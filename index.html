@@ -616,6 +616,141 @@
       .btn-small { flex: 1; }
     }
 
+
+    .auth-screen {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 32rem),
+        #eef3f9;
+    }
+
+    .auth-card {
+      width: min(460px, 100%);
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: white;
+      box-shadow: 0 24px 70px rgba(15,23,42,.15);
+    }
+
+    .auth-logo {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
+      margin-bottom: 16px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+      color: white;
+      font-size: 29px;
+    }
+
+    .auth-card h1 { margin: 0 0 8px; font-size: 26px; }
+    .auth-card > p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+    .auth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 15px; }
+
+    .auth-message {
+      min-height: 22px;
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .auth-message.error { color: #b91c1c; }
+    .auth-message.success { color: #166534; }
+
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 8px 11px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 11px;
+      background: rgba(255,255,255,.08);
+      color: #dbeafe;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .sync-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fbbf24;
+    }
+
+    .sync-status.online::before { background: #4ade80; }
+    .sync-status.error::before { background: #f87171; }
+    .sync-status.syncing::before { background: #60a5fa; animation: pulse 1s infinite alternate; }
+
+    @keyframes pulse { to { opacity: .35; } }
+
+    .migration-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      background: #eff6ff;
+    }
+
+    .migration-banner strong { display: block; margin-bottom: 3px; color: #1e40af; }
+    .migration-banner span { color: #475467; font-size: 12px; line-height: 1.4; }
+
+    .busy-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15,23,42,.58);
+      backdrop-filter: blur(3px);
+    }
+
+    .busy-card {
+      min-width: min(350px, 92vw);
+      padding: 20px;
+      border-radius: 16px;
+      background: white;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0,0,0,.25);
+    }
+
+    .busy-spinner {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 12px;
+      border: 4px solid #dbeafe;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    button:disabled, input:disabled, textarea:disabled, select:disabled {
+      cursor: not-allowed;
+      opacity: .58;
+    }
+
+    @media (max-width: 620px) {
+      .auth-actions { grid-template-columns: 1fr; }
+      .migration-banner { align-items: stretch; flex-direction: column; }
+      .migration-banner .btn { width: 100%; }
+      .sync-status { width: 100%; justify-content: center; }
+    }
+
     @media print {
       .topbar, .form-panel, .search-wrap, .customer-actions, .top-actions, .stats, .suggestions-panel { display: none !important; }
       .layout { display: block; padding: 0; }
@@ -627,18 +762,51 @@
   </style>
 </head>
 <body>
-  <div class="app-shell">
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <div class="auth-logo">🔐</div>
+      <h1>Είσοδος στο χαρτοφυλάκιο</h1>
+      <p>Τα στοιχεία αποθηκεύονται πλέον στην ασφαλή online βάση Supabase και συγχρονίζονται σε κινητό και υπολογιστή.</p>
+
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" inputmode="email" autocomplete="username" placeholder="name@email.gr" />
+      </div>
+      <div class="field">
+        <label for="authPassword">Κωδικός</label>
+        <input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Τουλάχιστον 6 χαρακτήρες" />
+      </div>
+
+      <div class="auth-actions">
+        <button class="btn btn-primary" id="signInBtn" type="button">Είσοδος</button>
+        <button class="btn btn-secondary" id="signUpBtn" type="button">Δημιουργία λογαριασμού</button>
+      </div>
+      <div class="auth-message" id="authMessage">Χρησιμοποίησε το ίδιο email και τον ίδιο κωδικό σε όλες τις συσκευές.</div>
+    </div>
+  </section>
+
+  <div class="busy-overlay hidden" id="busyOverlay">
+    <div class="busy-card">
+      <div class="busy-spinner"></div>
+      <strong id="busyTitle">Γίνεται συγχρονισμός…</strong>
+      <div id="busyText" style="margin-top:6px;color:#667085;font-size:13px"></div>
+    </div>
+  </div>
+
+  <div class="app-shell hidden" id="appShell">
     <header class="topbar">
       <div class="brand">
         <div class="brand-icon">👥</div>
         <div>
           <h1>Προσωπικό Χαρτοφυλάκιο</h1>
-          <p>Πελάτες, πλήρη στοιχεία και ασφαλιστήρια συμβόλαια</p>
+          <p>Ασφαλισμένοι, συμβόλαια και online συγχρονισμός</p>
         </div>
       </div>
       <div class="top-actions">
+        <span class="sync-status" id="syncStatus">Σύνδεση στη βάση…</span>
         <button class="btn btn-ghost" id="exportBtn">Εξαγωγή backup</button>
         <button class="btn btn-ghost" id="importBtn">Εισαγωγή backup</button>
+        <button class="btn btn-ghost" id="signOutBtn">Αποσύνδεση</button>
         <input class="hidden" type="file" id="importFile" accept=".json,application/json" />
       </div>
     </header>
@@ -646,7 +814,7 @@
     <main class="layout">
       <aside class="card form-panel">
         <div class="section-title">
-          <h2 id="formTitle">Νέος πελάτης</h2>
+          <h2 id="formTitle">Νέος ασφαλισμένος</h2>
           <span class="badge" id="editBadge">Καταχώριση</span>
         </div>
 
@@ -737,7 +905,7 @@
           </div>
 
           <div class="form-actions">
-            <button class="btn btn-primary" type="submit" id="saveBtn">Αποθήκευση πελάτη</button>
+            <button class="btn btn-primary" type="submit" id="saveBtn">Αποθήκευση ασφαλισμένου</button>
             <button class="btn btn-secondary hidden" type="button" id="cancelEditBtn">Ακύρωση</button>
           </div>
         </form>
@@ -753,6 +921,14 @@
         </div>
         <div class="search-rule">
           Στην αναζήτηση αριθμού εμφανίζονται μόνο συμβόλαια που ξεκινούν από τα ψηφία που πληκτρολογείς.
+        </div>
+
+        <div class="migration-banner hidden" id="migrationBanner">
+          <div>
+            <strong>Η online βάση είναι κενή</strong>
+            <span>Μετέφερε μία φορά τους 174 ασφαλισμένους, τα 243 συμβόλαια και τα προϊόντα που είναι ήδη ενσωματωμένα στην εφαρμογή.</span>
+          </div>
+          <button class="btn btn-primary" id="seedImportBtn" type="button">Μεταφορά αρχικών δεδομένων</button>
         </div>
 
         <div class="stats">
@@ -789,19 +965,40 @@
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
-  const SEED_VERSION = "insured_products_excel_2026_07_19_v1";
+  const SUPABASE_URL = "https://exzjhcivqpwueqgkpivs.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zFcNXgTlrs9WqZmXc7vWXg_vAC9vya5";
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  const SEED_VERSION = "supabase_cloud_2026_07_19_v1";
   const SEED_MARKER_KEY = STORAGE_KEY + "_seed_" + SEED_VERSION;
   const SEED_CUSTOMERS = [{"id":"excel-4b0f9a3d99df4953","firstName":"ΜΑΡΓΑΡΙΤΑ","lastName":"ΑΜΑΝΑΤΙΔΟΥ","company":"","phone":"","email":"","afm":"064654567","birthDate":"1973-12-03","dou":"","adt":"","street":"ΝΥΜΦΩΝ","streetNumber":"10","area":"ΓΕΡΑΚΑΣ","postalCode":"15344","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1232805","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-2101293cbec1f3ba","firstName":"ΠΛΟΥΤΑΡΧΟΣ","lastName":"ΑΜΠΑΤΑΓΓΕΛΟΣ","company":"","phone":"","email":"","afm":"079360119","birthDate":"1972-04-17","dou":"","adt":"","street":"ΜΟΡΓΚΕΝΤΑΟΥ","streetNumber":"4","area":"ΒΥΡΩΝΑΣ","postalCode":"16232","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1384470","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f1e0a2f1c7b7cca3","firstName":"ΕΙΡΗΝΗ","lastName":"ΑΜΠΑΤΑΓΓΕΛΟΥ","company":"","phone":"","email":"","afm":"079360212","birthDate":"1974-12-21","dou":"","adt":"","street":"ΑΓΑΜΕΜΝΟΝΟΣ","streetNumber":"13","area":"Α.ΛΙΟΣΙΑ","postalCode":"13341","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1219641","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-9a0ce742d0983d20","firstName":"ΑΡΙΑΔΝΗ","lastName":"ΑΝΑΠΟΛΙΤΑΚΗ","company":"","phone":"","email":"","afm":"","birthDate":"2011-05-15","dou":"","adt":"","street":"ΑΘ. ΔΙΑΚΟΥ","streetNumber":"111","area":"ΑΙΓΑΛΕΩ","postalCode":"12243","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1346690","product":"ΕΘΝΙΚΗ ΚΑΙ ΠΑΙΔΙ"},{"number":"1346692","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-c02222225c874057","firstName":"ΕΜΜΑΝΟΥΗΛ","lastName":"ΑΝΑΠΟΛΙΤΑΚΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2008-10-13","dou":"","adt":"","street":"ΑΘ. ΔΙΑΚΟΥ","streetNumber":"111","area":"ΑΙΓΑΛΕΩ","postalCode":"12243","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1346688","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-2844d2491ebfa3ae","firstName":"ΣΤΥΛΙΑΝΟΣ","lastName":"ΑΝΑΠΟΛΙΤΑΚΗΣ","company":"","phone":"","email":"","afm":"078645324","birthDate":"1972-12-14","dou":"","adt":"","street":"ΑΘΑΝΑΣΙΟΥ ΔΙΑΚΟΥ","streetNumber":"111","area":"ΑΙΓΑΛΕΩ","postalCode":"12243","notes":"Επάγγελμα: ΕΜΠΟΡΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1360689","product":"Δεν αναφέρεται στο Excel"},{"number":"1622619","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-8715b56b940eb012","firstName":"ΜΑΡΙΑ","lastName":"ΑΝΥΦΑΝΤΗ","company":"","phone":"","email":"","afm":"138840974","birthDate":"1984-04-17","dou":"","adt":"","street":"ΜΠΙΖΑΝΙΟΥ","streetNumber":"92","area":"ΙΛΙΟΝ","postalCode":"13123","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1215034","product":"Ν11 FULL"},{"number":"1225021","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-c598683d7df02f7f","firstName":"ΜΑΡΙΑ","lastName":"ΑΠΟΣΤΟΛΟΥ","company":"","phone":"","email":"","afm":"050650846","birthDate":"1965-05-23","dou":"","adt":"","street":"ΑΡΙΣΤΟΦΑΝΟΥΣ","streetNumber":"43","area":"ΧΑΛΑΝΔΡΙ","postalCode":"15232","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1105895","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1363194","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-3d590bd24f1c08a5","firstName":"ΧΡΙΣΤΙΝΑ","lastName":"ΒΑΣΙΛΑΚΟΥ","company":"","phone":"","email":"","afm":"145269558","birthDate":"1986-05-16","dou":"","adt":"","street":"ΜΠΟΥΜΠΟΥΛΙΝΑΣ","streetNumber":"9","area":"ΧΑΙΔΑΡΙ","postalCode":"12462","notes":"Επάγγελμα: ΓΥΜΝΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1668321","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-afa6f5921abefe79","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΒΛΑΣΙ","company":"","phone":"","email":"","afm":"165313516","birthDate":"1995-07-31","dou":"","adt":"","street":"ΜΑΝΙΑΚΙΟΥ","streetNumber":"26","area":"ΠΕΡΙΣΤΕΡΙ","postalCode":"12136","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1413196","product":"ΕΘΝΙΚΗ ΣΥΝΤΑΞΗ"},{"number":"1427724","product":"Ν11 FULL"},{"number":"1625918","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5c28d85a9f13c523","firstName":"ΑΛΕΞΑΝΔΡΟΣ","lastName":"ΒΟΥΓΙΟΥΚΛΑΚΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2017-09-05","dou":"","adt":"","street":"ΑΔΡΙΑΝΟΥΠΟΛΕΩΣ","streetNumber":"42","area":"ΑΙΓΑΛΕΩ","postalCode":"12242","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1413341","product":"ΕΘΝΙΚΗ ΚΑΙ ΠΑΙΔΙ"}],"isInsured":true},{"id":"excel-89c724555a4e7684","firstName":"ΜΑΡΙΝΑ","lastName":"ΓΑΒΡΑ","company":"","phone":"","email":"","afm":"125128181","birthDate":"1983-10-10","dou":"","adt":"","street":"ΖΑΝ.ΜΩΡΕΑΣ","streetNumber":"32","area":"ΑΘΗΝΑ","postalCode":"11741","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1585905","product":"Ν11 FULL"},{"number":"1626052","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-efcb662913bad181","firstName":"ΣΤΕΦΑΝΟΣ","lastName":"ΓΕΩΡΓΑΛΗΣ","company":"","phone":"","email":"","afm":"107465177","birthDate":"1977-07-06","dou":"","adt":"","street":"ΜΟΡΓΚΕΝΤΑΟΥ","streetNumber":"4","area":"ΒΥΡΩΝΑΣ","postalCode":"16232","notes":"Επάγγελμα: ΙΕΡΕΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1625972","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-ce0ce6a30906fea3","firstName":"ΞΑΝΘΗ","lastName":"ΓΕΩΡΓΙΟΥ","company":"","phone":"","email":"","afm":"109449333","birthDate":"1973-03-14","dou":"","adt":"","street":"ΧΡΙΣΤΟΦΗ","streetNumber":"20","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18547","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1698229","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-adba1b32c6b24b7a","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΓΙΑΝΝΑΚΑΣ","company":"","phone":"","email":"","afm":"161046025","birthDate":"1997-03-31","dou":"","adt":"","street":"ΟΡΦΕΩΣ","streetNumber":"17","area":"ΠΑΛ.ΦΑΛΗΡΟ","postalCode":"18761","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1582882","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e926893b8ad38a4d","firstName":"ΜΕΛΙΝΑ-ΣΟΦ","lastName":"ΓΙΑΝΝΙΚΑ","company":"","phone":"","email":"","afm":"","birthDate":"2016-04-07","dou":"","adt":"","street":"ΑΝΔΡΕΑ ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"38","area":"ΙΛΙΟΝ","postalCode":"13122","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1313210","product":"Ν11 FULL"},{"number":"1626988","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-8891cc8d10a157fc","firstName":"ΜΑΡΙΝΑ","lastName":"ΓΙΑΝΝΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2016-06-20","dou":"","adt":"","street":"ΜΑΚΡΥΓΙΑΝΝΗ","streetNumber":"9","area":"ΙΛΙΟΝ","postalCode":"13123","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1619758","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-c1f89013411f3e69","firstName":"ΜΑΡΙΑΝΝΑ","lastName":"ΓΚΡΕΚΟΥ","company":"","phone":"","email":"","afm":"065722726","birthDate":"1971-07-18","dou":"","adt":"","street":"Λ.ΠΟΣΕΙΔΩΝΟΣ","streetNumber":"8","area":"ΠΑΛΑΙΟ ΦΑΛΗΡΟ","postalCode":"17562","notes":"Επάγγελμα: ΕΜΠΟΡΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1429262","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-278da26e0ced24d4","firstName":"ΑΙΚΑΤΕΡΙΝΗ","lastName":"ΓΚΩΣΕ","company":"","phone":"","email":"","afm":"120897417","birthDate":"1962-11-30","dou":"","adt":"","street":"ΖΕΡΒΑ & ΨΑΡΡΩΝ","streetNumber":"2","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1608903","product":"Ν11 FULL"},{"number":"1626684","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-84a5ecae2d3ceb14","firstName":"ΑΡΙΣΤΕΙΔΗΣ","lastName":"ΓΡΗΓΟΡΙΟΥ","company":"","phone":"","email":"","afm":"125925250","birthDate":"1983-11-24","dou":"","adt":"","street":"ΑΝΟΙΞΕΩΣ","streetNumber":"13","area":"ΚΡΥΟΝΕΡΙ","postalCode":"14568","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1706303","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-409172d62cc99f07","firstName":"ΧΡΥΣΗΛΙΑ","lastName":"ΓΡΗΓΟΡΙΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2025-10-08","dou":"","adt":"","street":"ΑΝΟΙΞΕΩΣ","streetNumber":"13","area":"ΚΡΥΟΝΕΡΙ","postalCode":"14568","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1695963","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-835f0324e5abc29f","firstName":"ΤΕΡΨΙΧΟΡΗ","lastName":"ΔΑΜΙΓΟΥ","company":"","phone":"","email":"","afm":"067583778","birthDate":"1980-10-22","dou":"","adt":"","street":"ΒΑΣ.ΒΟΥΛΓΑΡΟΚΤΟΝΟΥ","streetNumber":"93","area":"ΑΧΑΡΝΕΣ","postalCode":"13671","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1186670","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-92d34b5d21fe1ef1","firstName":"ΑΛΕΞΑΝΔΡΑ","lastName":"ΔΕΛΗΣΤΡΑΤΗ","company":"","phone":"","email":"","afm":"174064505","birthDate":"2001-04-05","dou":"","adt":"","street":"Γ.ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"21","area":"ΑΡΓΥΡΟΥΠΟΛΗ","postalCode":"16451","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1556582","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-78a3ed31c2928ae4","firstName":"ΜΑΡΙΝΕΛΑ Ρ","lastName":"ΔΕΛΗΣΤΡΑΤΗ","company":"","phone":"","email":"","afm":"132718761","birthDate":"1964-08-15","dou":"","adt":"","street":"ΑΓ.ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"21","area":"ΑΡΓΥΡΟΥΠΟΛΗ","postalCode":"16451","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1167734","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-f06051f538d9438a","firstName":"ΑΓΓΕΛΟΣ","lastName":"ΔΕΛΤΣΙΔΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2006-11-09","dou":"","adt":"","street":"ΣΠ. ΜΕΛΑ 24 ΠΡΩΗΝ","streetNumber":"34","area":"ΜΕΤΑΜΟΡΦΩΣΗ","postalCode":"14452","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1063210","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"}],"isInsured":true},{"id":"excel-a75347ec6a2d0fe1","firstName":"ΚΩΝ/ΝΟΣ","lastName":"ΔΕΣΠΟΤΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"038570272","birthDate":"1966-02-07","dou":"","adt":"","street":"ΜΕΘΩΝΗ ΜΕΣΣΗΝΙΑΣ ΚΑΛΑΜΑΤΑ","streetNumber":"","area":"ΜΕΘΩΝΗ","postalCode":"24006","notes":"Επάγγελμα: ΓΕΩΡΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1562465","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e1d604fab52cad0a","firstName":"ΣΤΑΥΡΟΥΛΑ","lastName":"ΔΕΣΠΟΤΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"132563549","birthDate":"1961-02-03","dou":"","adt":"","street":"ΤΙΜΑΙΟΥ","streetNumber":"11","area":"ΑΘΗΝΑ","postalCode":"10441","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1665581","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e715107333e25718","firstName":"ΑΒΑΠΤΙΣΤΟ","lastName":"ΔΟΜΑΖΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2019-09-05","dou":"","adt":"","street":"ΤΑΥΓΕΤΟΥ","streetNumber":"21","area":"ΚΕΡΑΤΣΙΝΙ","postalCode":"18757","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1465730","product":"Ν11 FULL"},{"number":"1681629","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-4ef26a9456782b06","firstName":"ΒΑΣΙΛΕΙΟΣ","lastName":"ΖΑΦΕΙΡΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"135410735","birthDate":"1984-08-14","dou":"","adt":"","street":"ΚΕΦΑΛΛΗΝΙΑΣ","streetNumber":"21","area":"ΑΘΗΝΑ","postalCode":"11361","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ / ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1570012","product":"Ν11 FULL"},{"number":"1683298","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f5c20b7709fe32c6","firstName":"ΔΗΜΗΤΡΙΟΣ","lastName":"ΖΑΦΕΙΡΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2021-12-14","dou":"","adt":"","street":"ΚΕΦΑΛΛΗΝΙΑΣ","streetNumber":"21","area":"ΑΘΗΝΑ","postalCode":"11361","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1683496","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-91650bc73274b6ff","firstName":"ΥΒΟΝΝΗ","lastName":"ΖΑΦΕΙΡΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2017-11-01","dou":"","adt":"","street":"ΚΑΦΑΛΛΗΝΙΑΣ","streetNumber":"21","area":"ΑΘΗΝΑ","postalCode":"11361","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1545447","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-934c6a0ae9d74fa2","firstName":"ΦΙΛΙΠΠΟΣ","lastName":"ΗΛΙΑΔΗΣ","company":"","phone":"","email":"","afm":"159280457","birthDate":"1994-07-13","dou":"","adt":"","street":"ΛΑΜΠΡΑΚΗ ΓΡΗΓ","streetNumber":"16","area":"ΓΛΥΦΑΔΑ","postalCode":"16674","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1705169","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-1c2d36f3ce38f9a6","firstName":"ΝΙΚΟLΑS","lastName":"ΗΟΧΗΑ","company":"","phone":"","email":"","afm":"","birthDate":"2015-09-20","dou":"","adt":"","street":"ΤΣΑΚΑΛΩΦ","streetNumber":"31","area":"ΚΕΡΑΤΣΙΝΙ","postalCode":"18757","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1237185","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-89299d5817e301e2","firstName":"ΔΗΜΗΤΡΙΟΣ","lastName":"ΗΡΑΚΛΕΟΥΣ","company":"","phone":"","email":"","afm":"076106230","birthDate":"1976-07-29","dou":"","adt":"","street":"ΑΙΓΙΝΗΣ","streetNumber":"9-11","area":"ΝΕΑ ΙΩΝΙΑ","postalCode":"14232","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1254371","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ"},{"number":"1622529","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-10cf5d1a67fe76df","firstName":"ΚΟΣΜΑΣ ΑΒΑΠΤΙΣΤΟ","lastName":"ΗΡΑΚΛΕΟΥΣ","company":"","phone":"","email":"","afm":"","birthDate":"2017-11-29","dou":"","adt":"","street":"ΝΥΜΦΩΝ","streetNumber":"54","area":"ΓΛΥΦΑΔΑ","postalCode":"16561","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1362587","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-7f60796e3b3d44e8","firstName":"ΕΜΜΑΝΟΥΗΛ","lastName":"ΚΑΙΛΑΣ","company":"","phone":"","email":"","afm":"033522330","birthDate":"1959-07-17","dou":"","adt":"","street":"ΣΑΛ/ΜΑΧΩΝ & ΔΥΝΑΜΙΔΗ","streetNumber":"","area":"ΣΑΛΑΜΙΝΑ","postalCode":"18902","notes":"Επάγγελμα: ΣΥΝΤΑΞΙΟΥΧΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1127590","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-55a972e0836b258d","firstName":"ΑΒΑΠΤΙΣΤΗ","lastName":"ΚΑΝΔΡΙΝΑΚΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2022-07-29","dou":"","adt":"","street":"ΣΜΠΑΡΟΥΝΗ ΤΡΙΚΟΡΦΟΥ","streetNumber":"7","area":"ΑΘΗΝΑ","postalCode":"10443","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1603935","product":"Ν11 FULL"},{"number":"1640509","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f8e526286f8915a6","firstName":"ΠΟΛΥΞΕΝΗ","lastName":"ΚΑΠΙΖΙΩΝΗ","company":"","phone":"","email":"","afm":"121966253","birthDate":"1994-05-31","dou":"","adt":"","street":"ΘΗΣΕΩΣ","streetNumber":"11","area":"ΒΥΡΩΝΑΣ","postalCode":"16233","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1630992","product":"Ν11 FULL"},{"number":"1706159","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-fa251d58b7007159","firstName":"ΑΝΤΩΝΗΣ","lastName":"ΚΑΡΑΜΑΝΩΛΑΚΗΣ","company":"","phone":"","email":"","afm":"107513550","birthDate":"1977-08-31","dou":"","adt":"","street":"ΑΧΑΙΑΣ","streetNumber":"37","area":"ΚΗΦΙΣΙΑ","postalCode":"14564","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1371308","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-56cef6eca112fb55","firstName":"ΣΠΥΡΙΔΩΝ","lastName":"ΚΑΡΑΝΙΚΟΛΑΣ","company":"","phone":"","email":"","afm":"070659334","birthDate":"1981-09-07","dou":"","adt":"","street":"ΣΕΡΙΦΟΥ","streetNumber":"10","area":"ΧΟΛΑΡΓΟΣ","postalCode":"15562","notes":"Επάγγελμα: ΔΙΚΗΓΟΡΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"915777","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-7fd8ef7c64aee498","firstName":"ΙΩΣΗΦ","lastName":"ΚΑΡΑΤΑΡΑΚΗΣ","company":"","phone":"","email":"","afm":"078400290","birthDate":"1979-05-01","dou":"","adt":"","street":"ΗΡΑΚΛΕΙΟ ΜΟΥΝΤΡΑΚΗ ΜΙΝΩΑ","streetNumber":"9","area":"ΗΡ","postalCode":"71307","notes":"Επάγγελμα: ΛΟΙΠΑ ΑΓΡΟΤΙΚΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1694241","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d76454b72576c405","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΚΑΣΣΑΡΑΣ","company":"","phone":"","email":"","afm":"063029819","birthDate":"1977-03-27","dou":"","adt":"","street":"ΜΑΚΡΥΓΙΑΝΝΗ","streetNumber":"29","area":"ΑΙΓΑΛΕΩ","postalCode":"12243","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1617928","product":"Ν11 FULL"},{"number":"1618031","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-749485c4576161b4","firstName":"ΑΡΙΣΤΕΙΔΗΣ","lastName":"ΚΑΤΣΟΥΛΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2013-09-02","dou":"","adt":"","street":"ΑΡΙΣΤΟΤΕΛΟΥΣ","streetNumber":"11","area":"ΜΑΓΟΥΛΑ ΑΤΤΙΚΗΣ","postalCode":"19018","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1238129","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"}],"isInsured":true},{"id":"excel-2357debf76811d3d","firstName":"ΠΑΝΑΓΙΩΤΑ","lastName":"ΚΙΟΥΣΗ","company":"","phone":"","email":"","afm":"118051540","birthDate":"1983-01-19","dou":"","adt":"","street":"ΑΝΤΩΝΗ ΤΡΙΤΣΗ","streetNumber":"2","area":"ΜΕΛΙΣΣΙΑ","postalCode":"15127","notes":"Επάγγελμα: ΔΙΚΗΓΟΡΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1222552","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1634806","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-0132a81a7df3c4bd","firstName":"ΠΑΝΑΓΙΩΤΗΣ","lastName":"ΚΙΟΥΣΗΣ","company":"","phone":"","email":"","afm":"106874227","birthDate":"1981-03-15","dou":"","adt":"","street":"ΑΝΤΩΝΗ ΤΡΙΤΣΗ","streetNumber":"2","area":"ΜΕΛΙΣΣΙΑ","postalCode":"15127","notes":"Επάγγελμα: ΔΙΚΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1224439","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1634807","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-6d879e003277ba5c","firstName":"ΜΑΡΙΑ","lastName":"ΚΙΤΣΙΚΟΥΔΗ","company":"","phone":"","email":"","afm":"061380952","birthDate":"1973-02-16","dou":"","adt":"","street":"ΑΓΙΟΥ ΚΩΝΣΤΑΝΤΙΝΟΥ","streetNumber":"11","area":"ΝΕΑ ΙΩΝΙ","postalCode":"14231","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1592662","product":"Ν11 FULL"},{"number":"1702559","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-92ad16f74809754e","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΚΟΡΩΝΑΚΟΣ","company":"","phone":"","email":"","afm":"174693820","birthDate":"2003-11-05","dou":"","adt":"","street":"ΑΝΔΡΙΑΝΟΥΠΟΛΕΩΣ","streetNumber":"28","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18539","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1652020","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e26d5cc454d1d877","firstName":"ΑΝΘΟΥΛΑ","lastName":"ΚΟΣΜΑ","company":"","phone":"","email":"","afm":"101003250","birthDate":"1979-08-25","dou":"","adt":"","street":"ΝΥΜΦΩΝ","streetNumber":"54","area":"ΓΛΥΦΑΔΑ","postalCode":"16561","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1109367","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-6470d26ca8d4c88d","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΚΟΤΣΙΡΑΣ","company":"","phone":"","email":"","afm":"301740636","birthDate":"1980-01-04","dou":"","adt":"","street":"ΕΛΠΙΔΟΦΟΡΟΥ","streetNumber":"5","area":"ΑΓΙΟΣ ΔΗΜΗΤΡΙΟΣ","postalCode":"17341","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1456925","product":"Ν11 FULL"},{"number":"1659723","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-bce529cf310ce772","firstName":"ΤΑΤΙΑΝΑ","lastName":"ΚΟΥΡΗ","company":"","phone":"","email":"","afm":"169605590","birthDate":"1998-11-13","dou":"","adt":"","street":"Ι.ΘΕΟΛΟΓΟΥ","streetNumber":"89","area":"ΖΩΓΡΑΦΟΣ","postalCode":"15773","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1155216","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"},{"number":"1579031","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-539f99674102f68c","firstName":"ΦΩΤΙΟΣ","lastName":"ΚΟΥΡΗΣ","company":"","phone":"","email":"","afm":"140243112","birthDate":"1988-01-28","dou":"","adt":"","street":"Ι.ΘΕΟΛΟΓΟΥ","streetNumber":"89","area":"ΖΩΓΡΑΦΟΣ","postalCode":"15773","notes":"Επάγγελμα: ΕΚΠΑΙΔΕΥΤΙΚΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1155214","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1579036","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-934d2abcd785152f","firstName":"ΜΑΡΙΑ","lastName":"ΚΟΥΤΡΟΜΑΝΟΥ","company":"","phone":"","email":"","afm":"070455454","birthDate":"1979-03-28","dou":"","adt":"","street":"ΒΙΩΝΟΣ","streetNumber":"4-6","area":"ΑΘΗΝΑ","postalCode":"10443","notes":"Επάγγελμα: ΧΗΜΙΚΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1217996","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-3ef146bdf1c49e44","firstName":"ΑΛΚΙΝΟΟΣ","lastName":"ΚΟΥΤΣΑΝΤΩΝΑΚΗΣ","company":"","phone":"","email":"","afm":"164441830","birthDate":"1999-07-15","dou":"","adt":"","street":"ΚΑΡΑΙΣΚΑΚΗ","streetNumber":"14","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14342","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1657630","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1673185","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-0b23c20033d54db2","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΚΟΥΤΣΑΝΤΩΝΑΚΗΣ","company":"","phone":"","email":"","afm":"045113352","birthDate":"1967-07-27","dou":"","adt":"","street":"ΚΑΡΑΙΣΚΑΚΗ","streetNumber":"14","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14342","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1668387","product":"Ν11 FULL"},{"number":"1702469","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-4be86568aa31aefc","firstName":"ΚΩΝΣΤΑΝΤΙΝ","lastName":"ΚΡΕΤΣΑΣ","company":"","phone":"","email":"","afm":"","birthDate":"2014-11-19","dou":"","adt":"","street":"ΠΑΥΣΑΝΙΟΥ","streetNumber":"5","area":"ΝΙΚΑΙΑ","postalCode":"18454","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1663068","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-ab6319c58509bf98","firstName":"ΠΑΝΤΕΛΗΣ","lastName":"ΚΡΕΤΣΑΣ","company":"","phone":"","email":"","afm":"","birthDate":"2014-11-19","dou":"","adt":"","street":"ΠΑΥΣΑΝΙΟΥ","streetNumber":"5","area":"ΝΙΚΑΙΑ","postalCode":"18454","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1663053","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-806e3d6967f33d3c","firstName":"ΣΤΑΥΡΟΣ","lastName":"ΚΡΕΤΣΑΣ","company":"","phone":"","email":"","afm":"131062942","birthDate":"1984-12-07","dou":"","adt":"","street":"ΠΑΥΣΑΝΙΟΥ","streetNumber":"5","area":"ΝΙΚΑΙΑ","postalCode":"18454","notes":"Επάγγελμα: ΜΗΧ/ΚΟΣ ΑΥΤ/ΤΩΝ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1414677","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-be70a86b51ed0df2","firstName":"ΑΓΓΕΛΟΣ","lastName":"ΚΥΡΜΠΑΤΣΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2014-09-12","dou":"","adt":"","street":"ΥΨΗΛΑΝΤΟΥ","streetNumber":"23","area":"ΧΑΛΑΝΔΡΙ","postalCode":"15232","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1259711","product":"Ν11 FULL"},{"number":"1585833","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-c02fc286bf136207","firstName":"ΚΥΡΙΑΚΟΣ","lastName":"ΚΥΡΜΠΑΤΣΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2017-09-01","dou":"","adt":"","street":"ΥΨΗΛΑΝΤΟΥ","streetNumber":"23","area":"ΧΑΛΑΝΔΡΙ","postalCode":"15232","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1357830","product":"Ν11 FULL"},{"number":"1585836","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e2c59f88d0cae3bf","firstName":"ΚΩΝ/ΝΟΣ-ΜΑ","lastName":"ΚΩΣΤΑΡΕΛΛΟΣ","company":"","phone":"","email":"","afm":"162196560","birthDate":"2001-11-13","dou":"","adt":"","street":"ΤΣΑΜΗ ΚΑΡΑΤΑΣΟΥ","streetNumber":"72","area":"ΑΘΗΝΑ","postalCode":"11741","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1199286","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"},{"number":"1688124","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d73fc1bc261dae19","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΚΩΣΤΑΡΕΛΛΟΣ","company":"","phone":"","email":"","afm":"054497156","birthDate":"1969-01-08","dou":"","adt":"","street":"ΒΑΣΙΛΙΣΣΗΣ ΣΟΦΙΑΣ","streetNumber":"55","area":"ΑΘΗΝΑ","postalCode":"11521","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1158935","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1688123","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-969cc88d3dfec2fe","firstName":"ΜΑΡΙΑ ΝΕΦΕ","lastName":"ΚΩΣΤΑΡΕΛΛΟΥ","company":"","phone":"","email":"","afm":"162196559","birthDate":"2005-09-05","dou":"","adt":"","street":"ΤΣΑΜΗ ΚΑΡΑΤΑΣΟΥ","streetNumber":"72","area":"ΑΘΗΝΑ","postalCode":"11741","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1199285","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"},{"number":"1688127","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-521f615a6ecf9091","firstName":"ΧΑΡΑ-ΕΙΡΗΝ","lastName":"ΚΩΤΣΕΛΗ","company":"","phone":"","email":"","afm":"140562497","birthDate":"1987-01-15","dou":"","adt":"","street":"Ν.ΝΟΤΑΡΑ","streetNumber":"58","area":"ΑΓΙΟΣ ΔΗΜΗΤΡΙΟΣ","postalCode":"17343","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1456781","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-229793aa8165fe3e","firstName":"ΑΝΑΣΤΑΣΙΑ","lastName":"ΛΑΣΚΑΡΙΔΟΥ","company":"","phone":"","email":"","afm":"068604881","birthDate":"1969-04-10","dou":"","adt":"","street":"ΠΑΡΟΔΟΣ ΕΡΜΟΥ ΝΕΑ ΜΑΚΡΗ","streetNumber":"","area":"ΝΕΑ ΜΑΚΡΗ ΑΤΤΙΚΗΣ","postalCode":"19005","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1423866","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-3a17416ea16b68cd","firstName":"ΦΙΛΟΘΕΟΣ","lastName":"ΛΕΜΟΝΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"054444206","birthDate":"1972-08-27","dou":"","adt":"","street":"21ΧΛΜ ΘΕΣΣ/ΝΙΚΗΣ ΜΗΧ. ΘΕΣ/ΝΙΚΗ","streetNumber":"","area":"ΘΕΡΜΑΙΚΟΣ ΘΕΣΣΑΛΟΝΙΚΗΣ","postalCode":"57019","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1377347","product":"Ν11 NF"}],"isInsured":true},{"id":"excel-dfa00837264e5c01","firstName":"ΘΕΟΔΩΡΟΣ","lastName":"ΛΙΑΜΗΣ","company":"","phone":"","email":"","afm":"046688679","birthDate":"1974-08-09","dou":"","adt":"","street":"ΚΟΔΡΟΥ","streetNumber":"10","area":"ΧΑΙΔΑΡΙ","postalCode":"12461","notes":"Επάγγελμα: ΚΑΘΗΓΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1109371","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-b8c6d0032403edcf","firstName":"ΑΛΕΞΑΝΔΡΟΣ","lastName":"ΛΙΑΝΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2012-01-20","dou":"","adt":"","street":"ΕΥΑΓΓΕΛΟΥ ΜΙΝΗ","streetNumber":"19","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1626627","product":"Ν11 FULL"},{"number":"1700749","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f0db86c402742277","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΛΙΑΝΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2009-06-18","dou":"","adt":"","street":"ΕΥΑΓΓΕΛΟΥ ΜΙΝΗ","streetNumber":"19","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1143295","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"},{"number":"1626258","product":"Ν11 FULL"},{"number":"1700582","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-63155d2e868db7ce","firstName":"ΝΙΚΟΛΑΟΣ","lastName":"ΛΙΑΝΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2014-03-16","dou":"","adt":"","street":"ΕΥΑΓΓΕΛΟΥ ΜΙΝΗ","streetNumber":"19","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1626260","product":"Ν11 FULL"},{"number":"1700549","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-7d637d5287e600d4","firstName":"ΧΑΡΙΛΑΟΣ","lastName":"ΛΙΑΝΟΣ","company":"","phone":"","email":"","afm":"061106533","birthDate":"1977-05-24","dou":"","adt":"","street":"ΕΥΑΓΓΕΛΟΥ ΜΙΝΗ","streetNumber":"19","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1661757","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1661758","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1701090","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-26f9698390806c1e","firstName":"ΛΑΟΥΡΑ","lastName":"ΛΙΤΣΙΟΥ","company":"","phone":"","email":"","afm":"106300951","birthDate":"1979-06-26","dou":"","adt":"","street":"ΗΡΑΚΛΕΟΥΣ","streetNumber":"22","area":"ΒΥΡΩΝΑΣ","postalCode":"16233","notes":"Επάγγελμα: ΚΟΜΜΩΤΡΙΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1417253","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-65245509861730d7","firstName":"ΝΙΚΟΛΑΟΣ","lastName":"ΛΥΚΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"037699900","birthDate":"1967-03-09","dou":"","adt":"","street":"ΛΟΥΝΤΕΜΗ ΜΕΝΕΛΑΟΥ","streetNumber":"1","area":"ΧΑΙΔΑΡΙ","postalCode":"12462","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ / ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1130694","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1202093","product":"Ν11 FULL"},{"number":"1558110","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1716075","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-24df6ea3ce026eee","firstName":"ΑΙΚΑΤΕΡΙΝΗ","lastName":"ΜΑΓΚΛΑΡΑ","company":"","phone":"","email":"","afm":"","birthDate":"2010-05-26","dou":"","adt":"","street":"ΚΥΖΙΚΟΥ","streetNumber":"4","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14341","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1043263","product":"U.L.ΠΡΟΙΟΝΤΑ"}],"isInsured":true},{"id":"excel-1ce166e883016bf1","firstName":"ΑΝΔΡΙΑΝΑ","lastName":"ΜΑΓΚΛΑΡΑ","company":"","phone":"","email":"","afm":"","birthDate":"2015-01-01","dou":"","adt":"","street":"ΚΥΖΙΚΟΥ","streetNumber":"4","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14341","notes":"Επάγγελμα: ΑΝΗΛΙΚΗ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1198586","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"}],"isInsured":true},{"id":"excel-c42efd8c6db64848","firstName":"ΒΑΣΙΛΙΚΗ","lastName":"ΜΑΓΚΛΑΡΑ","company":"","phone":"","email":"","afm":"","birthDate":"2007-11-15","dou":"","adt":"","street":"ΚΥΖΙΚΟΥ","streetNumber":"4","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14341","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1043264","product":"U.L.ΠΡΟΙΟΝΤΑ"}],"isInsured":true},{"id":"excel-e4d46dd36f595fe7","firstName":"ΑΝΑΣΤΑΣΙΑ","lastName":"ΜΑΚΡΗ","company":"","phone":"","email":"","afm":"162670692","birthDate":"1995-12-22","dou":"","adt":"","street":"ΒΟΡΕΙΟΥ ΗΠΕΙΡΟΥ","streetNumber":"114","area":"ΑΘΗΝΑ","postalCode":"10444","notes":"Επάγγελμα: ΔΗΜΟΣΙΟΣ ΥΠΑΛΛΗ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1660640","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5fbdeba24b9931fa","firstName":"ΔΙΟΝΥΣΙΑ","lastName":"ΜΑΝΕΤΑ","company":"","phone":"","email":"","afm":"145936532","birthDate":"1988-07-14","dou":"","adt":"","street":"ΙΩΑΝΝΙΝΩΝ","streetNumber":"62Β","area":"ΠΕΡΙΣΤΕΡΙ","postalCode":"12137","notes":"Επάγγελμα: ΔΙΑΚΟΣΜΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1581461","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-b4dc5549a874c28f","firstName":"ΑΓΓΕΛΙΚΗ","lastName":"ΜΑΡΚΕΤΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2017-06-21","dou":"","adt":"","street":"ΑΡΙΑΔΝΗΣ","streetNumber":"26","area":"ΗΡΑΚΛΕΙΟ","postalCode":"71202","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1663829","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-e0fb40050a98d2fd","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΜΑΣΤΡΟΓΙΑΝΝΗΣ","company":"","phone":"","email":"","afm":"102803201","birthDate":"1976-06-08","dou":"","adt":"","street":"ΚΙΤΙΟΥ","streetNumber":"7","area":"ΝΙΚΑΙΑ","postalCode":"18453","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1228833","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-14618a43a5f30f75","firstName":"ΑΜΑΛΙΑ","lastName":"ΜΑΥΡΑΚΗ","company":"","phone":"","email":"","afm":"072057693","birthDate":"1973-08-26","dou":"","adt":"","street":"ΑΓΗΣΙΛΑΟΥ","streetNumber":"6","area":"ΝΕΑ ΣΜΥΡΝΗ","postalCode":"17123","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1514702","product":"Ν11 FULL"},{"number":"1623290","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-6e8ff568060efd8d","firstName":"ΑΝΑΣΤΑΣΙΑ","lastName":"ΜΕΤΣΙΟΥ","company":"","phone":"","email":"","afm":"106692481","birthDate":"1975-10-12","dou":"","adt":"","street":"ΑΝΤΙΦΙΛΟΥ","streetNumber":"3","area":"ΑΘΗΝΑ","postalCode":"11528","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1694752","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-9d682ae026be28b9","firstName":"ΔΙΟΝΥΣΙΟΣ","lastName":"ΜΙΧΑΛΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2018-10-22","dou":"","adt":"","street":"ΔΙΓΕΝΗ ΑΚΡΙΤΑ","streetNumber":"29","area":"ΠΕΤΡΟΥΠΟΛΗ","postalCode":"13231","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1621894","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-63b2986d5a5b85f7","firstName":"ΗΛΙΑΣ","lastName":"ΜΙΧΑΛΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"123912180","birthDate":"1985-10-15","dou":"","adt":"","street":"ΔΙΓΕΝΗ ΑΚΡΙΤΑ","streetNumber":"29","area":"ΠΕΤΡΟΥΠΟΛΗ","postalCode":"13231","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1661340","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e4318981290eaa47","firstName":"ΖΑΦΕΙΡΕΝΙΑ","lastName":"ΜΙΧΑΛΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"042298778","birthDate":"1956-02-13","dou":"","adt":"","street":"ΚΟΡΙΝΘΟΥ","streetNumber":"17","area":"ΓΛΥΦΑΔΑ","postalCode":"16674","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1225772","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1629064","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-613d391f20b0eed6","firstName":"ΓΕΩΡ ΚΑΛΛΙ","lastName":"ΜΟΣΚΟΒΙΤΗ","company":"","phone":"","email":"","afm":"115269062","birthDate":"1981-06-05","dou":"","adt":"","street":"ΑΘ.ΔΙΑΚΟΥ","streetNumber":"111","area":"ΑΙΓΑΛΕΩ","postalCode":"12243","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1346693","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-ee44ffeffac5536f","firstName":"ΚΩΝ/ΝΟΣ","lastName":"ΜΟΥΔΑΤΣΟΣ","company":"","phone":"","email":"","afm":"028486110","birthDate":"1946-09-29","dou":"","adt":"","street":"ΑΓ.ΠΑΡΑΣΚΕΥΗΣ","streetNumber":"80","area":"ΧΑΙΔΑΡΙ","postalCode":"12461","notes":"Επάγγελμα: ΣΥΝΤΑΞΙΟΥΧΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"496593","product":"ΣΥΝΤΑΞΙΟΔΟΤΙΚΟ ΠΡΟΓΡΑΜΜΑ"},{"number":"1215645","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-1a90f4dbbfe567fa","firstName":"ΑΛΕΞΑΝΔΡΟΣ","lastName":"ΜΟΥΡΤΖΟΥΚΟΣ","company":"","phone":"","email":"","afm":"127912852","birthDate":"1985-05-10","dou":"","adt":"","street":"ΠΛΑΤΕΙΑ ΕΞΩ ΒΡΥΣΗΣ","streetNumber":"","area":"ΜΕΓΑΡΑ","postalCode":"19100","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1363718","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-c9ae80a572167539","firstName":"ΣΟΦΙΑ ΙΩΑΝ","lastName":"ΜΟΥΣΤΑΚΑ","company":"","phone":"","email":"","afm":"135391777","birthDate":"1987-07-02","dou":"","adt":"","street":"ΣΥΝΤΑΓΜΑΤΑΡΧΟΥ ΔΑΒΑΚΗ","streetNumber":"29","area":"ΝΕΑ","postalCode":"14341","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1671475","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e12fc8d0c143ebde","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΜΠΑΛΤΑΔΩΡΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2024-12-12","dou":"","adt":"","street":"ΒΟΡΕΙΟΥ ΗΠΕΙΡΟΥ","streetNumber":"114","area":"ΑΘΗΝΑ","postalCode":"10444","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1700560","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-0b18687db0e9ad45","firstName":"ΜΕΛΙΝΑ","lastName":"ΜΠΛΑΤΣΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2016-08-06","dou":"","adt":"","street":"ΑΝΤΩΝΙΟΥ ΠΑΠΠΑ","streetNumber":"2","area":"ΚΑΛΥΒΙΑ","postalCode":"19010","notes":"Επάγγελμα: ΑΝΗΛΙΚΗ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1327621","product":"Ν11 FULL"},{"number":"1630199","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-898292b067280e13","firstName":"ΑΒΑΠΤΙΣΤΟ","lastName":"ΜΠΟΖΙΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2024-11-02","dou":"","adt":"","street":"ΦΩΚΙΔΟΣ","streetNumber":"32","area":"ΑΓΙΟΣ ΔΗΜΗΤΡΙΟΣ","postalCode":"17342","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1669455","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5355e230eb033168","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΜΠΡΕΜΠΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2012-01-31","dou":"","adt":"","street":"ΑΓ.ΔΗΜΗΤΡΙΟΥ ΟΠΛΩΝ","streetNumber":"6","area":"ΑΘΗΝΑ","postalCode":"10445","notes":"Επάγγελμα: ΑΝΗΛΙΚΟ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1271453","product":"Ν11 FULL"},{"number":"1630225","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-733b1ba2785a5879","firstName":"ΝΕΚΤΑΡΙΑ","lastName":"ΜΥΛΩΝΑ","company":"","phone":"","email":"","afm":"","birthDate":"2010-01-31","dou":"","adt":"","street":"ΜΕΝΑΔΡΟΥ","streetNumber":"19","area":"ΗΛΙΟΥΠΟΛΗ","postalCode":"16345","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1447004","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-7afc6147b8d91460","firstName":"ΒΑΣΙΛΕΙΟΣ","lastName":"ΜΥΛΩΝΑΣ","company":"","phone":"","email":"","afm":"185485679","birthDate":"2006-06-29","dou":"","adt":"","street":"ΜΕΝΑΝΔΡΟΥ","streetNumber":"19","area":"ΗΛΙΟΥΠΟΛΗ","postalCode":"16345","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1447007","product":"Ν11 FULL"},{"number":"1670168","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-ae835e9020629a6e","firstName":"ΗΛΙΑΣ","lastName":"ΜΥΛΩΝΑΣ","company":"","phone":"","email":"","afm":"056287923","birthDate":"1975-01-02","dou":"","adt":"","street":"ΜΕΝΑΝΔΡΟΥ","streetNumber":"19","area":"ΗΛΙΟΥΠΟΛΗ","postalCode":"16345","notes":"Επάγγελμα: ΠΟΛ/ΚΟΣ ΜΗΧ/ΚΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1511244","product":"ΕΘΝΙΚΗ ΣΥΝΤΑΞΗ"},{"number":"1619637","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-0f0e58de197eaa97","firstName":"ΜΑΡΙΑ","lastName":"ΝΙΚΗΦΟΡΟΥ","company":"","phone":"","email":"","afm":"141742470","birthDate":"1988-12-26","dou":"","adt":"","street":"Μ.ΜΠΟΤΣΑΡΗ","streetNumber":"7","area":"ΒΟΥΛΑ","postalCode":"16673","notes":"Επάγγελμα: ΑΝΕΡΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1283496","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1283500","product":"Ν11 FULL"},{"number":"1477319","product":"ΕΘΝΙΚΗ ΣΥΝΤΑΞΗ"}],"isInsured":true},{"id":"excel-ab3ccab91e399b45","firstName":"ΕΥΑΓΓΕΛΙΑ","lastName":"ΞΕΝΑΚΗ","company":"","phone":"","email":"","afm":"114692388","birthDate":"1982-01-28","dou":"","adt":"","street":"ΣΤ.ΚΩΤΙΑΔΗ","streetNumber":"2","area":"ΡΟΔΟΣ","postalCode":"85100","notes":"Επάγγελμα: ΑΕΡΟΣΥΝΟΔΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1538929","product":"ΕΘΝΙΚΗ ΣΥΝΤΑΞΗ"},{"number":"1604604","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-b66f4b5a465ee0ea","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΟΚΟΝΝΟΡ","company":"","phone":"","email":"","afm":"","birthDate":"2021-03-04","dou":"","adt":"","street":"ΣΜΠΑΡΟΥΝΗ ΤΡΙΚΟΡΦΟΥ","streetNumber":"7","area":"ΑΘΗΝΑ","postalCode":"10443","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1649284","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-b2b7ae56447ad1fd","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΟΚΟΝΝΟΡ","company":"","phone":"","email":"","afm":"","birthDate":"2021-03-04","dou":"","adt":"","street":"ΣΜΠΑΡΟΥΝΗ ΤΡΙΚΟΡΦΟΥ","streetNumber":"7","area":"ΑΘΗΝΑ","postalCode":"10443","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1649397","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5e3e4a7bd9339790","firstName":"ΒΑΣΙΛΕΙΟΣ","lastName":"ΠΑΙΚΟΥΛΑΣ","company":"","phone":"","email":"","afm":"154688185","birthDate":"1995-06-12","dou":"","adt":"","street":"ΕΘΝΟΜΑΡΤΥΡΩΝ","streetNumber":"25","area":"ΤΡΙΠΟΛΗ","postalCode":"22131","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1625312","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-1cf4aecb0e12196c","firstName":"ΜΙΧΑΗΛ","lastName":"ΠΑΝΑΓΙΩΤΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"137640604","birthDate":"1987-06-08","dou":"","adt":"","street":"ΑΗΔΟΝΙΩΝ","streetNumber":"9","area":"ΠΑΛΛΗΝΗ","postalCode":"15351","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1678136","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d1c60c159c5f71a4","firstName":"ΑΣΗΜΙΝΑ","lastName":"ΠΑΝΑΓΙΩΤΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"038962728","birthDate":"1968-08-26","dou":"","adt":"","street":"ΘΕΟΤΟΚΟΠΟΥΛΟΥ","streetNumber":"17","area":"ΚΗΦΙΣΙΑ","postalCode":"14562","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1369241","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-b167372d73504194","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΠΑΝΟΣ","company":"","phone":"","email":"","afm":"073193664","birthDate":"1972-01-22","dou":"","adt":"","street":"ΕΥΡΩΠΗΣ","streetNumber":"5","area":"ΑΓΙΟΣ ΙΩΑΝΝΗΣ ΡΕΝΤΗΣ","postalCode":"18233","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1659857","product":"Ν11 FULL"},{"number":"1667925","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-1031a62f286a4b79","firstName":"ΑΔΑΜΑΝΤΙΑ","lastName":"ΠΑΝΟΥ","company":"","phone":"","email":"","afm":"183416630","birthDate":"2006-07-16","dou":"","adt":"","street":"ΕΥΡΩΠΗΣ","streetNumber":"5","area":"ΑΓΙΟΣ ΙΩΑΝΝΗΣ ΡΕΝΤΗΣ","postalCode":"18233","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1657629","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1659858","product":"Ν11 FULL"},{"number":"1673188","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1701370","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-94afafd374abdd10","firstName":"ΜΑΡΙΑ","lastName":"ΠΑΝΟΥ","company":"","phone":"","email":"","afm":"185572591","birthDate":"2009-01-04","dou":"","adt":"","street":"ΕΥΡΩΠΗΣ","streetNumber":"5","area":"ΑΓΙΟΣ ΙΩΑΝΝΗΣ ΡΕΝΤΗΣ","postalCode":"18233","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1657627","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1673191","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1701373","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-24ad825edcce118d","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΠΑΝΤΑΖΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2015-03-19","dou":"","adt":"","street":"ΠΡΟΜΗΘΕΩΣ","streetNumber":"87","area":"ΑΝΩ ΛΙΟΣΙΑ","postalCode":"13341","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1300321","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-23aad255e57074c4","firstName":"ΑΒΑΠΤΙΣΤΟ","lastName":"ΠΑΠΑΓΕΩΡΓΙΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2026-03-20","dou":"","adt":"","street":"ΑΓΙΟΙ ΑΠΟΣΤΟΛΟΙ-ΚΑΛΑΜΟΣ ΑΤΤΙΚΗ","streetNumber":"","area":"ΚΑΠΑΝΔΡΙΤΙ ΑΤΤΙΚΗΣ","postalCode":"19014","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1712197","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-7d9660aa6cce624f","firstName":"ΙΑΣΩΝ","lastName":"ΠΑΠΑΓΕΩΡΓΙΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2023-04-14","dou":"","adt":"","street":"ΑΓΙΟΙ ΑΠΟΣΤΟΛΟΙ-ΚΑΛΑΜΟΣ","streetNumber":"","area":"ΚΑΠΑΝΔΡΙΤΙ ΑΤΤΙΚΗΣ","postalCode":"19014","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1616455","product":"Ν11 FULL"},{"number":"1679600","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-819c065673412cdb","firstName":"ΜΑΡΙΑ","lastName":"ΠΑΠΑΔΑΚΗ","company":"","phone":"","email":"","afm":"035828743","birthDate":"1969-06-13","dou":"","adt":"","street":"ΚΙΛΚΙΣ","streetNumber":"19","area":"ΚΟΡΥΔΑΛΛΟΣ","postalCode":"18120","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1147782","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-2fdb225aa098c4cd","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΠΑΥΛΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"055868443","birthDate":"1967-12-01","dou":"","adt":"","street":"ΚΡΕΟΝΤΟΣ","streetNumber":"36","area":"ΑΘΗΝΑ","postalCode":"10442","notes":"Επάγγελμα: ΣΥΝΤΗΡ.ΕΡΓΩΝ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1410859","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-286ae6a26bce80f8","firstName":"ΕΛΕΝΗ","lastName":"ΠΛΑΚΑΛΗ","company":"","phone":"","email":"","afm":"050735461","birthDate":"1967-01-26","dou":"","adt":"","street":"ΑΓ.ΕΛΕΝΗΣ","streetNumber":"31","area":"ΖΩΓΡΑΦΟΣ","postalCode":"15772","notes":"Επάγγελμα: ΔΑΣΚΑΛΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1654762","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-9fa58e69ad14983e","firstName":"ΕΛΛΗ","lastName":"ΠΛΑΣΑΡΑ","company":"","phone":"","email":"","afm":"123588141","birthDate":"1984-08-09","dou":"","adt":"","street":"ΚΑΛΥΜΝΟΥ","streetNumber":"14","area":"ΧΑΙΔΑΡΙ","postalCode":"12462","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1665804","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e2675771c7ba02aa","firstName":"ΑΝΑΣΤΑΣΙΟΣ","lastName":"ΠΥΡΓΙΕΡΗΣ","company":"","phone":"","email":"","afm":"065341561","birthDate":"1980-05-01","dou":"","adt":"","street":"ΚΕΡΑΤΣΙΝΙΟΥ","streetNumber":"4","area":"ΑΘΗΝΑ","postalCode":"10441","notes":"Επάγγελμα: ΣΚΗΝΟΘΕΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1697737","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-0365d6e2f7a411bf","firstName":"ΔΗΜΗΤΡΙΟΣ","lastName":"ΡΑΙΚΟΣ","company":"","phone":"","email":"","afm":"168852879","birthDate":"1997-09-30","dou":"","adt":"","street":"ΥΨΗΛΑΝΤΟΥ","streetNumber":"3","area":"ΒΡΙΛΗΣΣΙΑ","postalCode":"15235","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1306485","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-da46fe77d324314c","firstName":"ΘΩΜΑΣ","lastName":"ΡΑΙΚΟΣ","company":"","phone":"","email":"","afm":"045562053","birthDate":"1966-09-15","dou":"","adt":"","street":"ΥΨΗΛΑΝΤΟΥ","streetNumber":"3","area":"ΧΑΛΑΝΔΡΙ","postalCode":"15232","notes":"Επάγγελμα: ΗΛ/ΓΟΣ ΜΗΧ/ΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1306483","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-97425a88f04086ba","firstName":"ΚΩΝ/ΝΟΣ","lastName":"ΡΑΙΚΟΣ","company":"","phone":"","email":"","afm":"162806784","birthDate":"1994-12-13","dou":"","adt":"","street":"ΥΨΗΛΑΝΤΟΥ","streetNumber":"3","area":"ΒΡΙΛΗΣΣΙΑ","postalCode":"15235","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1306486","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-1860776ea9257516","firstName":"ΑΒΑΠΤΙΣΤΗ","lastName":"ΡΗΝΑΚΗ","company":"","phone":"","email":"","afm":"","birthDate":"2021-09-24","dou":"","adt":"","street":"ΚΑΛΛΙΔΡΟΜΟΥ","streetNumber":"9","area":"ΠΕΡΙΣΤΕΡΙ","postalCode":"12133","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1564325","product":"Ν11 FULL"},{"number":"1668886","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-83a061558efc9149","firstName":"ΕΥΘΥΜΙΟΣ","lastName":"ΡΙΖΕΣ","company":"","phone":"","email":"","afm":"116751420","birthDate":"1979-05-23","dou":"","adt":"","street":"ΑΓΧΙΑΛΟΥ","streetNumber":"71","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18544","notes":"Επάγγελμα: ΛΙΜΕΝΙΚΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1577493","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-2f695b15e8027faa","firstName":"ΓΡΗΓΟΡΙΟΣ","lastName":"ΡΙΖΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"053362412","birthDate":"1968-09-08","dou":"","adt":"","street":"ΜΥΚΗΝΩΝ","streetNumber":"34","area":"ΠΕΤΡΟΥΠΟΛΗ","postalCode":"13231","notes":"Επάγγελμα: ΚΟΜΜΩΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1634978","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-640eeda5d37a4590","firstName":"ΒΑΣΙΛΗΣ","lastName":"ΣΑΒΒΑΤΑΚΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2013-02-18","dou":"","adt":"","street":"ΑΝΔΡΟΥ","streetNumber":"13","area":"ΧΑΙΔΑΡΙ","postalCode":"12462","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1540618","product":"ΕΘΝΙΚΗ ΚΑΙ ΠΑΙΔΙ"}],"isInsured":true},{"id":"excel-7377f356ba6a8e49","firstName":"ΘΕΟΔΩΡΟΣ","lastName":"ΣΑΒΒΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"079558306","birthDate":"1976-09-12","dou":"","adt":"","street":"ΜΑΚΕΔΟΝΙΑΣ","streetNumber":"6","area":"ΝΙΚΑΙΑ","postalCode":"18453","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1454079","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1454080","product":"Ν11 FULL"},{"number":"1698935","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-0bde7a39436c07c8","firstName":"ΑΛΕΞΑΝΔΡΟΣ","lastName":"ΣΑΚΕΛΛΑΡΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"039182390","birthDate":"1969-10-13","dou":"","adt":"","street":"ΑΛΚΥΟΝΗΣ","streetNumber":"8","area":"ΑΧΑΡΝΕΣ","postalCode":"13677","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1152297","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-c59a514d0b337c9d","firstName":"ΕΙΡΗΝΗ","lastName":"ΣΑΚΚΑ","company":"","phone":"","email":"","afm":"147847358","birthDate":"1993-05-31","dou":"","adt":"","street":"ΧΙΟΥ","streetNumber":"1","area":"ΣΠΑΤΑ","postalCode":"19004","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1143279","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"},{"number":"1631540","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d5d447a79c1c4ab9","firstName":"ΓΕΩΡΓΙΑ","lastName":"ΣΑΝΤΑΜΟΥΡΗ","company":"","phone":"","email":"","afm":"039529826","birthDate":"1971-07-07","dou":"","adt":"","street":"ΕΛΛΗΣΠΟΝΤΟΥ","streetNumber":"51","area":"ΝΕΑ ΣΜΥΡΝΗ","postalCode":"17124","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1696010","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-ce9943b03630f5d8","firstName":"ΜΑΓΔΑΛΗΝΗ","lastName":"ΣΑΡΑΦΑΔΗ","company":"","phone":"","email":"","afm":"147823490","birthDate":"1985-03-20","dou":"","adt":"","street":"ΣΜΠΑΡΟΥΝΗ ΤΡΙΚΟΡΦΟΥ","streetNumber":"7","area":"ΑΘΗΝΑ","postalCode":"10443","notes":"Επάγγελμα: ΙΑΤΡΟΣ ΚΑΘΕ ΕΙΔ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1681917","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-dfa249724428ce0d","firstName":"ΠΑΡΑΣΚΕΥΗ","lastName":"ΣΔΡΕΝΙΑ","company":"","phone":"","email":"","afm":"175613533","birthDate":"2001-09-22","dou":"","adt":"","street":"ΣΑΜΟΥ","streetNumber":"17","area":"ΓΛΥΚΑ ΝΕΡΑ","postalCode":"15354","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1712832","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-50ccf73f05ef31ea","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΣΔΡΕΝΙΑΣ","company":"","phone":"","email":"","afm":"184886871","birthDate":"2006-12-16","dou":"","adt":"","street":"ΣΑΜΟΥ","streetNumber":"17","area":"ΓΛΥΚΑ ΝΕΡΑ","postalCode":"15354","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1713145","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-820bf211cf6139e4","firstName":"ΓΕΩΡΓΙΑ","lastName":"ΣΕΦΕΡΛΗ","company":"","phone":"","email":"","afm":"","birthDate":"2021-10-02","dou":"","adt":"","street":"ΙΩΑΝΝΟΥ ΧΡΥΣΟΣΤΟΜΟΥ","streetNumber":"64","area":"ΠΕΤΡΟΥΠ","postalCode":"13231","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1558934","product":"Ν11 FULL"},{"number":"1678364","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-e9ad63fa106a9ce2","firstName":"ΜΑΡΙΑ","lastName":"ΣΕΦΕΡΛΗ","company":"","phone":"","email":"","afm":"","birthDate":"2019-05-02","dou":"","adt":"","street":"ΧΡ.ΣΜΥΡΝΗΣ","streetNumber":"64","area":"ΠΕΤΡΟΥΠΟΛΗ","postalCode":"13232","notes":"Επάγγελμα: ΑΝΗΛΙΚΟ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1492125","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f9a2e262435a5a40","firstName":"ΕΛΕΥΘΕΡΙΟΣ","lastName":"ΣΕΦΕΡΛΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2023-04-23","dou":"","adt":"","street":"ΙΩΑΝΝΟΥ ΧΡΥΣΟΣΤΟΜΟΥ","streetNumber":"64","area":"ΠΕΤΡΟΥΠ","postalCode":"13231","notes":"Επάγγελμα: ΜΑΘΗΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1617410","product":"Ν11 FULL"},{"number":"1678363","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5d47e0f72489703b","firstName":"ΦΩΤΙΟΣ","lastName":"ΣΕΦΕΡΛΗΣ","company":"","phone":"","email":"","afm":"","birthDate":"2019-05-02","dou":"","adt":"","street":"ΧΡ.ΣΜΥΡΝΗΣ","streetNumber":"64","area":"ΠΕΤΡΟΥΠΟΛΗ","postalCode":"13232","notes":"Επάγγελμα: ΑΝΗΛΙΚΟ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1492122","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d98755e8a102e45d","firstName":"ΚΩΝΣΤΑΝΤΙΝ","lastName":"ΣΙΑΚΑΒΑΡΑ","company":"","phone":"","email":"","afm":"075580242","birthDate":"1976-06-03","dou":"","adt":"","street":"ΜΕΝΑΝΔΡΟΥ","streetNumber":"19","area":"ΗΛΙΟΥΠΟΛΗ","postalCode":"16345","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1670169","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-15a12ef72e66b3fa","firstName":"ΑΒΑΠΤΙΣΤΟ","lastName":"ΣΙΑΠΛΑΟΥΡΑ","company":"","phone":"","email":"","afm":"","birthDate":"2023-04-03","dou":"","adt":"","street":"ΚΥΡΗΝΕΙΑΣ","streetNumber":"13","area":"ΓΛΥΦΑΔΑ","postalCode":"16561","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1627365","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-45cf17209d81a3ec","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΣΙΑΠΛΑΟΥΡΑΣ","company":"","phone":"","email":"","afm":"","birthDate":"2019-02-19","dou":"","adt":"","street":"ΚΥΡΗΝΕΙΑΣ","streetNumber":"13","area":"ΓΛΥΦΑΔΑ","postalCode":"16561","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1464709","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-476faa80512b6293","firstName":"ΣΟΦΙΑ","lastName":"ΣΠΑΝΟΜΑΡΙΔΗ","company":"","phone":"","email":"","afm":"163427801","birthDate":"1996-02-14","dou":"","adt":"","street":"ΠΑΡΟΔΟΣ ΕΡΜΟΥ","streetNumber":"","area":"ΝΕΑ ΜΑΚΡΗ","postalCode":"19005","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1421428","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-6df410aafe3a5544","firstName":"ΣΟΦΙΑ","lastName":"ΣΤΕΡΓΙΟΥ","company":"","phone":"","email":"","afm":"044586201","birthDate":"1968-11-28","dou":"","adt":"","street":"ΚΑΡΑΙΣΚΑΚΗ","streetNumber":"14","area":"ΝΕΑ ΦΙΛΑΔΕΛΦΕΙΑ","postalCode":"14342","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1669963","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-1f1994e72398ebd8","firstName":"ΜΑΡΙΑ","lastName":"ΣΤΕΦΑΝΑΚΗ","company":"","phone":"","email":"","afm":"062861432","birthDate":"1964-05-17","dou":"","adt":"","street":"ΘΕΟΔ.ΒΡΕΣΘΕΝΗΣ","streetNumber":"75","area":"ΑΘΗΝΑ","postalCode":"11744","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1298263","product":"Ν11 NF"},{"number":"1631470","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-3f72946e59a6e721","firstName":"ΧΡΗΣΤΟΣ","lastName":"ΣΥΡΙΓΟΣ","company":"","phone":"","email":"","afm":"053966674","birthDate":"1972-03-03","dou":"","adt":"","street":"ΤΑΥΓΕΤΟΥ","streetNumber":"21-23","area":"ΚΕΡΑΤΣΙΝΙ","postalCode":"18757","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1573554","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-5726a1153b8c484f","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΣΦΑΕΛΟΣ","company":"","phone":"","email":"","afm":"141329439","birthDate":"1994-05-24","dou":"","adt":"","street":"ΧΙΟΥ","streetNumber":"41","area":"ΑΘΗΝΑ","postalCode":"10438","notes":"Επάγγελμα: ΓΥΜΝΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1456408","product":"Ν11 FULL"},{"number":"1625305","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-9b737893625d1ed7","firstName":"ΣΤΑΥΡΟΣ","lastName":"ΣΩΤΗΡΙΑΔΗΣ","company":"","phone":"","email":"","afm":"132197987","birthDate":"1986-12-08","dou":"","adt":"","street":"ΣΚΡΑ","streetNumber":"24","area":"ΚΑΛΛΙΘΕΑ","postalCode":"17673","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1682814","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-67cb878644dfdee3","firstName":"ΑΓΓΕΛΙΚΗ","lastName":"ΤΑΓΚΑΛΟΥ","company":"","phone":"","email":"","afm":"033184901","birthDate":"1966-01-29","dou":"","adt":"","street":"ΛΑΜΠΡΟΥ ΚΑΤΣΩΝΗ","streetNumber":"54","area":"ΥΜΗΤΤΟΣ","postalCode":"17236","notes":"Επάγγελμα: ΕΚΠΑΙΔΕΥΤΙΚΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1140733","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-70cdb9113a4fc100","firstName":"ΞΑΝΘΙΠΠΗ","lastName":"ΤΕΡΖΗ","company":"","phone":"","email":"","afm":"037309625","birthDate":"1975-09-14","dou":"","adt":"","street":"ΠΛΟΥΤΑΡΧΟΥ","streetNumber":"14","area":"ΚΟΡΥΔΑΛΛΟΣ","postalCode":"18120","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1414251","product":"ΕΘΝΙΚΗ ΣΥΝΤΑΞΗ"}],"isInsured":true},{"id":"excel-963cf3322068b3bb","firstName":"ΑΡΡΕΝ","lastName":"ΤΖΩΡΤΖΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2023-02-10","dou":"","adt":"","street":"Μ.ΑΛΕΞΑΝΔΡΟΥ","streetNumber":"134","area":"ΠΕΡΑΜΑ","postalCode":"18863","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1622326","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-93c7a12c820c776e","firstName":"ΣΤΑΥΡΟΣ","lastName":"ΤΡΙΟΥΛΙΔΗΣ","company":"","phone":"","email":"","afm":"070661250","birthDate":"1972-02-15","dou":"","adt":"","street":"ΨΑΡΩΝ","streetNumber":"38","area":"ΑΘΗΝΑ","postalCode":"10438","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1579447","product":"Ν11 FULL"},{"number":"1625302","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-26bee687a93d4050","firstName":"ΑΙΚΑΤΕΡΙΝΗ","lastName":"ΤΣΑΚΑΝΙΚΑ","company":"","phone":"","email":"","afm":"073006666","birthDate":"1952-07-04","dou":"","adt":"","street":"ΑΛΚΙΒΙΑΔΟΥ","streetNumber":"24","area":"ΑΘΗΝΑ","postalCode":"10439","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1252669","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-effcd46374e4086a","firstName":"ΓΕΩΡΓΙΟΣ","lastName":"ΤΣΕΡΤΟΣ","company":"","phone":"","email":"","afm":"138829957","birthDate":"1987-09-15","dou":"","adt":"","street":"ΤΙΜΑΙΟΥ","streetNumber":"11","area":"ΑΘΗΝΑ","postalCode":"10441","notes":"Επάγγελμα: ΑΣΦΑΛΙΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1554327","product":"Ν11 FULL"},{"number":"1671823","product":"Ν11 FULL"},{"number":"1700960","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-cbafeb4f6673a984","firstName":"ΚΩΝ/ΝΟΣ","lastName":"ΤΣΕΡΤΟΣ","company":"","phone":"","email":"","afm":"","birthDate":"2014-02-22","dou":"","adt":"","street":"ΚΟΛΟΚΟΤΡΩΝΗ","streetNumber":"19","area":"ΚΕΡΑΤΣΙΝΙ","postalCode":"18756","notes":"Επάγγελμα: ΑΝΗΛΙΚΟ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1337045","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-4c2c4d0611c5c150","firstName":"ΕΛΕΑΝΝΑ","lastName":"ΤΣΕΡΤΟΥ","company":"","phone":"","email":"","afm":"126130475","birthDate":"1983-12-30","dou":"","adt":"","street":"Α.ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"64","area":"ΓΛΥΦΑΔΑ","postalCode":"16675","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1353899","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d2feaa7732972370","firstName":"ΕΥΑΓΓΕΛΙΑ","lastName":"ΤΣΕΡΤΟΥ","company":"","phone":"","email":"","afm":"023257152","birthDate":"1956-09-18","dou":"","adt":"","street":"Α.ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"64","area":"ΓΛΥΦΑΔΑ","postalCode":"16675","notes":"Επάγγελμα: ΣΥΝΤΑΞΙΟΥΧΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1366901","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-381c0935bf435e91","firstName":"ΜΕΡΟΠΗ ΑΡΤ","lastName":"ΤΣΕΡΤΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2018-11-16","dou":"","adt":"","street":"ΚΟΛΟΚΟΤΡΩΝΗ","streetNumber":"19","area":"ΚΕΡΑΤΣΙΝΙ","postalCode":"18756","notes":"Επάγγελμα: ΑΝΗΛΙΚΗ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1415502","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-6d26844e988c58f6","firstName":"ΣΤΕΦΑΝΙΑ","lastName":"ΤΣΕΡΤΟΥ","company":"","phone":"","email":"","afm":"142924748","birthDate":"1987-04-01","dou":"","adt":"","street":"Α.ΠΑΠΑΝΔΡΕΟΥ","streetNumber":"64","area":"ΓΛΥΦΑΔΑ","postalCode":"16675","notes":"Επάγγελμα: ΧΟΡΕΥΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1238716","product":"Ν11 FULL"},{"number":"1238717","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-8944217073d60d9a","firstName":"ΕΛΕΝΗ","lastName":"ΤΣΙΑΝΤΟΥΚΑ","company":"","phone":"","email":"","afm":"","birthDate":"2013-02-07","dou":"","adt":"","street":"ΕΥΤΥΧΙΑ","streetNumber":"50","area":"ΗΡΑΚΛΕΙΟ","postalCode":"14121","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1128043","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"}],"isInsured":true},{"id":"excel-a45b7071559c9023","firstName":"ΘΥΛΗ","lastName":"ΤΣΙΑΝΤΟΥΚΑ","company":"","phone":"","email":"","afm":"","birthDate":"2015-07-07","dou":"","adt":"","street":"ΕΥΤΥΧΙΑΣ","streetNumber":"50","area":"ΗΡΑΚΛΕΙΟ","postalCode":"14121","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1203826","product":"ΠΑΙΔΙΚΟ ΠΡΟΓΡΑΜΜΑ - ΠΡΟΓΡΑΜΜΑ ΕΠΙΒΙΩΣΗΣ"}],"isInsured":true},{"id":"excel-164d8efb2a8518e3","firstName":"ΣΤΑΥΡΟΣ","lastName":"ΤΣΙΜΠΙΔΑΣ","company":"","phone":"","email":"","afm":"128223128","birthDate":"1981-12-23","dou":"","adt":"","street":"ΜΕΓΔΟΒΑ","streetNumber":"8","area":"ΙΛΙΟΝ","postalCode":"13122","notes":"Επάγγελμα: ΑΝΕΡΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1103682","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-8b2e1c56dffe2752","firstName":"ΧΑΡΑΛΑΜΠΟΣ","lastName":"ΤΣΙΟΥΜΠΡΗΣ","company":"","phone":"","email":"","afm":"128216101","birthDate":"1982-09-14","dou":"","adt":"","street":"ΠΑΝΟΣ","streetNumber":"7","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΑΡΧΙΤΕΚΤΟΝΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1165936","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ ΜΕΙΩΜΕΝΟΥ ΚΕΦΑΛΑΙΟΥ"}],"isInsured":true},{"id":"excel-60c4a0064451a72f","firstName":"ΕΥΑΓΓΕΛΙΑ","lastName":"ΤΣΙΠΡΑ","company":"","phone":"","email":"","afm":"160005623","birthDate":"1991-12-23","dou":"","adt":"","street":"ΚΥΠΡΟΥ","streetNumber":"27","area":"ΑΓΙΑ ΒΑΡΒΑΡΑ","postalCode":"12351","notes":"Επάγγελμα: ΑΝΕΡΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1205414","product":"ΠΡΟΣΚΑΙΡΗ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-27ba82dcbee7f8b1","firstName":"ΑΛΙΚΗ","lastName":"ΦΕΤΣΗ","company":"","phone":"","email":"","afm":"137613976","birthDate":"1985-06-29","dou":"","adt":"","street":"ΑΘ.ΔΙΑΚΟΥ","streetNumber":"9","area":"ΓΕΡΑΚΑΣ","postalCode":"15344","notes":"Επάγγελμα: ΑΝΕΡΓΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1319371","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-4afbddb44fbdbde5","firstName":"ΑΓΓΕ-ΙΩΑΝΝ","lastName":"ΦΙΛΙΠΠΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2006-04-18","dou":"","adt":"","street":"ΠΕΡΙΣΣΟΥ","streetNumber":"87","area":"ΝΕΑ ΧΑΛΚΗΔΟΝΑ","postalCode":"14343","notes":"Επάγγελμα: ΑΝΗΛΙΚΟ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1400040","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-03b8e4c2d3c53e00","firstName":"ΜΑΡΙΟΣ","lastName":"ΦΙΛΙΠΠΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2009-11-10","dou":"","adt":"","street":"ΠΕΡΙΣΣΟΥ","streetNumber":"87","area":"ΝΕΑ ΧΑΛΚΗΔΟΝΑ","postalCode":"14343","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1400041","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-2d1e0253c00a4282","firstName":"ΙΩΑΝΝΗΣ","lastName":"ΦΙΛΟΠΟΥΛΟΣ","company":"","phone":"","email":"","afm":"038580449","birthDate":"1973-12-17","dou":"","adt":"","street":"ΧΡΙΣΤΟΦΗ","streetNumber":"20","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18547","notes":"Επάγγελμα: ΟΙΚΟΔΟΜΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1633896","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-c9b4cfa1944224ca","firstName":"ΕΥΑΓΓΕΛΙΑ","lastName":"ΦΙΛΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"","birthDate":"2005-05-04","dou":"","adt":"","street":"ΧΡΙΣΤΟΦΗ","streetNumber":"20","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18547","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1475198","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-bd141dc61b02c998","firstName":"ΧΡΥΣΑΝΘΗ","lastName":"ΦΙΛΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"175458842","birthDate":"2001-10-31","dou":"","adt":"","street":"ΧΡΙΣΤΟΦΗ","streetNumber":"20","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18547","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1577304","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-a793a5925e26e33f","firstName":"ΣΟΦΙΑ","lastName":"ΦΟΥΝΤΑ","company":"","phone":"","email":"","afm":"128236554","birthDate":"1985-08-12","dou":"","adt":"","street":"ΑΡΙΑΔΝΗΣ","streetNumber":"26","area":"ΗΡΑΚΛΕΙΟ ΚΡΗΤΗΣ","postalCode":"71202","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1663831","product":"FULL ΕΠΕΝΔΥΣΗ"},{"number":"1664537","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-f2578c301686e67c","firstName":"ΧΑΡΑΛΑΜΠΟΣ","lastName":"ΦΟΥΝΤΑΣ","company":"","phone":"","email":"","afm":"158089303","birthDate":"1995-08-26","dou":"","adt":"","street":"ΨΑΡΡΩΝ","streetNumber":"2","area":"ΚΑΜΑΤΕΡΟ","postalCode":"13451","notes":"Επάγγελμα: ΕΠΙΧΕΙΡΗΜΑΤΙΑΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1640746","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-c9ac3c3bcaa2d44a","firstName":"ΑΝΘΙΑ","lastName":"ΦΟΥΣΤΕΡΗ","company":"","phone":"","email":"","afm":"","birthDate":"2018-03-09","dou":"","adt":"","street":"ΜΑΤΡΟΖΟΥ","streetNumber":"98","area":"ΝΙΚΑΙΑ","postalCode":"18452","notes":"","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1573507","product":"ΙΣΟΒΙΑ ΑΣΦΑΛΙΣΗ"}],"isInsured":true},{"id":"excel-b3695e7a2fe469c3","firstName":"ΕΛΕΥΘΕΡΙΟΣ","lastName":"ΦΟΥΣΤΕΡΗΣ","company":"","phone":"","email":"","afm":"138904810","birthDate":"1986-05-23","dou":"","adt":"","street":"ΜΑΤΡΟΖΟΥ","streetNumber":"98","area":"ΝΙΚΑΙΑ","postalCode":"18452","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1356204","product":"Ν11 FULL"},{"number":"1627673","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-2681bd5087fa3d4c","firstName":"ΑΝΝΑ-ΜΑΡΙΑ","lastName":"ΦΡΑΝΤΖΕΣΚΟΥ","company":"","phone":"","email":"","afm":"179835968","birthDate":"2005-01-08","dou":"","adt":"","street":"ΑΓΙΟΥ ΚΩΝΣΤΑΝΤΙΝΟΥ","streetNumber":"11","area":"ΝΕΑ ΙΩΝΙΑ","postalCode":"14231","notes":"Επάγγελμα: ΣΠΟΥΔΑΣΤΗΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1593141","product":"Ν11 FULL"},{"number":"1702560","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d6fb350291c68654","firstName":"ΑΛΚΙΒΙΑΔΗΣ","lastName":"ΦΡΕΤΖΑΓΙΑΣ","company":"","phone":"","email":"","afm":"163957770","birthDate":"1995-02-15","dou":"","adt":"","street":"ΑΦΡΟΔΙΤΗΣ","streetNumber":"55","area":"ΓΛΥΦΑΔΑ","postalCode":"16607","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1709777","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-032662db150722bd","firstName":"ΙΟΥΛΙΑ","lastName":"ΧΑΒΔΟΥΛΑ","company":"","phone":"","email":"","afm":"121841388","birthDate":"1986-10-02","dou":"","adt":"","street":"ΧΕΛΜΟΥ","streetNumber":"12","area":"ΝΕΟ ΗΡΑΚΛΕΙΟ","postalCode":"14122","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1660716","product":"FULL ΕΠΕΝΔΥΣΗ"}],"isInsured":true},{"id":"excel-0abd5b6f27eb213c","firstName":"ΒΑΣΙΛΙΚΗ","lastName":"ΧΑΤΖΗΔΟΥΡΟΥ","company":"","phone":"","email":"","afm":"022290870","birthDate":"1968-01-11","dou":"","adt":"","street":"ΑΦΡΟΔΙΤΗΣ","streetNumber":"55","area":"ΒΟΥΛΑ","postalCode":"16673","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1659670","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-729e9cf23dcf71c8","firstName":"ΜΑΡΙΑ","lastName":"ΧΑΤΖΗΝΙΚΟΛΑΟΥ","company":"","phone":"","email":"","afm":"101414596","birthDate":"1973-06-02","dou":"","adt":"","street":"ΚΡΕΟΝΤΟΣ","streetNumber":"36","area":"ΑΘΗΝΑ","postalCode":"10442","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦ.","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1411678","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-d07439314b1b2617","firstName":"ΘΕΩΝΗ","lastName":"ΧΑΤΖΟΠΟΥΛΟΥ","company":"","phone":"","email":"","afm":"058350555","birthDate":"1973-04-26","dou":"","adt":"","street":"ΣΑΜΟΥ","streetNumber":"17","area":"ΓΛΥΚΑ ΝΕΡΑ","postalCode":"15354","notes":"Επάγγελμα: ΥΠΑΛΛΗΛΟΣ ΓΡΑΦΕ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1712943","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-9b8ad3efc7a1649e","firstName":"ΧΡΙΣΤΙΝΑ","lastName":"ΧΟΤΖΟΓΛΟΥ","company":"","phone":"","email":"","afm":"039669872","birthDate":"1969-02-10","dou":"","adt":"","street":"ΑΝΔΡΙΑΝΟΠΟΥΛΟΥ","streetNumber":"28","area":"ΠΕΙΡΑΙΑΣ","postalCode":"18539","notes":"Επάγγελμα: ΟΙΚΟΚΥΡΑ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1477502","product":"Ν11 FULL"}],"isInsured":true},{"id":"excel-cbac37a3516598ac","firstName":"ΣΤΑΥΡΟΥΛΑ","lastName":"ΨΥΛΛΙΑ","company":"","phone":"","email":"","afm":"108333178","birthDate":"1963-01-03","dou":"","adt":"","street":"ΑΛ.ΠΑΝΑΓΟΥΛΗ","streetNumber":"43","area":"ΥΜΗΤΤΟΣ","postalCode":"17237","notes":"Επάγγελμα: ΣΥΝΤΑΞΙΟΥΧΟΣ","createdAt":"2026-07-19T00:00:00.000Z","updatedAt":"2026-07-19T00:00:00.000Z","policies":[{"number":"1344609","product":"Ν11 FULL"}],"isInsured":true}];
   const INSURED_SEED_IDS = new Set(SEED_CUSTOMERS.map(customer => customer.id));
-  let customers = loadCustomers();
+  let customers = [];
+  let currentUser = null;
   let pendingDeleteId = null;
   let selectedCustomerId = null;
 
   const $ = (id) => document.getElementById(id);
   const els = {
+    authScreen: $("authScreen"),
+    appShell: $("appShell"),
+    authEmail: $("authEmail"),
+    authPassword: $("authPassword"),
+    authMessage: $("authMessage"),
+    signInBtn: $("signInBtn"),
+    signUpBtn: $("signUpBtn"),
+    signOutBtn: $("signOutBtn"),
+    syncStatus: $("syncStatus"),
+    migrationBanner: $("migrationBanner"),
+    seedImportBtn: $("seedImportBtn"),
+    busyOverlay: $("busyOverlay"),
+    busyTitle: $("busyTitle"),
+    busyText: $("busyText"),
     form: $("customerForm"),
     id: $("customerId"),
     firstName: $("firstName"),
@@ -982,25 +1179,252 @@
     return !id.startsWith("excel-") || INSURED_SEED_IDS.has(id);
   }
 
-  function loadCustomers() {
-    try {
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      let loaded = Array.isArray(data) ? data.map(sanitizeCustomer) : [];
-
-      if (localStorage.getItem(SEED_MARKER_KEY) !== SEED_VERSION) {
-        loaded = mergeSeedCustomers(loaded, SEED_CUSTOMERS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
-        localStorage.setItem(SEED_MARKER_KEY, SEED_VERSION);
-      }
-
-      return loaded;
-    } catch {
-      return SEED_CUSTOMERS.map(sanitizeCustomer);
-    }
+  function setAuthMessage(message, type = "") {
+    els.authMessage.textContent = message;
+    els.authMessage.className = "auth-message" + (type ? " " + type : "");
   }
 
-  function persist() {
+  function setSyncStatus(message, type = "") {
+    els.syncStatus.textContent = message;
+    els.syncStatus.className = "sync-status" + (type ? " " + type : "");
+  }
+
+  function setBusy(isBusy, title = "Γίνεται συγχρονισμός…", text = "") {
+    els.busyTitle.textContent = title;
+    els.busyText.textContent = text;
+    els.busyOverlay.classList.toggle("hidden", !isBusy);
+  }
+
+  function showAuthScreen() {
+    els.authScreen.classList.remove("hidden");
+    els.appShell.classList.add("hidden");
+  }
+
+  function showApplication() {
+    els.authScreen.classList.add("hidden");
+    els.appShell.classList.remove("hidden");
+  }
+
+  function databaseErrorMessage(error) {
+    const message = String(error?.message || error || "Άγνωστο σφάλμα");
+    if (message.includes("relation") && message.includes("does not exist")) {
+      return "Δεν έχουν δημιουργηθεί ακόμη οι πίνακες insureds και policies. Εκτέλεσε πρώτα το SUPABASE_SETUP.sql.";
+    }
+    if (message.includes("row-level security")) {
+      return "Η βάση απέρριψε την ενέργεια λόγω ρυθμίσεων ασφαλείας. Έλεγξε το SQL setup και κάνε ξανά είσοδο.";
+    }
+    if (message.includes("duplicate key") || message.includes("policies_owner_number_unique")) {
+      return "Ο ίδιος αριθμός συμβολαίου υπάρχει ήδη σε άλλη εγγραφή.";
+    }
+    return message;
+  }
+
+  function fromDatabaseInsured(row, policyRows = []) {
+    return sanitizeCustomer({
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      company: row.company,
+      phone: row.phone,
+      email: row.email,
+      afm: row.afm,
+      birthDate: row.birth_date,
+      dou: row.dou,
+      adt: row.adt,
+      street: row.street,
+      streetNumber: row.street_number,
+      area: row.area,
+      postalCode: row.postal_code,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      isInsured: true,
+      policies: policyRows.map(policy => ({
+        number: policy.policy_number,
+        product: policy.product || ""
+      }))
+    });
+  }
+
+  function toDatabaseInsured(record, includeId = false) {
+    const row = {
+      owner_id: currentUser.id,
+      first_name: record.firstName || null,
+      last_name: record.lastName || "",
+      company: record.company || null,
+      phone: record.phone || null,
+      email: record.email || null,
+      afm: record.afm || null,
+      birth_date: record.birthDate || null,
+      dou: record.dou || null,
+      adt: record.adt || null,
+      street: record.street || null,
+      street_number: record.streetNumber || null,
+      area: record.area || null,
+      postal_code: record.postalCode || null,
+      notes: record.notes || null
+    };
+    if (includeId) row.id = record.id;
+    return row;
+  }
+
+  async function loadCustomersFromDatabase({ quiet = false } = {}) {
+    if (!currentUser) return;
+    if (!quiet) setSyncStatus("Φόρτωση στοιχείων…", "syncing");
+
+    const [insuredResult, policiesResult] = await Promise.all([
+      supabaseClient
+        .from("insureds")
+        .select("*")
+        .order("last_name", { ascending: true })
+        .order("first_name", { ascending: true }),
+      supabaseClient
+        .from("policies")
+        .select("*")
+        .order("policy_number", { ascending: true })
+    ]);
+
+    if (insuredResult.error) throw insuredResult.error;
+    if (policiesResult.error) throw policiesResult.error;
+
+    const policiesByInsured = new Map();
+    (policiesResult.data || []).forEach(policy => {
+      if (!policiesByInsured.has(policy.insured_id)) policiesByInsured.set(policy.insured_id, []);
+      policiesByInsured.get(policy.insured_id).push(policy);
+    });
+
+    customers = (insuredResult.data || []).map(row =>
+      fromDatabaseInsured(row, policiesByInsured.get(row.id) || [])
+    );
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    els.migrationBanner.classList.toggle("hidden", customers.length !== 0);
+    setSyncStatus(`Συνδεδεμένος: ${currentUser.email || "λογαριασμός"}`, "online");
+    render();
+  }
+
+  async function saveRecordToDatabase(record) {
+    if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
+
+    let insuredId = record.id;
+    const existing = customers.find(customer => customer.id === insuredId);
+
+    if (existing) {
+      const { error } = await supabaseClient
+        .from("insureds")
+        .update(toDatabaseInsured(record))
+        .eq("id", insuredId);
+      if (error) throw error;
+    } else {
+      const { data, error } = await supabaseClient
+        .from("insureds")
+        .insert(toDatabaseInsured(record))
+        .select("id")
+        .single();
+      if (error) throw error;
+      insuredId = data.id;
+    }
+
+    const oldPolicies = existing?.policies || [];
+    const { error: deleteError } = await supabaseClient
+      .from("policies")
+      .delete()
+      .eq("insured_id", insuredId);
+    if (deleteError) throw deleteError;
+
+    const policies = normalizePolicies(record.policies);
+    if (policies.length) {
+      const policyRows = policies.map(policy => ({
+        owner_id: currentUser.id,
+        insured_id: insuredId,
+        policy_number: policy.number,
+        product: policy.product || null
+      }));
+
+      const { error: insertError } = await supabaseClient
+        .from("policies")
+        .insert(policyRows);
+
+      if (insertError) {
+        if (oldPolicies.length) {
+          await supabaseClient.from("policies").insert(oldPolicies.map(policy => ({
+            owner_id: currentUser.id,
+            insured_id: insuredId,
+            policy_number: policy.number,
+            product: policy.product || null
+          })));
+        }
+        throw insertError;
+      }
+    }
+
+    return insuredId;
+  }
+
+  function makeDatabaseUuid() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, char => {
+      const random = Math.random() * 16 | 0;
+      const value = char === "x" ? random : (random & 0x3 | 0x8);
+      return value.toString(16);
+    });
+  }
+
+  function chunks(items, size) {
+    const result = [];
+    for (let index = 0; index < items.length; index += size) {
+      result.push(items.slice(index, index + size));
+    }
+    return result;
+  }
+
+  async function importRecordsIntoDatabase(records) {
+    if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
+    if (customers.length) throw new Error("Για ασφάλεια, η μαζική εισαγωγή επιτρέπεται μόνο όταν η online βάση είναι κενή.");
+
+    const prepared = records.map(source => ({
+      dbId: makeDatabaseUuid(),
+      customer: sanitizeCustomer(source)
+    }));
+
+    const insuredRows = prepared.map(item => ({
+      id: item.dbId,
+      ...toDatabaseInsured(item.customer)
+    }));
+
+    const policyRows = prepared.flatMap(item =>
+      normalizePolicies(item.customer.policies).map(policy => ({
+        id: makeDatabaseUuid(),
+        owner_id: currentUser.id,
+        insured_id: item.dbId,
+        policy_number: policy.number,
+        product: policy.product || null
+      }))
+    );
+
+    const insertedIds = [];
+    try {
+      const insuredChunks = chunks(insuredRows, 75);
+      for (let index = 0; index < insuredChunks.length; index++) {
+        setBusy(true, "Μεταφορά ασφαλισμένων…", `Ομάδα ${index + 1} από ${insuredChunks.length}`);
+        const batch = insuredChunks[index];
+        const { error } = await supabaseClient.from("insureds").insert(batch);
+        if (error) throw error;
+        insertedIds.push(...batch.map(row => row.id));
+      }
+
+      const policyChunks = chunks(policyRows, 100);
+      for (let index = 0; index < policyChunks.length; index++) {
+        setBusy(true, "Μεταφορά συμβολαίων…", `Ομάδα ${index + 1} από ${policyChunks.length}`);
+        const { error } = await supabaseClient.from("policies").insert(policyChunks[index]);
+        if (error) throw error;
+      }
+    } catch (error) {
+      if (insertedIds.length) {
+        await supabaseClient.from("insureds").delete().in("id", insertedIds);
+      }
+      throw error;
+    }
   }
 
   function uid() {
@@ -1039,9 +1463,9 @@
   function resetForm() {
     els.form.reset();
     els.id.value = "";
-    els.formTitle.textContent = "Νέος πελάτης";
+    els.formTitle.textContent = "Νέος ασφαλισμένος";
     els.editBadge.textContent = "Καταχώριση";
-    els.saveBtn.textContent = "Αποθήκευση πελάτη";
+    els.saveBtn.textContent = "Αποθήκευση ασφαλισμένου";
     els.cancelEditBtn.classList.add("hidden");
   }
 
@@ -1299,7 +1723,7 @@
     els.modal.classList.add("hidden");
   }
 
-  els.form.addEventListener("submit", (e) => {
+  els.form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     if (els.afm.value && !/^\d{9}$/.test(els.afm.value.trim())) {
@@ -1314,7 +1738,7 @@
     }
 
     const record = {
-      id: els.id.value || uid(),
+      id: els.id.value || "",
       firstName: els.firstName.value.trim(),
       lastName: els.lastName.value.trim(),
       company: els.company.value.trim(),
@@ -1330,8 +1754,7 @@
       streetNumber: els.streetNumber.value.trim(),
       area: els.area.value.trim(),
       postalCode: els.postalCode.value.trim(),
-      notes: els.notes.value.trim(),
-      updatedAt: new Date().toISOString()
+      notes: els.notes.value.trim()
     };
 
     if (!record.lastName && !record.company) {
@@ -1339,21 +1762,24 @@
       return;
     }
 
-    const index = customers.findIndex(c => c.id === record.id);
-    if (index >= 0) {
-      record.createdAt = customers[index].createdAt || record.updatedAt;
-      customers[index] = record;
-      showToast("Οι αλλαγές αποθηκεύτηκαν.");
-    } else {
-      record.createdAt = record.updatedAt;
-      customers.push(record);
-      showToast("Ο πελάτης αποθηκεύτηκε.");
-    }
+    const wasExisting = Boolean(record.id && customers.some(customer => customer.id === record.id));
+    els.saveBtn.disabled = true;
+    setSyncStatus("Αποθήκευση αλλαγών…", "syncing");
 
-    selectedCustomerId = record.id;
-    persist();
-    resetForm();
-    render();
+    try {
+      const savedId = await saveRecordToDatabase(record);
+      selectedCustomerId = savedId;
+      await loadCustomersFromDatabase({ quiet: true });
+      resetForm();
+      render();
+      showToast(wasExisting ? "Οι αλλαγές αποθηκεύτηκαν στη βάση." : "Ο ασφαλισμένος αποθηκεύτηκε στη βάση.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      els.saveBtn.disabled = false;
+    }
   });
 
   els.cancelEditBtn.addEventListener("click", resetForm);
@@ -1384,38 +1810,191 @@
     try {
       const parsed = JSON.parse(await file.text());
       const imported = Array.isArray(parsed) ? parsed : parsed.customers;
-      if (!Array.isArray(imported)) throw new Error("invalid");
-      customers = imported.map(sanitizeCustomer);
-      selectedCustomerId = null;
-      persist();
-      resetForm();
-      render();
-      showToast(`Εισήχθησαν ${customers.length} πελάτες.`);
-    } catch {
-      showToast("Το αρχείο backup δεν είναι έγκυρο.");
+      if (!Array.isArray(imported)) throw new Error("Το αρχείο backup δεν είναι έγκυρο.");
+      setBusy(true, "Εισαγωγή backup…", "Τα δεδομένα μεταφέρονται στην online βάση.");
+      await importRecordsIntoDatabase(imported);
+      await loadCustomersFromDatabase({ quiet: true });
+      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι στη βάση.`);
+    } catch (error) {
+      console.error(error);
+      showToast(databaseErrorMessage(error));
     } finally {
+      setBusy(false);
       e.target.value = "";
     }
   });
 
   $("confirmCancel").addEventListener("click", closeModal);
-  $("confirmDelete").addEventListener("click", () => {
+  $("confirmDelete").addEventListener("click", async () => {
     if (!pendingDeleteId) return;
-    customers = customers.filter(c => c.id !== pendingDeleteId);
-    if (selectedCustomerId === pendingDeleteId) selectedCustomerId = null;
-    persist();
-    closeModal();
+    const deleteId = pendingDeleteId;
+    $("confirmDelete").disabled = true;
+    setSyncStatus("Διαγραφή εγγραφής…", "syncing");
+
+    try {
+      const { error } = await supabaseClient
+        .from("insureds")
+        .delete()
+        .eq("id", deleteId);
+      if (error) throw error;
+
+      if (selectedCustomerId === deleteId) selectedCustomerId = null;
+      closeModal();
+      resetForm();
+      await loadCustomersFromDatabase({ quiet: true });
+      showToast("Ο ασφαλισμένος διαγράφηκε από τη βάση.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      $("confirmDelete").disabled = false;
+    }
+  });
+
+
+  async function signIn() {
+    const email = els.authEmail.value.trim();
+    const password = els.authPassword.value;
+    if (!email || !password) {
+      setAuthMessage("Συμπλήρωσε email και κωδικό.", "error");
+      return;
+    }
+
+    els.signInBtn.disabled = true;
+    els.signUpBtn.disabled = true;
+    setAuthMessage("Γίνεται είσοδος…");
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      setAuthMessage(databaseErrorMessage(error), "error");
+      els.signInBtn.disabled = false;
+      els.signUpBtn.disabled = false;
+    }
+  }
+
+  async function signUp() {
+    const email = els.authEmail.value.trim();
+    const password = els.authPassword.value;
+    if (!email || !password) {
+      setAuthMessage("Συμπλήρωσε email και κωδικό.", "error");
+      return;
+    }
+    if (password.length < 6) {
+      setAuthMessage("Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.", "error");
+      return;
+    }
+
+    els.signInBtn.disabled = true;
+    els.signUpBtn.disabled = true;
+    setAuthMessage("Δημιουργείται ο λογαριασμός…");
+
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) {
+      setAuthMessage(databaseErrorMessage(error), "error");
+    } else if (data.session) {
+      setAuthMessage("Ο λογαριασμός δημιουργήθηκε.", "success");
+    } else {
+      setAuthMessage("Ο λογαριασμός δημιουργήθηκε. Έλεγξε το email σου για επιβεβαίωση και μετά πάτησε Είσοδος.", "success");
+    }
+
+    els.signInBtn.disabled = false;
+    els.signUpBtn.disabled = false;
+  }
+
+  async function handleSignedIn(session) {
+    currentUser = session.user;
+    showApplication();
+    setBusy(true, "Σύνδεση στην online βάση…", currentUser.email || "");
+    try {
+      await loadCustomersFromDatabase();
+      resetForm();
+      render();
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα σύνδεσης", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      setBusy(false);
+      els.signInBtn.disabled = false;
+      els.signUpBtn.disabled = false;
+    }
+  }
+
+  async function handleSignedOut() {
+    currentUser = null;
+    customers = [];
+    selectedCustomerId = null;
     resetForm();
     render();
-    showToast("Ο πελάτης διαγράφηκε.");
+    showAuthScreen();
+    setAuthMessage("Χρησιμοποίησε το ίδιο email και τον ίδιο κωδικό σε όλες τις συσκευές.");
+    els.signInBtn.disabled = false;
+    els.signUpBtn.disabled = false;
+  }
+
+  els.signInBtn.addEventListener("click", signIn);
+  els.signUpBtn.addEventListener("click", signUp);
+  els.authPassword.addEventListener("keydown", event => {
+    if (event.key === "Enter") signIn();
+  });
+
+  els.signOutBtn.addEventListener("click", async () => {
+    setSyncStatus("Αποσύνδεση…", "syncing");
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) showToast(databaseErrorMessage(error));
+  });
+
+  els.seedImportBtn.addEventListener("click", async () => {
+    if (customers.length) {
+      showToast("Η βάση περιέχει ήδη εγγραφές.");
+      return;
+    }
+    els.seedImportBtn.disabled = true;
+    try {
+      setBusy(true, "Προετοιμασία μεταφοράς…", "174 ασφαλισμένοι και 243 συμβόλαια");
+      await importRecordsIntoDatabase(SEED_CUSTOMERS);
+      await loadCustomersFromDatabase({ quiet: true });
+      showToast("Η αρχική μεταφορά ολοκληρώθηκε επιτυχώς.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα μεταφοράς", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      setBusy(false);
+      els.seedImportBtn.disabled = false;
+    }
   });
 
   els.modal.addEventListener("click", (e) => {
     if (e.target === els.modal) closeModal();
   });
 
-  resetForm();
-  render();
+  async function initializeApplication() {
+    resetForm();
+    render();
+    showAuthScreen();
+
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      setAuthMessage(databaseErrorMessage(error), "error");
+      return;
+    }
+
+    if (data.session) {
+      await handleSignedIn(data.session);
+    }
+
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        await handleSignedIn(session);
+      } else if (event === "SIGNED_OUT") {
+        await handleSignedOut();
+      }
+    });
+  }
+
+  initializeApplication();
 })();
 </script>
 </body>
