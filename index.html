@@ -237,6 +237,55 @@
       line-height: 1.4;
     }
 
+    .mobile-search-shell,
+    .mobile-search-modal {
+      display: none;
+    }
+
+    .mobile-search-input {
+      position: relative;
+    }
+
+    .mobile-search-clear {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: #e9eef6;
+      color: #344054;
+      font-size: 24px;
+      line-height: 1;
+      transform: translateY(-50%);
+    }
+
+    .mobile-search-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .mobile-search-modal-head strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .mobile-search-modal-head span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .stats {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -596,13 +645,124 @@
     }
 
     @media (max-width: 760px) {
-      .results-layout { grid-template-columns: 1fr; }
-      .customer-list { max-height: none; }
-      .customer-detail { position: static; }
+      body.mobile-search-open {
+        overflow: hidden;
+      }
+
+      .mobile-search-shell {
+        position: sticky;
+        top: 0;
+        z-index: 140;
+        display: block;
+        padding: calc(9px + env(safe-area-inset-top)) 10px 9px;
+        background: rgba(15, 23, 42, .98);
+        box-shadow: 0 5px 20px rgba(15, 23, 42, .22);
+        backdrop-filter: blur(12px);
+      }
+
+      .mobile-search-input input {
+        min-height: 49px;
+        padding-left: 43px;
+        padding-right: 48px;
+        border: 0;
+        border-radius: 14px;
+        background: #fff;
+        font-size: 16px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+      }
+
+      .mobile-search-input input:focus {
+        border: 0;
+        box-shadow: 0 0 0 4px rgba(96, 165, 250, .30), 0 4px 14px rgba(0, 0, 0, .12);
+      }
+
+      .topbar {
+        position: static;
+        padding-top: 13px;
+        padding-bottom: 13px;
+      }
+
+      .layout {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content-panel {
+        order: 1;
+      }
+
+      .form-panel {
+        order: 2;
+      }
+
+      .content-panel > .search-wrap,
+      .content-panel > .search-rule,
+      .content-panel > .stats {
+        display: none;
+      }
+
+      .results-layout {
+        display: block;
+      }
+
+      .results-layout > .suggestions-panel {
+        display: none;
+      }
+
+      .customer-detail {
+        position: static;
+        min-height: 260px;
+      }
+
+      .mobile-search-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 130;
+        display: block;
+        padding: calc(70px + env(safe-area-inset-top)) 8px 8px;
+        background: rgba(15, 23, 42, .62);
+        backdrop-filter: blur(4px);
+      }
+
+      .mobile-search-window {
+        height: calc(100dvh - 78px - env(safe-area-inset-top));
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,.25);
+        border-radius: 18px;
+        background: #f8fafc;
+        box-shadow: 0 24px 70px rgba(0,0,0,.35);
+      }
+
+      .mobile-search-results-host {
+        height: calc(100% - 68px);
+        overflow: hidden;
+      }
+
+      .mobile-search-results-host .suggestions-panel {
+        display: block;
+        height: 100%;
+        padding: 12px;
+      }
+
+      .mobile-search-results-host .results-heading {
+        display: none;
+      }
+
+      .mobile-search-results-host .customer-list {
+        max-height: 100%;
+        height: 100%;
+        overflow-y: auto;
+        padding: 0 2px 18px 0;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
     }
 
     @media (max-width: 620px) {
       .topbar { flex-direction: column; }
+      .brand { width: 100%; }
+      .brand-icon { width: 38px; height: 38px; border-radius: 12px; font-size: 20px; }
+      .brand p { font-size: 11px; }
       .top-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
       .layout { padding-left: 10px; padding-right: 10px; }
       .form-panel, .content-panel { padding: 15px; border-radius: 15px; }
@@ -794,6 +954,21 @@
   </div>
 
   <div class="app-shell hidden" id="appShell">
+    <div class="mobile-search-shell" id="mobileSearchShell">
+      <div class="search-input mobile-search-input">
+        <span class="search-icon">🔎</span>
+        <input
+          id="mobileSearchInput"
+          type="search"
+          inputmode="search"
+          autocomplete="off"
+          enterkeyhint="search"
+          placeholder="Όνομα, επώνυμο ή αριθμός συμβολαίου..."
+          aria-label="Αναζήτηση ασφαλισμένου"
+        />
+        <button class="mobile-search-clear" id="mobileSearchClear" type="button" aria-label="Καθαρισμός αναζήτησης">×</button>
+      </div>
+    </div>
     <header class="topbar">
       <div class="brand">
         <div class="brand-icon">👥</div>
@@ -954,6 +1129,19 @@
 
   <div class="toast" id="toast"></div>
 
+  <div class="mobile-search-modal hidden" id="mobileSearchModal" role="dialog" aria-modal="true" aria-labelledby="mobileSearchModalTitle">
+    <div class="mobile-search-window">
+      <div class="mobile-search-modal-head">
+        <div>
+          <strong id="mobileSearchModalTitle">Αποτελέσματα αναζήτησης</strong>
+          <span id="mobileSearchCount">0 αποτελέσματα</span>
+        </div>
+        <button class="btn btn-secondary btn-small" id="mobileSearchClose" type="button">Κλείσιμο</button>
+      </div>
+      <div class="mobile-search-results-host" id="mobileSearchResultsHost"></div>
+    </div>
+  </div>
+
   <div class="modal hidden" id="confirmModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <h2 style="margin-top:0">Διαγραφή πελάτη</h2>
@@ -1017,6 +1205,12 @@
     postalCode: $("postalCode"),
     notes: $("notes"),
     search: $("searchInput"),
+    mobileSearch: $("mobileSearchInput"),
+    mobileSearchClear: $("mobileSearchClear"),
+    mobileSearchModal: $("mobileSearchModal"),
+    mobileSearchClose: $("mobileSearchClose"),
+    mobileSearchCount: $("mobileSearchCount"),
+    mobileSearchResultsHost: $("mobileSearchResultsHost"),
     list: $("customerList"),
     detail: $("customerDetail"),
     formTitle: $("formTitle"),
@@ -1027,6 +1221,9 @@
     modal: $("confirmModal"),
     confirmText: $("confirmText")
   };
+
+  const suggestionsPanel = document.querySelector(".suggestions-panel");
+  const suggestionsHome = document.querySelector(".results-layout");
 
   function sanitizeCustomer(c = {}) {
     return {
@@ -1460,6 +1657,47 @@
   }
 
 
+  function isMobileSearchMode() {
+    return window.matchMedia("(max-width: 760px)").matches;
+  }
+
+  function syncSuggestionsPlacement() {
+    if (!suggestionsPanel || !suggestionsHome || !els.mobileSearchResultsHost) return;
+
+    if (isMobileSearchMode()) {
+      if (suggestionsPanel.parentElement !== els.mobileSearchResultsHost) {
+        els.mobileSearchResultsHost.appendChild(suggestionsPanel);
+      }
+    } else if (suggestionsPanel.parentElement !== suggestionsHome) {
+      suggestionsHome.insertBefore(suggestionsPanel, els.detail);
+    }
+  }
+
+  function openMobileSearchModal() {
+    if (!isMobileSearchMode() || !normalize(els.mobileSearch.value)) return;
+    syncSuggestionsPlacement();
+    els.mobileSearchModal.classList.remove("hidden");
+    document.body.classList.add("mobile-search-open");
+  }
+
+  function closeMobileSearchModal() {
+    els.mobileSearchModal.classList.add("hidden");
+    document.body.classList.remove("mobile-search-open");
+  }
+
+  function setSearchValue(value, source = "desktop") {
+    const text = String(value || "");
+    els.search.value = text;
+    els.mobileSearch.value = text;
+    render();
+
+    if (source === "mobile") {
+      if (normalize(text)) openMobileSearchModal();
+      else closeMobileSearchModal();
+    }
+  }
+
+
   function resetForm() {
     els.form.reset();
     els.id.value = "";
@@ -1583,7 +1821,9 @@
     selectedCustomerId = id;
     render();
 
-    if (window.matchMedia("(max-width: 760px)").matches) {
+    if (isMobileSearchMode()) {
+      closeMobileSearchModal();
+      els.mobileSearch.blur();
       requestAnimationFrame(() => {
         els.detail.scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -1591,6 +1831,7 @@
   }
 
   function render() {
+    syncSuggestionsPlacement();
     const query = normalize(els.search.value);
     const insuredCustomers = customers.filter(isInsuredCustomer);
     const filtered = query
@@ -1605,6 +1846,9 @@
 
     $("totalCustomers").textContent = insuredCustomers.length;
     $("visibleCustomers").textContent = filtered.length;
+    els.mobileSearchCount.textContent = filtered.length === 1
+      ? "1 αποτέλεσμα"
+      : `${filtered.length} αποτελέσματα`;
     $("totalPolicies").textContent = insuredCustomers.reduce(
       (sum, customer) => sum + (customer.policies || []).length,
       0
@@ -1783,7 +2027,41 @@
   });
 
   els.cancelEditBtn.addEventListener("click", resetForm);
-  els.search.addEventListener("input", render);
+
+  els.search.addEventListener("input", () => {
+    setSearchValue(els.search.value, "desktop");
+  });
+
+  els.mobileSearch.addEventListener("input", () => {
+    setSearchValue(els.mobileSearch.value, "mobile");
+  });
+
+  els.mobileSearch.addEventListener("focus", () => {
+    if (normalize(els.mobileSearch.value)) openMobileSearchModal();
+  });
+
+  els.mobileSearchClear.addEventListener("click", () => {
+    setSearchValue("", "mobile");
+    els.mobileSearch.focus();
+  });
+
+  els.mobileSearchClose.addEventListener("click", closeMobileSearchModal);
+
+  els.mobileSearchModal.addEventListener("click", event => {
+    if (event.target === els.mobileSearchModal) closeMobileSearchModal();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !els.mobileSearchModal.classList.contains("hidden")) {
+      closeMobileSearchModal();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    syncSuggestionsPlacement();
+    if (!isMobileSearchMode()) closeMobileSearchModal();
+  });
+
   $("printBtn").addEventListener("click", () => window.print());
 
   $("exportBtn").addEventListener("click", () => {
@@ -1925,6 +2203,9 @@
     currentUser = null;
     customers = [];
     selectedCustomerId = null;
+    els.search.value = "";
+    els.mobileSearch.value = "";
+    closeMobileSearchModal();
     resetForm();
     render();
     showAuthScreen();
@@ -1971,6 +2252,7 @@
   });
 
   async function initializeApplication() {
+    syncSuggestionsPlacement();
     resetForm();
     render();
     showAuthScreen();
