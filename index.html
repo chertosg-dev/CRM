@@ -396,6 +396,656 @@
       margin-top: 16px;
     }
 
+    .detail-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 18px 0 16px;
+      padding: 5px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f1f5f9;
+    }
+
+    .detail-tab {
+      flex: 1;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #475467;
+      font-weight: 800;
+    }
+
+    .detail-tab.active {
+      background: #fff;
+      color: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, .08);
+    }
+
+    .detail-tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 23px;
+      height: 23px;
+      margin-left: 5px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 11px;
+    }
+
+    .detail-tab-panel {
+      min-width: 0;
+    }
+
+    .coverage-intro {
+      margin-bottom: 13px;
+      padding: 12px 14px;
+      border: 1px solid #dbeafe;
+      border-radius: 13px;
+      background: #eff6ff;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .policy-coverages-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .policy-coverage-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 5px 18px rgba(15, 23, 42, .045);
+    }
+
+    .policy-coverage-card.expanded {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, .08);
+    }
+
+    .policy-coverage-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 15px 16px;
+      border: 0;
+      border-top: 4px solid #2563eb;
+      background: #fff;
+      color: inherit;
+      text-align: left;
+    }
+
+    .policy-coverage-toggle:hover {
+      background: #f8fbff;
+    }
+
+    .policy-coverage-title {
+      min-width: 0;
+    }
+
+    .policy-coverage-number {
+      display: block;
+      color: #1d4ed8;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: .025em;
+    }
+
+    .policy-coverage-product {
+      display: block;
+      margin-top: 4px;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .coverage-status {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .coverage-status.saved {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .coverage-status.empty {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
+    .policy-toggle-arrow {
+      margin-left: 6px;
+      color: #2563eb;
+      font-size: 22px;
+      line-height: 1;
+      transition: transform .18s ease;
+    }
+
+    .policy-coverage-card.expanded .policy-toggle-arrow {
+      transform: rotate(90deg);
+    }
+
+    .coverage-preview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 16px 14px;
+    }
+
+    .coverage-preview-item {
+      min-width: 0;
+      padding: 9px 10px;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #344054;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .coverage-preview-item b {
+      display: block;
+      margin-bottom: 3px;
+      color: #667085;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .035em;
+    }
+
+    .coverage-editor {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: #fbfdff;
+    }
+
+    .coverage-editor-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .coverage-editor-title h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .coverage-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .coverage-field {
+      min-width: 0;
+    }
+
+    .coverage-field.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .coverage-field label {
+      min-height: 17px;
+    }
+
+    .money-input-wrap {
+      position: relative;
+    }
+
+    .money-input-wrap input {
+      padding-right: 37px;
+    }
+
+    .money-input-suffix {
+      position: absolute;
+      top: 50%;
+      right: 13px;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 800;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .checkbox-coverage {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 49px;
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .checkbox-coverage input {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      accent-color: #2563eb;
+    }
+
+    .checkbox-coverage span {
+      color: #344054;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .coverage-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .coverage-popup-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 220;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, .70);
+      backdrop-filter: blur(5px);
+    }
+
+    body.coverage-modal-open {
+      overflow: hidden;
+    }
+
+    .coverage-popup-window {
+      display: flex;
+      flex-direction: column;
+      width: min(980px, 100%);
+      max-height: calc(100dvh - 40px);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: 0 32px 90px rgba(0, 0, 0, .34);
+    }
+
+    .coverage-popup-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #eff6ff, #fff);
+    }
+
+    .coverage-popup-heading {
+      min-width: 0;
+    }
+
+    .coverage-popup-heading > span {
+      display: block;
+      margin-bottom: 4px;
+      color: #2563eb;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .coverage-popup-heading h2 {
+      margin: 0;
+      color: #172033;
+      font-size: clamp(20px, 3vw, 27px);
+      overflow-wrap: anywhere;
+    }
+
+    .coverage-popup-heading p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .coverage-popup-close {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: #e9eef6;
+      color: #344054;
+      font-size: 29px;
+      line-height: 1;
+    }
+
+    .coverage-popup-close:hover {
+      background: #dce5f1;
+    }
+
+    .coverage-popup-body {
+      overflow-y: auto;
+      padding: 20px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .coverage-popup-body .coverage-editor-title {
+      display: none;
+    }
+
+    .coverage-popup-body .coverage-actions {
+      position: sticky;
+      bottom: -20px;
+      z-index: 5;
+      margin-left: -20px;
+      margin-right: -20px;
+      margin-bottom: -20px;
+      padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(255, 255, 255, .97);
+      box-shadow: 0 -8px 22px rgba(15, 23, 42, .09);
+      backdrop-filter: blur(10px);
+    }
+
+    .member-popup-modal { z-index: 240; }
+    .member-coverage-popup-modal { z-index: 260; }
+
+    .member-popup-window {
+      width: min(920px, 100%);
+    }
+
+    .contract-popup-tabs {
+      position: sticky;
+      top: -20px;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin: -20px -20px 18px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(248, 250, 252, .97);
+      backdrop-filter: blur(10px);
+    }
+
+    .contract-popup-tab {
+      border: 1px solid transparent;
+      border-radius: 11px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #475467;
+      font-weight: 850;
+    }
+
+    .contract-popup-tab.active {
+      border-color: #bfdbfe;
+      background: #fff;
+      color: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, .07);
+    }
+
+    .contract-popup-count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 22px;
+      height: 22px;
+      margin-left: 5px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 11px;
+    }
+
+    .covered-members-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 13px 14px;
+      border: 1px solid #dbeafe;
+      border-radius: 14px;
+      background: #eff6ff;
+    }
+
+    .covered-members-toolbar strong {
+      display: block;
+      color: #1e3a8a;
+      font-size: 14px;
+    }
+
+    .covered-members-toolbar span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 11px;
+    }
+
+    .covered-members-list {
+      display: grid;
+      gap: 11px;
+    }
+
+    .covered-member-card {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 16px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: #fff;
+      color: inherit;
+      text-align: left;
+      box-shadow: 0 5px 15px rgba(15, 23, 42, .045);
+      transition: .16s ease;
+    }
+
+    .covered-member-card:hover {
+      border-color: #93c5fd;
+      background: #f8fbff;
+      transform: translateY(-1px);
+    }
+
+    .covered-member-card:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, .20);
+      outline-offset: 2px;
+    }
+
+    .covered-member-card-name {
+      min-width: 0;
+      font-size: 17px;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .covered-member-card-arrow {
+      flex: 0 0 auto;
+      color: #2563eb;
+      font-size: 27px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .member-detail-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .member-detail-choice {
+      min-height: 88px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #344054;
+      text-align: left;
+      font-weight: 850;
+    }
+
+    .member-detail-choice span {
+      display: block;
+      margin-top: 5px;
+      color: #667085;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .member-detail-choice.active {
+      border-color: #60a5fa;
+      background: #eff6ff;
+      color: #1d4ed8;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, .08);
+    }
+
+    .filled-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .filled-field-item {
+      min-width: 0;
+      padding: 11px 12px;
+      border: 1px solid #e5eaf1;
+      border-radius: 11px;
+      background: #fff;
+      color: #344054;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .filled-field-item b {
+      display: block;
+      margin-bottom: 4px;
+      color: #667085;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .filled-field-item.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .summary-empty {
+      padding: 35px 18px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      background: #fbfdff;
+      color: #667085;
+      text-align: center;
+    }
+
+    .summary-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .member-form-section {
+      margin-bottom: 17px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: #fbfdff;
+    }
+
+    .member-form-section-title {
+      margin: 0 0 12px;
+      color: #344054;
+      font-size: 15px;
+    }
+
+    .member-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .member-form-grid .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .same-address-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      margin-bottom: 13px;
+      padding: 12px 13px;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      background: #eff6ff;
+    }
+
+    .same-address-box input {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      accent-color: #2563eb;
+    }
+
+    .same-address-box strong {
+      display: block;
+      color: #1e3a8a;
+      font-size: 13px;
+    }
+
+    .same-address-box span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .policy-member-count {
+      display: block;
+      margin-top: 5px;
+      color: #475467;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .policy-coverage-toggle {
+      cursor: pointer;
+    }
+
+    .coverage-no-policy {
+      padding: 36px 18px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      text-align: center;
+      color: var(--muted);
+      background: #fbfdff;
+    }
+
     .detail-empty {
       display: grid;
       place-items: center;
@@ -649,6 +1299,36 @@
         overflow: hidden;
       }
 
+      .coverage-popup-modal {
+        padding: 0;
+        background: #fff;
+      }
+
+      .coverage-popup-window {
+        width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .coverage-popup-head {
+        padding: calc(14px + env(safe-area-inset-top)) 15px 14px;
+      }
+
+      .coverage-popup-body {
+        padding: 15px;
+      }
+
+      .coverage-popup-body .coverage-actions {
+        bottom: -15px;
+        margin-left: -15px;
+        margin-right: -15px;
+        margin-bottom: -15px;
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
       .mobile-search-shell {
         position: sticky;
         top: 0;
@@ -712,6 +1392,75 @@
       .customer-detail {
         position: static;
         min-height: 260px;
+      }
+
+      .detail-tabs {
+        position: sticky;
+        top: 69px;
+        z-index: 12;
+        margin-top: 14px;
+        background: rgba(241, 245, 249, .96);
+        backdrop-filter: blur(8px);
+      }
+
+      .coverage-form-grid,
+      .coverage-preview {
+        grid-template-columns: 1fr;
+      }
+
+      .coverage-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        margin-left: -16px;
+        margin-right: -16px;
+        margin-bottom: -16px;
+        padding: 13px 16px calc(13px + env(safe-area-inset-bottom));
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 -8px 20px rgba(15,23,42,.08);
+        backdrop-filter: blur(10px);
+      }
+
+      .coverage-actions .btn {
+        flex: 1;
+      }
+
+      .contract-popup-tabs {
+        top: -14px;
+        margin: -14px -14px 14px;
+        padding: 10px 14px;
+      }
+
+      .covered-members-toolbar,
+      .covered-member-card-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .covered-members-toolbar .btn,
+      .covered-member-actions .btn {
+        width: 100%;
+      }
+
+      .member-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .member-detail-choice-grid,
+      .filled-fields-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .filled-field-item.full-width {
+        grid-column: 1;
+      }
+
+      .summary-actions .btn {
+        flex: 1;
+      }
+
+      .member-form-grid .full-width {
+        grid-column: 1;
       }
 
       .mobile-search-modal {
@@ -918,6 +1667,9 @@
       .results-layout { display: block; }
       .customer-detail { position: static; border: 0; }
       .customer-detail-card { padding: 0; }
+      .detail-tabs, .selected-actions, .coverage-actions { display: none !important; }
+      .coverage-editor { display: block !important; }
+      .policy-coverage-card { break-inside: avoid; }
     }
   </style>
 </head>
@@ -974,7 +1726,7 @@
         <div class="brand-icon">👥</div>
         <div>
           <h1>Προσωπικό Χαρτοφυλάκιο</h1>
-          <p>Ασφαλισμένοι, συμβόλαια και online συγχρονισμός</p>
+          <p>Ασφαλισμένοι, συμβόλαια, καλυπτόμενα μέλη και online συγχρονισμός</p>
         </div>
       </div>
       <div class="top-actions">
@@ -1095,7 +1847,7 @@
           <button class="btn btn-secondary" id="printBtn">Εκτύπωση</button>
         </div>
         <div class="search-rule">
-          Στην αναζήτηση αριθμού εμφανίζονται μόνο συμβόλαια που ξεκινούν από τα ψηφία που πληκτρολογείς.
+          Η αναζήτηση βρίσκει ονόματα, επώνυμα και συμβόλαια μόνο όταν ξεκινούν από αυτό που πληκτρολογείς.
         </div>
 
         <div class="migration-banner hidden" id="migrationBanner">
@@ -1142,6 +1894,62 @@
     </div>
   </div>
 
+  <div class="coverage-popup-modal hidden" id="coverageModal" role="dialog" aria-modal="true" aria-labelledby="coverageModalTitle">
+    <div class="coverage-popup-window">
+      <div class="coverage-popup-head">
+        <div class="coverage-popup-heading">
+          <span>Συμβόλαιο, καλύψεις και μέλη</span>
+          <h2 id="coverageModalTitle">Συμβόλαιο</h2>
+          <p id="coverageModalSubtitle"></p>
+        </div>
+        <button class="coverage-popup-close" id="coverageModalClose" type="button" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div class="coverage-popup-body" id="coverageModalBody"></div>
+    </div>
+  </div>
+
+  <div class="coverage-popup-modal member-popup-modal hidden" id="memberModal" role="dialog" aria-modal="true" aria-labelledby="memberModalTitle">
+    <div class="coverage-popup-window member-popup-window">
+      <div class="coverage-popup-head">
+        <div class="coverage-popup-heading">
+          <span>Καλυπτόμενο μέλος</span>
+          <h2 id="memberModalTitle">Νέο καλυπτόμενο μέλος</h2>
+          <p id="memberModalSubtitle"></p>
+        </div>
+        <button class="coverage-popup-close" id="memberModalClose" type="button" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div class="coverage-popup-body" id="memberModalBody"></div>
+    </div>
+  </div>
+
+  <div class="coverage-popup-modal member-detail-popup-modal hidden" id="memberDetailModal" role="dialog" aria-modal="true" aria-labelledby="memberDetailModalTitle">
+    <div class="coverage-popup-window">
+      <div class="coverage-popup-head">
+        <div class="coverage-popup-heading">
+          <span>Καλυπτόμενο μέλος</span>
+          <h2 id="memberDetailModalTitle">Καλυπτόμενο μέλος</h2>
+          <p id="memberDetailModalSubtitle"></p>
+        </div>
+        <button class="coverage-popup-close" id="memberDetailModalClose" type="button" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div class="coverage-popup-body" id="memberDetailModalBody"></div>
+    </div>
+  </div>
+
+  <div class="coverage-popup-modal member-coverage-popup-modal hidden" id="memberCoverageModal" role="dialog" aria-modal="true" aria-labelledby="memberCoverageModalTitle">
+    <div class="coverage-popup-window">
+      <div class="coverage-popup-head">
+        <div class="coverage-popup-heading">
+          <span>Καλύψεις καλυπτόμενου μέλους</span>
+          <h2 id="memberCoverageModalTitle">Καλυπτόμενο μέλος</h2>
+          <p id="memberCoverageModalSubtitle"></p>
+        </div>
+        <button class="coverage-popup-close" id="memberCoverageModalClose" type="button" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div class="coverage-popup-body" id="memberCoverageModalBody"></div>
+    </div>
+  </div>
+
   <div class="modal hidden" id="confirmModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <h2 style="margin-top:0">Διαγραφή πελάτη</h2>
@@ -1170,6 +1978,21 @@
   let currentUser = null;
   let pendingDeleteId = null;
   let selectedCustomerId = null;
+  let activeDetailTab = "personal";
+  let expandedPolicyId = null;
+  let coverageModalPolicyId = null;
+  let coverageModalTab = "coverage";
+  let coverageModalEditMode = false;
+  let memberModalPolicyId = null;
+  let memberModalMemberId = null;
+  let memberDetailMemberId = null;
+  let memberDetailTab = "details";
+  let memberCoverageMemberId = null;
+  let coverageOptions = {
+    hospitalPrograms: [],
+    diagnosticPackages: [],
+    ifeOptions: []
+  };
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -1211,6 +2034,26 @@
     mobileSearchClose: $("mobileSearchClose"),
     mobileSearchCount: $("mobileSearchCount"),
     mobileSearchResultsHost: $("mobileSearchResultsHost"),
+    coverageModal: $("coverageModal"),
+    coverageModalClose: $("coverageModalClose"),
+    coverageModalTitle: $("coverageModalTitle"),
+    coverageModalSubtitle: $("coverageModalSubtitle"),
+    coverageModalBody: $("coverageModalBody"),
+    memberModal: $("memberModal"),
+    memberModalClose: $("memberModalClose"),
+    memberModalTitle: $("memberModalTitle"),
+    memberModalSubtitle: $("memberModalSubtitle"),
+    memberModalBody: $("memberModalBody"),
+    memberDetailModal: $("memberDetailModal"),
+    memberDetailModalClose: $("memberDetailModalClose"),
+    memberDetailModalTitle: $("memberDetailModalTitle"),
+    memberDetailModalSubtitle: $("memberDetailModalSubtitle"),
+    memberDetailModalBody: $("memberDetailModalBody"),
+    memberCoverageModal: $("memberCoverageModal"),
+    memberCoverageModalClose: $("memberCoverageModalClose"),
+    memberCoverageModalTitle: $("memberCoverageModalTitle"),
+    memberCoverageModalSubtitle: $("memberCoverageModalSubtitle"),
+    memberCoverageModalBody: $("memberCoverageModalBody"),
     list: $("customerList"),
     detail: $("customerDetail"),
     formTitle: $("formTitle"),
@@ -1249,6 +2092,32 @@
     };
   }
 
+
+  function sanitizeCoveredMember(member = {}) {
+    return {
+      id: member.id || "",
+      policyId: member.policyId || member.policy_id || "",
+      firstName: member.firstName || member.first_name || "",
+      lastName: member.lastName || member.last_name || "",
+      company: member.company || "",
+      phone: member.phone || "",
+      email: member.email || "",
+      afm: member.afm || "",
+      dou: member.dou || "",
+      adt: member.adt || "",
+      birthDate: member.birthDate || member.birth_date || "",
+      street: member.street || "",
+      streetNumber: member.streetNumber || member.street_number || "",
+      area: member.area || "",
+      postalCode: member.postalCode || member.postal_code || "",
+      notes: member.notes || "",
+      sameAddressAsInsured: Boolean(member.sameAddressAsInsured ?? member.same_address_as_insured),
+      coverage: member.coverage || null,
+      createdAt: member.createdAt || member.created_at || "",
+      updatedAt: member.updatedAt || member.updated_at || ""
+    };
+  }
+
   function normalizePolicies(value) {
     const source = Array.isArray(value)
       ? value
@@ -1257,12 +2126,20 @@
     const byNumber = new Map();
 
     source.forEach(item => {
+      let id = "";
       let number = "";
       let product = "";
+      let coverage = null;
+      let coveredMembers = [];
 
       if (item && typeof item === "object") {
+        id = String(item.id || "").trim();
         number = String(item.number || item.policy || item.contractNumber || "").trim();
         product = String(item.product || item.productName || "").trim();
+        coverage = item.coverage || null;
+        coveredMembers = Array.isArray(item.coveredMembers)
+          ? item.coveredMembers.map(sanitizeCoveredMember)
+          : [];
       } else {
         const text = String(item || "").trim();
         if (!text) return;
@@ -1275,8 +2152,11 @@
 
       const current = byNumber.get(number);
       byNumber.set(number, {
+        id: id || current?.id || "",
         number,
-        product: product || current?.product || ""
+        product: product || current?.product || "",
+        coverage: coverage || current?.coverage || null,
+        coveredMembers: coveredMembers.length ? coveredMembers : (current?.coveredMembers || [])
       });
     });
 
@@ -1293,8 +2173,11 @@
     normalizePolicies(existingPolicies).forEach(policy => {
       const seeded = byNumber.get(policy.number);
       byNumber.set(policy.number, {
+        id: policy.id || seeded?.id || "",
         number: policy.number,
-        product: policy.product || seeded?.product || ""
+        product: policy.product || seeded?.product || "",
+        coverage: policy.coverage || seeded?.coverage || null,
+        coveredMembers: policy.coveredMembers?.length ? policy.coveredMembers : (seeded?.coveredMembers || [])
       });
     });
 
@@ -1404,8 +2287,14 @@
 
   function databaseErrorMessage(error) {
     const message = String(error?.message || error || "Άγνωστο σφάλμα");
+    if (message.includes("covered_members") || message.includes("covered_member_coverages")) {
+      return "Δεν έχουν δημιουργηθεί οι πίνακες καλυπτόμενων μελών. Εκτέλεσε το SUPABASE_COVERED_MEMBERS.sql στο SQL Editor.";
+    }
+    if (message.includes("policy_coverages") || message.includes("hospital_program_options") || message.includes("diagnostic_package_options") || message.includes("ife_options")) {
+      return "Δεν έχει ολοκληρωθεί η βάση καλύψεων. Εκτέλεσε το SUPABASE_DATABASE_WITH_COVERAGES.sql στο SQL Editor.";
+    }
     if (message.includes("relation") && message.includes("does not exist")) {
-      return "Δεν έχουν δημιουργηθεί ακόμη οι πίνακες insureds και policies. Εκτέλεσε πρώτα το SUPABASE_SETUP.sql.";
+      return "Δεν έχουν δημιουργηθεί ακόμη οι βασικοί πίνακες. Εκτέλεσε πρώτα το SUPABASE_SETUP.sql και μετά το SUPABASE_DATABASE_WITH_COVERAGES.sql.";
     }
     if (message.includes("row-level security")) {
       return "Η βάση απέρριψε την ενέργεια λόγω ρυθμίσεων ασφαλείας. Έλεγξε το SQL setup και κάνε ξανά είσοδο.";
@@ -1414,6 +2303,76 @@
       return "Ο ίδιος αριθμός συμβολαίου υπάρχει ήδη σε άλλη εγγραφή.";
     }
     return message;
+  }
+
+  function fromDatabaseCoverage(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      startDate: row.start_date || "",
+      tariff: row.tariff || "",
+      lifeInsuranceAmount: row.life_insurance_amount ?? "",
+      accidentalDeathAmount: row.accidental_death_amount ?? "",
+      premiumWaiver: Boolean(row.premium_waiver),
+      ifeAmount: row.ife_amount ?? "",
+      temporaryDisabilityDailyAmount: row.temporary_disability_daily_amount ?? "",
+      incomeLossDailyAmount: row.income_loss_daily_amount ?? "",
+      criticalIllnessAmount: row.critical_illness_amount ?? "",
+      hospitalProgram: row.hospital_program || "",
+      hospitalDailyAllowance: row.hospital_daily_allowance ?? "",
+      surgicalAllowance: row.surgical_allowance ?? "",
+      diagnosticPackage: row.diagnostic_package || "",
+      comments: row.comments || "",
+      createdAt: row.created_at || "",
+      updatedAt: row.updated_at || ""
+    };
+  }
+
+  function fromDatabaseCoveredMember(row, coverage = null) {
+    return sanitizeCoveredMember({
+      id: row.id,
+      policyId: row.policy_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      company: row.company,
+      phone: row.phone,
+      email: row.email,
+      afm: row.afm,
+      dou: row.dou,
+      adt: row.adt,
+      birthDate: row.birth_date,
+      street: row.street,
+      streetNumber: row.street_number,
+      area: row.area,
+      postalCode: row.postal_code,
+      notes: row.notes,
+      sameAddressAsInsured: row.same_address_as_insured,
+      coverage,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    });
+  }
+
+  function toDatabaseCoveredMember(policyId, member) {
+    return {
+      owner_id: currentUser.id,
+      policy_id: policyId,
+      first_name: member.firstName || null,
+      last_name: member.lastName || "",
+      company: member.company || null,
+      phone: member.phone || null,
+      email: member.email || null,
+      afm: member.afm || null,
+      dou: member.dou || null,
+      adt: member.adt || null,
+      birth_date: member.birthDate || null,
+      street: member.street || null,
+      street_number: member.streetNumber || null,
+      area: member.area || null,
+      postal_code: member.postalCode || null,
+      notes: member.notes || null,
+      same_address_as_insured: Boolean(member.sameAddressAsInsured)
+    };
   }
 
   function fromDatabaseInsured(row, policyRows = []) {
@@ -1437,8 +2396,11 @@
       updatedAt: row.updated_at,
       isInsured: true,
       policies: policyRows.map(policy => ({
+        id: policy.id,
         number: policy.policy_number,
-        product: policy.product || ""
+        product: policy.product || "",
+        coverage: policy.coverage || null,
+        coveredMembers: policy.coveredMembers || []
       }))
     });
   }
@@ -1465,11 +2427,71 @@
     return row;
   }
 
+  function nullableAmount(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : null;
+  }
+
+  function toDatabaseCoverage(policyId, coverage, includeId = false) {
+    const row = {
+      owner_id: currentUser.id,
+      policy_id: policyId,
+      start_date: coverage.startDate || null,
+      tariff: coverage.tariff?.trim() || null,
+      life_insurance_amount: nullableAmount(coverage.lifeInsuranceAmount),
+      accidental_death_amount: nullableAmount(coverage.accidentalDeathAmount),
+      premium_waiver: Boolean(coverage.premiumWaiver),
+      ife_amount: nullableAmount(coverage.ifeAmount),
+      temporary_disability_daily_amount: nullableAmount(coverage.temporaryDisabilityDailyAmount),
+      income_loss_daily_amount: nullableAmount(coverage.incomeLossDailyAmount),
+      critical_illness_amount: nullableAmount(coverage.criticalIllnessAmount),
+      hospital_program: coverage.hospitalProgram || null,
+      hospital_daily_allowance: nullableAmount(coverage.hospitalDailyAllowance),
+      surgical_allowance: nullableAmount(coverage.surgicalAllowance),
+      diagnostic_package: coverage.diagnosticPackage || null,
+      comments: coverage.comments?.trim() || null
+    };
+    if (includeId && coverage.id) row.id = coverage.id;
+    return row;
+  }
+
+  function toDatabaseMemberCoverage(policyId, memberId, coverage) {
+    return {
+      owner_id: currentUser.id,
+      policy_id: policyId,
+      covered_member_id: memberId,
+      start_date: coverage.startDate || null,
+      tariff: coverage.tariff?.trim() || null,
+      life_insurance_amount: nullableAmount(coverage.lifeInsuranceAmount),
+      accidental_death_amount: nullableAmount(coverage.accidentalDeathAmount),
+      premium_waiver: Boolean(coverage.premiumWaiver),
+      ife_amount: nullableAmount(coverage.ifeAmount),
+      temporary_disability_daily_amount: nullableAmount(coverage.temporaryDisabilityDailyAmount),
+      income_loss_daily_amount: nullableAmount(coverage.incomeLossDailyAmount),
+      critical_illness_amount: nullableAmount(coverage.criticalIllnessAmount),
+      hospital_program: coverage.hospitalProgram || null,
+      hospital_daily_allowance: nullableAmount(coverage.hospitalDailyAllowance),
+      surgical_allowance: nullableAmount(coverage.surgicalAllowance),
+      diagnostic_package: coverage.diagnosticPackage || null,
+      comments: coverage.comments?.trim() || null
+    };
+  }
+
   async function loadCustomersFromDatabase({ quiet = false } = {}) {
     if (!currentUser) return;
-    if (!quiet) setSyncStatus("Φόρτωση στοιχείων…", "syncing");
+    if (!quiet) setSyncStatus("Φόρτωση στοιχείων, καλύψεων και μελών…", "syncing");
 
-    const [insuredResult, policiesResult] = await Promise.all([
+    const [
+      insuredResult,
+      policiesResult,
+      coveragesResult,
+      coveredMembersResult,
+      memberCoveragesResult,
+      hospitalProgramsResult,
+      diagnosticPackagesResult,
+      ifeOptionsResult
+    ] = await Promise.all([
       supabaseClient
         .from("insureds")
         .select("*")
@@ -1478,16 +2500,79 @@
       supabaseClient
         .from("policies")
         .select("*")
-        .order("policy_number", { ascending: true })
+        .order("policy_number", { ascending: true }),
+      supabaseClient.from("policy_coverages").select("*"),
+      supabaseClient
+        .from("covered_members")
+        .select("*")
+        .order("last_name", { ascending: true })
+        .order("first_name", { ascending: true }),
+      supabaseClient.from("covered_member_coverages").select("*"),
+      supabaseClient
+        .from("hospital_program_options")
+        .select("value, sort_order")
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+      supabaseClient
+        .from("diagnostic_package_options")
+        .select("value, sort_order")
+        .eq("active", true)
+        .order("sort_order", { ascending: true }),
+      supabaseClient
+        .from("ife_options")
+        .select("value, label, sort_order")
+        .eq("active", true)
+        .order("sort_order", { ascending: true })
     ]);
 
-    if (insuredResult.error) throw insuredResult.error;
-    if (policiesResult.error) throw policiesResult.error;
+    const results = [
+      insuredResult,
+      policiesResult,
+      coveragesResult,
+      coveredMembersResult,
+      memberCoveragesResult,
+      hospitalProgramsResult,
+      diagnosticPackagesResult,
+      ifeOptionsResult
+    ];
+    const failed = results.find(result => result.error);
+    if (failed) throw failed.error;
+
+    coverageOptions = {
+      hospitalPrograms: (hospitalProgramsResult.data || []).map(item => item.value),
+      diagnosticPackages: (diagnosticPackagesResult.data || []).map(item => item.value),
+      ifeOptions: (ifeOptionsResult.data || []).map(item => ({
+        value: String(item.value),
+        label: item.label
+      }))
+    };
+
+    const coveragesByPolicy = new Map();
+    (coveragesResult.data || []).forEach(row => {
+      coveragesByPolicy.set(row.policy_id, fromDatabaseCoverage(row));
+    });
+
+    const memberCoveragesByMember = new Map();
+    (memberCoveragesResult.data || []).forEach(row => {
+      memberCoveragesByMember.set(row.covered_member_id, fromDatabaseCoverage(row));
+    });
+
+    const membersByPolicy = new Map();
+    (coveredMembersResult.data || []).forEach(row => {
+      if (!membersByPolicy.has(row.policy_id)) membersByPolicy.set(row.policy_id, []);
+      membersByPolicy.get(row.policy_id).push(
+        fromDatabaseCoveredMember(row, memberCoveragesByMember.get(row.id) || null)
+      );
+    });
 
     const policiesByInsured = new Map();
     (policiesResult.data || []).forEach(policy => {
       if (!policiesByInsured.has(policy.insured_id)) policiesByInsured.set(policy.insured_id, []);
-      policiesByInsured.get(policy.insured_id).push(policy);
+      policiesByInsured.get(policy.insured_id).push({
+        ...policy,
+        coverage: coveragesByPolicy.get(policy.id) || null,
+        coveredMembers: membersByPolicy.get(policy.id) || []
+      });
     });
 
     customers = (insuredResult.data || []).map(row =>
@@ -1498,6 +2583,16 @@
     els.migrationBanner.classList.toggle("hidden", customers.length !== 0);
     setSyncStatus(`Συνδεδεμένος: ${currentUser.email || "λογαριασμός"}`, "online");
     render();
+
+    if (!els.coverageModal.classList.contains("hidden") && coverageModalPolicyId) {
+      renderCoverageModal();
+    }
+    if (!els.memberDetailModal.classList.contains("hidden") && memberDetailMemberId) {
+      renderMemberDetailModal();
+    }
+    if (!els.memberCoverageModal.classList.contains("hidden") && memberCoverageMemberId) {
+      renderMemberCoverageModal();
+    }
   }
 
   async function saveRecordToDatabase(record) {
@@ -1505,57 +2600,73 @@
 
     let insuredId = record.id;
     const existing = customers.find(customer => customer.id === insuredId);
+    const isNewInsured = !existing;
 
-    if (existing) {
-      const { error } = await supabaseClient
-        .from("insureds")
-        .update(toDatabaseInsured(record))
-        .eq("id", insuredId);
-      if (error) throw error;
-    } else {
-      const { data, error } = await supabaseClient
-        .from("insureds")
-        .insert(toDatabaseInsured(record))
-        .select("id")
-        .single();
-      if (error) throw error;
-      insuredId = data.id;
-    }
-
-    const oldPolicies = existing?.policies || [];
-    const { error: deleteError } = await supabaseClient
-      .from("policies")
-      .delete()
-      .eq("insured_id", insuredId);
-    if (deleteError) throw deleteError;
-
-    const policies = normalizePolicies(record.policies);
-    if (policies.length) {
-      const policyRows = policies.map(policy => ({
-        owner_id: currentUser.id,
-        insured_id: insuredId,
-        policy_number: policy.number,
-        product: policy.product || null
-      }));
-
-      const { error: insertError } = await supabaseClient
-        .from("policies")
-        .insert(policyRows);
-
-      if (insertError) {
-        if (oldPolicies.length) {
-          await supabaseClient.from("policies").insert(oldPolicies.map(policy => ({
-            owner_id: currentUser.id,
-            insured_id: insuredId,
-            policy_number: policy.number,
-            product: policy.product || null
-          })));
-        }
-        throw insertError;
+    try {
+      if (existing) {
+        const { error } = await supabaseClient
+          .from("insureds")
+          .update(toDatabaseInsured(record))
+          .eq("id", insuredId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabaseClient
+          .from("insureds")
+          .insert(toDatabaseInsured(record))
+          .select("id")
+          .single();
+        if (error) throw error;
+        insuredId = data.id;
       }
-    }
 
-    return insuredId;
+      const desiredPolicies = normalizePolicies(record.policies);
+      const existingPolicies = existing?.policies || [];
+      const existingByNumber = new Map(existingPolicies.map(policy => [policy.number, policy]));
+      const desiredNumbers = new Set(desiredPolicies.map(policy => policy.number));
+
+      for (const policy of desiredPolicies) {
+        const current = existingByNumber.get(policy.number);
+        if (current?.id) {
+          const { error } = await supabaseClient
+            .from("policies")
+            .update({
+              policy_number: policy.number,
+              product: policy.product || null
+            })
+            .eq("id", current.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient
+            .from("policies")
+            .insert({
+              owner_id: currentUser.id,
+              insured_id: insuredId,
+              policy_number: policy.number,
+              product: policy.product || null
+            });
+          if (error) throw error;
+        }
+      }
+
+      const removedPolicyIds = existingPolicies
+        .filter(policy => policy.id && !desiredNumbers.has(policy.number))
+        .map(policy => policy.id);
+
+      if (removedPolicyIds.length) {
+        const { error } = await supabaseClient
+          .from("policies")
+          .delete()
+          .in("id", removedPolicyIds);
+        if (error) throw error;
+      }
+
+      return insuredId;
+    } catch (error) {
+      if (isNewInsured && insuredId) {
+        await supabaseClient.from("insureds").delete().eq("id", insuredId);
+      }
+      throw error;
+    }
   }
 
   function makeDatabaseUuid() {
@@ -1579,10 +2690,21 @@
     if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
     if (customers.length) throw new Error("Για ασφάλεια, η μαζική εισαγωγή επιτρέπεται μόνο όταν η online βάση είναι κενή.");
 
-    const prepared = records.map(source => ({
-      dbId: makeDatabaseUuid(),
-      customer: sanitizeCustomer(source)
-    }));
+    const prepared = records.map(source => {
+      const customer = sanitizeCustomer(source);
+      return {
+        dbId: makeDatabaseUuid(),
+        customer,
+        policies: normalizePolicies(customer.policies).map(policy => ({
+          dbId: makeDatabaseUuid(),
+          policy,
+          members: (policy.coveredMembers || []).map(member => ({
+            dbId: makeDatabaseUuid(),
+            member: sanitizeCoveredMember(member)
+          }))
+        }))
+      };
+    });
 
     const insuredRows = prepared.map(item => ({
       id: item.dbId,
@@ -1590,13 +2712,42 @@
     }));
 
     const policyRows = prepared.flatMap(item =>
-      normalizePolicies(item.customer.policies).map(policy => ({
-        id: makeDatabaseUuid(),
+      item.policies.map(entry => ({
+        id: entry.dbId,
         owner_id: currentUser.id,
         insured_id: item.dbId,
-        policy_number: policy.number,
-        product: policy.product || null
+        policy_number: entry.policy.number,
+        product: entry.policy.product || null
       }))
+    );
+
+    const coverageRows = prepared.flatMap(item =>
+      item.policies
+        .filter(entry => entry.policy.coverage)
+        .map(entry => ({
+          id: makeDatabaseUuid(),
+          ...toDatabaseCoverage(entry.dbId, entry.policy.coverage)
+        }))
+    );
+
+    const memberRows = prepared.flatMap(item =>
+      item.policies.flatMap(entry =>
+        entry.members.map(memberEntry => ({
+          id: memberEntry.dbId,
+          ...toDatabaseCoveredMember(entry.dbId, memberEntry.member)
+        }))
+      )
+    );
+
+    const memberCoverageRows = prepared.flatMap(item =>
+      item.policies.flatMap(entry =>
+        entry.members
+          .filter(memberEntry => memberEntry.member.coverage)
+          .map(memberEntry => ({
+            id: makeDatabaseUuid(),
+            ...toDatabaseMemberCoverage(entry.dbId, memberEntry.dbId, memberEntry.member.coverage)
+          }))
+      )
     );
 
     const insertedIds = [];
@@ -1610,11 +2761,18 @@
         insertedIds.push(...batch.map(row => row.id));
       }
 
-      const policyChunks = chunks(policyRows, 100);
-      for (let index = 0; index < policyChunks.length; index++) {
-        setBusy(true, "Μεταφορά συμβολαίων…", `Ομάδα ${index + 1} από ${policyChunks.length}`);
-        const { error } = await supabaseClient.from("policies").insert(policyChunks[index]);
-        if (error) throw error;
+      for (const [table, rows, title] of [
+        ["policies", policyRows, "Μεταφορά συμβολαίων…"],
+        ["policy_coverages", coverageRows, "Μεταφορά καλύψεων…"],
+        ["covered_members", memberRows, "Μεταφορά καλυπτόμενων μελών…"],
+        ["covered_member_coverages", memberCoverageRows, "Μεταφορά καλύψεων μελών…"]
+      ]) {
+        const rowChunks = chunks(rows, 75);
+        for (let index = 0; index < rowChunks.length; index++) {
+          setBusy(true, title, `Ομάδα ${index + 1} από ${rowChunks.length}`);
+          const { error } = await supabaseClient.from(table).insert(rowChunks[index]);
+          if (error) throw error;
+        }
       }
     } catch (error) {
       if (insertedIds.length) {
@@ -1738,7 +2896,895 @@
     return [fullName, reverseFullName, c.lastName]
       .map(normalize)
       .filter(Boolean)
-      .some(value => value.includes(query));
+      .some(value => value.startsWith(query));
+  }
+
+  function formatMoney(value, daily = false) {
+    if (value === null || value === undefined || value === "") return "";
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "";
+    const formatted = new Intl.NumberFormat("el-GR", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: Number.isInteger(number) ? 0 : 2,
+      maximumFractionDigits: 2
+    }).format(number);
+    return daily ? `${formatted} / ημέρα` : formatted;
+  }
+
+  function coverageHasData(coverage) {
+    if (!coverage) return false;
+    return Boolean(
+      coverage.startDate ||
+      coverage.tariff ||
+      coverage.lifeInsuranceAmount !== "" ||
+      coverage.accidentalDeathAmount !== "" ||
+      coverage.premiumWaiver ||
+      coverage.ifeAmount !== "" ||
+      coverage.temporaryDisabilityDailyAmount !== "" ||
+      coverage.incomeLossDailyAmount !== "" ||
+      coverage.criticalIllnessAmount !== "" ||
+      coverage.hospitalProgram ||
+      coverage.hospitalDailyAllowance !== "" ||
+      coverage.surgicalAllowance !== "" ||
+      coverage.diagnosticPackage ||
+      coverage.comments
+    );
+  }
+
+  function coverageSummaryItems(coverage, includeEmptyPremiumWaiver = false) {
+    if (!coverage) return [];
+
+    const ifeOption = coverageOptions.ifeOptions.find(
+      option => Number(option.value) === Number(coverage.ifeAmount)
+    );
+
+    const items = [
+      ["Ημερομηνία έναρξης", formatDate(coverage.startDate)],
+      ["Τιμολόγιο", coverage.tariff],
+      ["Ασφάλεια ζωής", formatMoney(coverage.lifeInsuranceAmount)],
+      ["Θάνατος από ατύχημα", formatMoney(coverage.accidentalDeathAmount)],
+      ["Απαλλαγή πληρωμής ασφαλίστρων", coverage.premiumWaiver ? "Ναι" : (includeEmptyPremiumWaiver ? "Όχι" : "")],
+      ["ΙΦΕ", ifeOption?.label || formatMoney(coverage.ifeAmount)],
+      ["Πρόσκαιρη ανικανότητα", formatMoney(coverage.temporaryDisabilityDailyAmount, true)],
+      ["Απώλεια εισοδήματος", formatMoney(coverage.incomeLossDailyAmount, true)],
+      ["Σοβαρές ασθένειες", formatMoney(coverage.criticalIllnessAmount)],
+      ["Νοσοκομειακή περίθαλψη", coverage.hospitalProgram],
+      ["Νοσοκομειακό επίδομα", formatMoney(coverage.hospitalDailyAllowance)],
+      ["Χειρουργικό επίδομα", formatMoney(coverage.surgicalAllowance)],
+      ["Διαγνωστικές εξετάσεις", coverage.diagnosticPackage],
+      ["Σχόλια", coverage.comments]
+    ];
+
+    return items.filter(([, value]) => value !== "" && value !== null && value !== undefined);
+  }
+
+  function summaryGridHtml(items, emptyMessage) {
+    if (!items.length) {
+      return `<div class="summary-empty">${escapeHtml(emptyMessage)}</div>`;
+    }
+
+    return `
+      <div class="filled-fields-grid">
+        ${items.map(([label, value]) => `
+          <div class="filled-field-item ${label === "Σημειώσεις" || label === "Σχόλια" ? "full-width" : ""}">
+            <b>${escapeHtml(label)}</b>
+            ${escapeHtml(value)}
+          </div>`).join("")}
+      </div>`;
+  }
+
+  function memberFilledDetails(member) {
+    return [
+      ["Όνομα", member.firstName],
+      ["Επώνυμο", member.lastName],
+      ["Εταιρεία / Επωνυμία", member.company],
+      ["Τηλέφωνο", member.phone],
+      ["Email", member.email],
+      ["ΑΦΜ", member.afm],
+      ["ΔΟΥ", member.dou],
+      ["ΑΔΤ", member.adt],
+      ["Ημερομηνία γέννησης", formatDate(member.birthDate)],
+      ["Οδός", member.street],
+      ["Αριθμός", member.streetNumber],
+      ["Περιοχή", member.area],
+      ["ΤΚ", member.postalCode],
+      ["Σημειώσεις", member.notes]
+    ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
+  }
+
+  function policyCoverageSummaryHtml(policy) {
+    const items = coverageSummaryItems(policy.coverage);
+    const actionText = items.length ? "Επεξεργασία καλύψεων" : "Προσθήκη καλύψεων";
+
+    return `
+      ${summaryGridHtml(items, "Δεν έχουν συμπληρωθεί ακόμη καλύψεις για αυτό το συμβόλαιο.")}
+      <div class="summary-actions">
+        ${policy.coverage ? `<button class="btn btn-danger" type="button" data-delete-coverage="${escapeHtml(policy.id)}">Καθαρισμός</button>` : ""}
+        <button class="btn btn-primary" type="button" data-edit-policy-coverage="${escapeHtml(policy.id)}">${actionText}</button>
+      </div>`;
+  }
+
+  function selectOptionsHtml(items, selectedValue, placeholder = "— Χωρίς επιλογή —") {
+    const selected = String(selectedValue ?? "");
+    return [
+      `<option value="">${escapeHtml(placeholder)}</option>`,
+      ...items.map(item => {
+        const value = typeof item === "object" ? String(item.value) : String(item);
+        const label = typeof item === "object" ? String(item.label) : String(item);
+        return `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(label)}</option>`;
+      })
+    ].join("");
+  }
+
+  function coverageFormHtml(target, mode = "policy") {
+    const coverage = target.coverage || {};
+    const isMember = mode === "member";
+    const formAttribute = isMember ? "data-member-coverage-form" : "data-coverage-form";
+    const deleteAttribute = isMember ? "data-delete-member-coverage" : "data-delete-coverage";
+    const targetLabel = isMember ? customerDisplayName(target) : target.number;
+    return `
+      <form class="coverage-form" ${formAttribute}="${escapeHtml(target.id)}">
+        <div class="coverage-editor-title">
+          <h3>Επεξεργασία καλύψεων</h3>
+          <span class="badge">${escapeHtml(targetLabel)}</span>
+        </div>
+
+        <div class="coverage-form-grid">
+          <div class="coverage-field field">
+            <label>Ημερομηνία έναρξης</label>
+            <input name="start_date" type="date" value="${escapeHtml(coverage.startDate || "")}" />
+          </div>
+
+          <div class="coverage-field field">
+            <label>Τιμολόγιο</label>
+            <input name="tariff" type="text" value="${escapeHtml(coverage.tariff || "")}" placeholder="Γράψε το τιμολόγιο" />
+          </div>
+
+          <div class="coverage-field field">
+            <label>Ασφάλεια ζωής</label>
+            <div class="money-input-wrap">
+              <input name="life_insurance_amount" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.lifeInsuranceAmount ?? "")}" />
+              <span class="money-input-suffix">€</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Θάνατος από ατύχημα</label>
+            <div class="money-input-wrap">
+              <input name="accidental_death_amount" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.accidentalDeathAmount ?? "")}" />
+              <span class="money-input-suffix">€</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Απαλλαγή πληρωμής ασφαλίστρων</label>
+            <label class="checkbox-coverage">
+              <input name="premium_waiver" type="checkbox" ${coverage.premiumWaiver ? "checked" : ""} />
+              <span>Υπάρχει η κάλυψη</span>
+            </label>
+          </div>
+
+          <div class="coverage-field field">
+            <label>ΙΦΕ – Ιατροφαρμακευτικά έξοδα</label>
+            <select name="ife_amount">
+              ${selectOptionsHtml(coverageOptions.ifeOptions, coverage.ifeAmount)}
+            </select>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Πρόσκαιρη ανικανότητα</label>
+            <div class="money-input-wrap">
+              <input name="temporary_disability_daily_amount" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.temporaryDisabilityDailyAmount ?? "")}" />
+              <span class="money-input-suffix">€/ημ.</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Απώλεια εισοδήματος</label>
+            <div class="money-input-wrap">
+              <input name="income_loss_daily_amount" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.incomeLossDailyAmount ?? "")}" />
+              <span class="money-input-suffix">€/ημ.</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Σοβαρές ασθένειες</label>
+            <div class="money-input-wrap">
+              <input name="critical_illness_amount" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.criticalIllnessAmount ?? "")}" />
+              <span class="money-input-suffix">€</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Νοσοκομειακή περίθαλψη</label>
+            <select name="hospital_program">
+              ${selectOptionsHtml(coverageOptions.hospitalPrograms, coverage.hospitalProgram)}
+            </select>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Νοσοκομειακό επίδομα</label>
+            <div class="money-input-wrap">
+              <input name="hospital_daily_allowance" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.hospitalDailyAllowance ?? "")}" />
+              <span class="money-input-suffix">€</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field">
+            <label>Χειρουργικό επίδομα</label>
+            <div class="money-input-wrap">
+              <input name="surgical_allowance" type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(coverage.surgicalAllowance ?? "")}" />
+              <span class="money-input-suffix">€</span>
+            </div>
+          </div>
+
+          <div class="coverage-field field full-width">
+            <label>Διαγνωστικές εξετάσεις</label>
+            <select name="diagnostic_package">
+              ${selectOptionsHtml(coverageOptions.diagnosticPackages, coverage.diagnosticPackage)}
+            </select>
+          </div>
+
+          <div class="coverage-field field full-width">
+            <label>Σχόλια</label>
+            <textarea name="comments" placeholder="Ελεύθερο κείμενο για ειδικούς όρους, παρατηρήσεις ή εξαιρέσεις">${escapeHtml(coverage.comments || "")}</textarea>
+          </div>
+        </div>
+
+        <div class="coverage-actions">
+          ${target.coverage ? `<button class="btn btn-danger" type="button" ${deleteAttribute}="${escapeHtml(target.id)}">Καθαρισμός</button>` : ""}
+          <button class="btn btn-primary" type="submit">Αποθήκευση καλύψεων</button>
+        </div>
+      </form>`;
+  }
+
+  function findSelectedPolicy(policyId) {
+    const customer = customers.find(item => item.id === selectedCustomerId);
+    if (!customer) return null;
+    const policy = (customer.policies || []).find(item => item.id === policyId);
+    return policy ? { customer, policy } : null;
+  }
+
+  function findCoveredMember(memberId) {
+    for (const customer of customers) {
+      for (const policy of customer.policies || []) {
+        const member = (policy.coveredMembers || []).find(item => item.id === memberId);
+        if (member) return { customer, policy, member };
+      }
+    }
+    return null;
+  }
+
+  function memberDisplayAddress(member) {
+    return [
+      [member.street, member.streetNumber].filter(Boolean).join(" "),
+      member.area,
+      member.postalCode
+    ].filter(Boolean).join(", ");
+  }
+
+  function coveredMembersPanelHtml(customer, policy) {
+    const members = policy.coveredMembers || [];
+    const cards = members.map(member => `
+      <button class="covered-member-card" type="button" data-member-detail="${escapeHtml(member.id)}">
+        <span class="covered-member-card-name">${escapeHtml(customerDisplayName(member))}</span>
+        <span class="covered-member-card-arrow">›</span>
+      </button>`).join("");
+
+    return `
+      <div class="covered-members-toolbar">
+        <div>
+          <strong>Καλυπτόμενα μέλη συμβολαίου</strong>
+          <span>Πάτησε το όνομα ενός μέλους για να δεις τα στοιχεία και τις καλύψεις του.</span>
+        </div>
+        <button class="btn btn-primary" type="button" data-add-member="${escapeHtml(policy.id)}">+ Καλυπτόμενο μέλος</button>
+      </div>
+      ${members.length
+        ? `<div class="covered-members-list">${cards}</div>`
+        : `<div class="coverage-no-policy">Δεν έχουν προστεθεί ακόμη καλυπτόμενα μέλη σε αυτό το συμβόλαιο.</div>`}`;
+  }
+
+  function renderCoverageModal() {
+    const result = findSelectedPolicy(coverageModalPolicyId);
+    if (!result) {
+      closeCoverageModal();
+      return;
+    }
+
+    const { customer, policy } = result;
+    const members = policy.coveredMembers || [];
+    els.coverageModalTitle.textContent = `Συμβόλαιο ${policy.number}`;
+    els.coverageModalSubtitle.textContent = [
+      customerDisplayName(customer),
+      policy.product || "Δεν έχει καταχωριστεί προϊόν"
+    ].join(" · ");
+
+    els.coverageModalBody.innerHTML = `
+      <div class="contract-popup-tabs">
+        <button class="contract-popup-tab ${coverageModalTab === "coverage" ? "active" : ""}" type="button" data-contract-tab="coverage">
+          Καλύψεις ασφαλισμένου
+        </button>
+        <button class="contract-popup-tab ${coverageModalTab === "members" ? "active" : ""}" type="button" data-contract-tab="members">
+          Καλυπτόμενα μέλη <span class="contract-popup-count">${members.length}</span>
+        </button>
+      </div>
+      ${coverageModalTab === "members"
+        ? coveredMembersPanelHtml(customer, policy)
+        : (coverageModalEditMode ? coverageFormHtml(policy, "policy") : policyCoverageSummaryHtml(policy))}`;
+
+    els.coverageModalBody.querySelectorAll("[data-contract-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        coverageModalTab = button.dataset.contractTab;
+        coverageModalEditMode = false;
+        renderCoverageModal();
+      });
+    });
+
+    const form = els.coverageModalBody.querySelector("[data-coverage-form]");
+    form?.addEventListener("submit", event => {
+      event.preventDefault();
+      saveCoverage(policy.id, form);
+    });
+
+    els.coverageModalBody.querySelector("[data-delete-coverage]")?.addEventListener("click", () => {
+      deleteCoverage(policy.id);
+    });
+
+    els.coverageModalBody.querySelector("[data-add-member]")?.addEventListener("click", () => {
+      openMemberModal(policy.id);
+    });
+
+    els.coverageModalBody.querySelector("[data-edit-policy-coverage]")?.addEventListener("click", () => {
+      coverageModalEditMode = true;
+      renderCoverageModal();
+    });
+
+    els.coverageModalBody.querySelectorAll("[data-member-detail]").forEach(button => {
+      button.addEventListener("click", () => openMemberDetailModal(button.dataset.memberDetail));
+    });
+  }
+
+  function syncPopupBodyState() {
+    const popupOpen = [els.coverageModal, els.memberModal, els.memberDetailModal, els.memberCoverageModal]
+      .some(modal => modal && !modal.classList.contains("hidden"));
+    document.body.classList.toggle("coverage-modal-open", popupOpen);
+  }
+
+  function openCoverageModal(policyId, tab = "coverage") {
+    if (!policyId) {
+      showToast("Δεν βρέθηκε το συμβόλαιο.");
+      return;
+    }
+    coverageModalPolicyId = policyId;
+    coverageModalTab = tab;
+    coverageModalEditMode = false;
+    renderCoverageModal();
+    els.coverageModal.classList.remove("hidden");
+    syncPopupBodyState();
+
+    requestAnimationFrame(() => {
+      const firstField = els.coverageModalBody.querySelector("input, select, textarea, button");
+      firstField?.focus({ preventScroll: true });
+    });
+  }
+
+  function closeCoverageModal() {
+    coverageModalPolicyId = null;
+    coverageModalTab = "coverage";
+    coverageModalEditMode = false;
+    els.coverageModal.classList.add("hidden");
+    els.coverageModalBody.innerHTML = "";
+    closeMemberModal();
+    closeMemberDetailModal();
+    closeMemberCoverageModal();
+    syncPopupBodyState();
+  }
+
+  function renderMemberDetailModal() {
+    const result = findCoveredMember(memberDetailMemberId);
+    if (!result) {
+      closeMemberDetailModal();
+      return;
+    }
+
+    const { customer, policy, member } = result;
+    const detailItems = memberFilledDetails(member);
+    const coverageItems = coverageSummaryItems(member.coverage);
+
+    els.memberDetailModalTitle.textContent = customerDisplayName(member);
+    els.memberDetailModalSubtitle.textContent = `Συμβόλαιο ${policy.number} · ${customerDisplayName(customer)}`;
+
+    const content = memberDetailTab === "coverage"
+      ? summaryGridHtml(coverageItems, "Δεν έχουν συμπληρωθεί ακόμη καλύψεις για αυτό το μέλος.")
+      : summaryGridHtml(detailItems, "Δεν έχουν συμπληρωθεί ακόμη στοιχεία για αυτό το μέλος.");
+
+    els.memberDetailModalBody.innerHTML = `
+      <div class="member-detail-choice-grid">
+        <button class="member-detail-choice ${memberDetailTab === "details" ? "active" : ""}" type="button" data-member-detail-tab="details">
+          Στοιχεία καλυπτόμενου μέλους
+          <span>Εμφανίζονται μόνο όσα προσωπικά στοιχεία έχουν συμπληρωθεί.</span>
+        </button>
+        <button class="member-detail-choice ${memberDetailTab === "coverage" ? "active" : ""}" type="button" data-member-detail-tab="coverage">
+          Καλύψεις
+          <span>Εμφανίζονται μόνο οι καλύψεις που έχουν συμπληρωθεί.</span>
+        </button>
+      </div>
+
+      ${content}
+
+      <div class="summary-actions">
+        <button class="btn btn-danger" type="button" data-detail-delete-member="${escapeHtml(member.id)}">Διαγραφή μέλους</button>
+        ${memberDetailTab === "coverage"
+          ? `<button class="btn btn-primary" type="button" data-detail-edit-member-coverage="${escapeHtml(member.id)}">${coverageItems.length ? "Επεξεργασία καλύψεων" : "Προσθήκη καλύψεων"}</button>`
+          : `<button class="btn btn-primary" type="button" data-detail-edit-member="${escapeHtml(member.id)}">Επεξεργασία στοιχείων</button>`}
+      </div>`;
+
+    els.memberDetailModalBody.querySelectorAll("[data-member-detail-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        memberDetailTab = button.dataset.memberDetailTab;
+        renderMemberDetailModal();
+      });
+    });
+
+    els.memberDetailModalBody.querySelector("[data-detail-edit-member]")?.addEventListener("click", () => {
+      openMemberModal(policy.id, member.id);
+    });
+
+    els.memberDetailModalBody.querySelector("[data-detail-edit-member-coverage]")?.addEventListener("click", () => {
+      openMemberCoverageModal(member.id);
+    });
+
+    els.memberDetailModalBody.querySelector("[data-detail-delete-member]")?.addEventListener("click", () => {
+      deleteCoveredMember(member.id);
+    });
+  }
+
+  function openMemberDetailModal(memberId, tab = "details") {
+    const result = findCoveredMember(memberId);
+    if (!result) {
+      showToast("Δεν βρέθηκε το καλυπτόμενο μέλος.");
+      return;
+    }
+
+    memberDetailMemberId = memberId;
+    memberDetailTab = tab;
+    renderMemberDetailModal();
+    els.memberDetailModal.classList.remove("hidden");
+    syncPopupBodyState();
+  }
+
+  function closeMemberDetailModal() {
+    memberDetailMemberId = null;
+    memberDetailTab = "details";
+    els.memberDetailModal.classList.add("hidden");
+    els.memberDetailModalBody.innerHTML = "";
+    syncPopupBodyState();
+  }
+
+  function memberFormHtml(customer, policy, member = null) {
+    const value = (key) => escapeHtml(member?.[key] || "");
+    return `
+      <form data-member-form="${escapeHtml(member?.id || "new")}">
+        <div class="member-form-section">
+          <h3 class="member-form-section-title">Προσωπικά στοιχεία</h3>
+          <div class="member-form-grid">
+            <div class="field">
+              <label>Όνομα</label>
+              <input name="first_name" value="${value("firstName")}" placeholder="Όνομα" />
+            </div>
+            <div class="field">
+              <label>Επώνυμο *</label>
+              <input name="last_name" value="${value("lastName")}" required placeholder="Επώνυμο" />
+            </div>
+            <div class="field full-width">
+              <label>Εταιρεία / Επωνυμία</label>
+              <input name="company" value="${value("company")}" />
+            </div>
+            <div class="field">
+              <label>Τηλέφωνο</label>
+              <input name="phone" type="tel" inputmode="tel" value="${value("phone")}" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input name="email" type="email" inputmode="email" value="${value("email")}" />
+            </div>
+            <div class="field">
+              <label>ΑΦΜ</label>
+              <input name="afm" inputmode="numeric" maxlength="9" value="${value("afm")}" />
+            </div>
+            <div class="field">
+              <label>Ημερομηνία γέννησης</label>
+              <input name="birth_date" type="date" value="${value("birthDate")}" />
+            </div>
+            <div class="field">
+              <label>ΔΟΥ</label>
+              <input name="dou" value="${value("dou")}" />
+            </div>
+            <div class="field">
+              <label>ΑΔΤ</label>
+              <input name="adt" value="${value("adt")}" />
+            </div>
+          </div>
+        </div>
+
+        <div class="member-form-section">
+          <h3 class="member-form-section-title">Διεύθυνση</h3>
+          <label class="same-address-box">
+            <input name="same_address_as_insured" type="checkbox" ${member?.sameAddressAsInsured ? "checked" : ""} />
+            <span>
+              <strong>Ίδια διεύθυνση με τον ασφαλισμένο</strong>
+              <span>Αντιγράφονται μόνο Οδός, Αριθμός, Περιοχή και ΤΚ. Κανένα άλλο στοιχείο.</span>
+            </span>
+          </label>
+          <div class="member-form-grid">
+            <div class="field">
+              <label>Οδός</label>
+              <input name="street" value="${value("street")}" />
+            </div>
+            <div class="field">
+              <label>Αριθμός</label>
+              <input name="street_number" value="${value("streetNumber")}" />
+            </div>
+            <div class="field">
+              <label>Περιοχή</label>
+              <input name="area" value="${value("area")}" />
+            </div>
+            <div class="field">
+              <label>ΤΚ</label>
+              <input name="postal_code" inputmode="numeric" maxlength="5" value="${value("postalCode")}" />
+            </div>
+          </div>
+        </div>
+
+        <div class="member-form-section">
+          <h3 class="member-form-section-title">Σημειώσεις</h3>
+          <textarea name="notes" placeholder="Σημειώσεις για το καλυπτόμενο μέλος">${value("notes")}</textarea>
+        </div>
+
+        <div class="coverage-actions">
+          <button class="btn btn-secondary" type="button" data-cancel-member>Ακύρωση</button>
+          <button class="btn btn-primary" type="submit">Αποθήκευση μέλους</button>
+        </div>
+      </form>`;
+  }
+
+  function bindSameAddressBehavior(form, customer) {
+    const checkbox = form.elements.namedItem("same_address_as_insured");
+    const addressFields = {
+      street: form.elements.namedItem("street"),
+      streetNumber: form.elements.namedItem("street_number"),
+      area: form.elements.namedItem("area"),
+      postalCode: form.elements.namedItem("postal_code")
+    };
+
+    const copyAddress = () => {
+      addressFields.street.value = customer.street || "";
+      addressFields.streetNumber.value = customer.streetNumber || "";
+      addressFields.area.value = customer.area || "";
+      addressFields.postalCode.value = customer.postalCode || "";
+    };
+
+    checkbox?.addEventListener("change", () => {
+      if (checkbox.checked) copyAddress();
+    });
+
+    if (checkbox?.checked) copyAddress();
+
+    Object.values(addressFields).forEach(field => {
+      field?.addEventListener("input", () => {
+        if (!checkbox?.checked) return;
+        const stillSame =
+          addressFields.street.value === (customer.street || "") &&
+          addressFields.streetNumber.value === (customer.streetNumber || "") &&
+          addressFields.area.value === (customer.area || "") &&
+          addressFields.postalCode.value === (customer.postalCode || "");
+        if (!stillSame) checkbox.checked = false;
+      });
+    });
+  }
+
+  function openMemberModal(policyId, memberId = null) {
+    const result = findSelectedPolicy(policyId);
+    if (!result) {
+      showToast("Δεν βρέθηκε το συμβόλαιο.");
+      return;
+    }
+    const { customer, policy } = result;
+    const member = memberId
+      ? (policy.coveredMembers || []).find(item => item.id === memberId)
+      : null;
+
+    memberModalPolicyId = policyId;
+    memberModalMemberId = member?.id || null;
+    els.memberModalTitle.textContent = member ? customerDisplayName(member) : "Νέο καλυπτόμενο μέλος";
+    els.memberModalSubtitle.textContent = `Συμβόλαιο ${policy.number} · ${customerDisplayName(customer)}`;
+    els.memberModalBody.innerHTML = memberFormHtml(customer, policy, member);
+    els.memberModal.classList.remove("hidden");
+    syncPopupBodyState();
+
+    const form = els.memberModalBody.querySelector("[data-member-form]");
+    bindSameAddressBehavior(form, customer);
+    form?.addEventListener("submit", event => {
+      event.preventDefault();
+      saveCoveredMember(policyId, member?.id || null, form);
+    });
+    els.memberModalBody.querySelector("[data-cancel-member]")?.addEventListener("click", closeMemberModal);
+
+    requestAnimationFrame(() => form?.querySelector("input")?.focus({ preventScroll: true }));
+  }
+
+  function closeMemberModal() {
+    memberModalPolicyId = null;
+    memberModalMemberId = null;
+    els.memberModal.classList.add("hidden");
+    els.memberModalBody.innerHTML = "";
+    syncPopupBodyState();
+  }
+
+  function readCoveredMemberForm(form) {
+    const value = name => form.elements.namedItem(name)?.value?.trim() || "";
+    return sanitizeCoveredMember({
+      firstName: value("first_name"),
+      lastName: value("last_name"),
+      company: value("company"),
+      phone: value("phone"),
+      email: value("email"),
+      afm: value("afm"),
+      birthDate: form.elements.namedItem("birth_date")?.value || "",
+      dou: value("dou"),
+      adt: value("adt").toUpperCase(),
+      street: value("street"),
+      streetNumber: value("street_number"),
+      area: value("area"),
+      postalCode: value("postal_code"),
+      notes: value("notes"),
+      sameAddressAsInsured: Boolean(form.elements.namedItem("same_address_as_insured")?.checked)
+    });
+  }
+
+  async function saveCoveredMember(policyId, memberId, form) {
+    const member = readCoveredMemberForm(form);
+    if (!member.lastName && !member.company) {
+      showToast("Συμπλήρωσε επώνυμο ή εταιρεία.");
+      return;
+    }
+    if (member.afm && !/^\d{9}$/.test(member.afm)) {
+      showToast("Το ΑΦΜ πρέπει να αποτελείται από 9 ψηφία.");
+      form.elements.namedItem("afm")?.focus();
+      return;
+    }
+    if (member.postalCode && !/^\d{5}$/.test(member.postalCode)) {
+      showToast("Ο ΤΚ πρέπει να αποτελείται από 5 ψηφία.");
+      form.elements.namedItem("postal_code")?.focus();
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    setSyncStatus("Αποθήκευση καλυπτόμενου μέλους…", "syncing");
+    try {
+      const query = memberId
+        ? supabaseClient.from("covered_members").update(toDatabaseCoveredMember(policyId, member)).eq("id", memberId)
+        : supabaseClient.from("covered_members").insert(toDatabaseCoveredMember(policyId, member));
+      const { error } = await query;
+      if (error) throw error;
+
+      coverageModalTab = "members";
+      await loadCustomersFromDatabase({ quiet: true });
+      closeMemberModal();
+      renderCoverageModal();
+      if (memberDetailMemberId) renderMemberDetailModal();
+      showToast(memberId ? "Τα στοιχεία του μέλους αποθηκεύτηκαν." : "Το καλυπτόμενο μέλος προστέθηκε.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  async function deleteCoveredMember(memberId) {
+    const result = findCoveredMember(memberId);
+    if (!result) return;
+    if (!window.confirm(`Θέλεις να διαγράψεις το καλυπτόμενο μέλος «${customerDisplayName(result.member)}» και τις καλύψεις του;`)) return;
+
+    setSyncStatus("Διαγραφή καλυπτόμενου μέλους…", "syncing");
+    try {
+      const { error } = await supabaseClient.from("covered_members").delete().eq("id", memberId);
+      if (error) throw error;
+      coverageModalTab = "members";
+      closeMemberDetailModal();
+      await loadCustomersFromDatabase({ quiet: true });
+      renderCoverageModal();
+      showToast("Το καλυπτόμενο μέλος διαγράφηκε.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    }
+  }
+
+  function renderMemberCoverageModal() {
+    const result = findCoveredMember(memberCoverageMemberId);
+    if (!result) {
+      closeMemberCoverageModal();
+      return;
+    }
+    const { customer, policy, member } = result;
+    const memberForForm = {
+      ...member,
+      coverage: {
+        ...(member.coverage || {}),
+        startDate: member.coverage?.startDate || policy.coverage?.startDate || ""
+      }
+    };
+    els.memberCoverageModalTitle.textContent = customerDisplayName(member);
+    els.memberCoverageModalSubtitle.textContent = `Συμβόλαιο ${policy.number} · ${customerDisplayName(customer)}`;
+    els.memberCoverageModalBody.innerHTML = coverageFormHtml(memberForForm, "member");
+
+    const form = els.memberCoverageModalBody.querySelector("[data-member-coverage-form]");
+    form?.addEventListener("submit", event => {
+      event.preventDefault();
+      saveMemberCoverage(policy.id, member.id, form);
+    });
+    els.memberCoverageModalBody.querySelector("[data-delete-member-coverage]")?.addEventListener("click", () => {
+      deleteMemberCoverage(member.id);
+    });
+  }
+
+  function openMemberCoverageModal(memberId) {
+    const result = findCoveredMember(memberId);
+    if (!result) {
+      showToast("Δεν βρέθηκε το καλυπτόμενο μέλος.");
+      return;
+    }
+    memberCoverageMemberId = memberId;
+    renderMemberCoverageModal();
+    els.memberCoverageModal.classList.remove("hidden");
+    syncPopupBodyState();
+    requestAnimationFrame(() => {
+      els.memberCoverageModalBody.querySelector("input, select, textarea")?.focus({ preventScroll: true });
+    });
+  }
+
+  function closeMemberCoverageModal() {
+    memberCoverageMemberId = null;
+    els.memberCoverageModal.classList.add("hidden");
+    els.memberCoverageModalBody.innerHTML = "";
+    syncPopupBodyState();
+  }
+
+  async function saveMemberCoverage(policyId, memberId, form) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    setSyncStatus("Αποθήκευση καλύψεων μέλους…", "syncing");
+    try {
+      const coverage = readCoverageForm(form);
+      const { error } = await supabaseClient
+        .from("covered_member_coverages")
+        .upsert(toDatabaseMemberCoverage(policyId, memberId, coverage), {
+          onConflict: "owner_id,covered_member_id"
+        });
+      if (error) throw error;
+      coverageModalTab = "members";
+      await loadCustomersFromDatabase({ quiet: true });
+      closeMemberCoverageModal();
+      renderCoverageModal();
+      if (memberDetailMemberId) {
+        memberDetailTab = "coverage";
+        renderMemberDetailModal();
+      }
+      showToast("Οι καλύψεις του μέλους αποθηκεύτηκαν.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  async function deleteMemberCoverage(memberId) {
+    if (!window.confirm("Θέλεις να καθαρίσεις όλες τις καλύψεις αυτού του μέλους;")) return;
+    setSyncStatus("Διαγραφή καλύψεων μέλους…", "syncing");
+    try {
+      const { error } = await supabaseClient
+        .from("covered_member_coverages")
+        .delete()
+        .eq("covered_member_id", memberId);
+      if (error) throw error;
+      coverageModalTab = "members";
+      await loadCustomersFromDatabase({ quiet: true });
+      closeMemberCoverageModal();
+      renderCoverageModal();
+      if (memberDetailMemberId) {
+        memberDetailTab = "coverage";
+        renderMemberDetailModal();
+      }
+      showToast("Οι καλύψεις του μέλους καθαρίστηκαν.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    }
+  }
+
+  function readCoverageForm(form) {
+    const value = name => form.elements.namedItem(name)?.value ?? "";
+    return {
+      startDate: value("start_date"),
+      tariff: value("tariff").trim(),
+      lifeInsuranceAmount: value("life_insurance_amount"),
+      accidentalDeathAmount: value("accidental_death_amount"),
+      premiumWaiver: Boolean(form.elements.namedItem("premium_waiver")?.checked),
+      ifeAmount: value("ife_amount"),
+      temporaryDisabilityDailyAmount: value("temporary_disability_daily_amount"),
+      incomeLossDailyAmount: value("income_loss_daily_amount"),
+      criticalIllnessAmount: value("critical_illness_amount"),
+      hospitalProgram: value("hospital_program"),
+      hospitalDailyAllowance: value("hospital_daily_allowance"),
+      surgicalAllowance: value("surgical_allowance"),
+      diagnosticPackage: value("diagnostic_package"),
+      comments: value("comments").trim()
+    };
+  }
+
+  async function saveCoverage(policyId, form) {
+    if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    setSyncStatus("Αποθήκευση καλύψεων…", "syncing");
+
+    try {
+      const coverage = readCoverageForm(form);
+      const { error } = await supabaseClient
+        .from("policy_coverages")
+        .upsert(toDatabaseCoverage(policyId, coverage), {
+          onConflict: "owner_id,policy_id"
+        });
+      if (error) throw error;
+
+      activeDetailTab = "coverages";
+      expandedPolicyId = null;
+      coverageModalTab = "coverage";
+      coverageModalEditMode = false;
+      await loadCustomersFromDatabase({ quiet: true });
+      renderCoverageModal();
+      showToast("Οι καλύψεις αποθηκεύτηκαν στη βάση.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  async function deleteCoverage(policyId) {
+    if (!window.confirm("Θέλεις να καθαρίσεις όλες τις καλύψεις αυτού του συμβολαίου;")) return;
+
+    setSyncStatus("Διαγραφή καλύψεων…", "syncing");
+    try {
+      const { error } = await supabaseClient
+        .from("policy_coverages")
+        .delete()
+        .eq("policy_id", policyId);
+      if (error) throw error;
+
+      activeDetailTab = "coverages";
+      expandedPolicyId = null;
+      coverageModalTab = "coverage";
+      coverageModalEditMode = false;
+      await loadCustomersFromDatabase({ quiet: true });
+      renderCoverageModal();
+      showToast("Οι καλύψεις καθαρίστηκαν.");
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
+      showToast(databaseErrorMessage(error));
+    }
   }
 
   function renderCustomerDetail() {
@@ -1758,14 +3804,6 @@
       return;
     }
 
-    const policies = (c.policies || [])
-      .map(policy => `
-        <div class="policy-chip">
-          <span class="policy-number">${escapeHtml(policy.number)}</span>
-          <span class="policy-product">${escapeHtml(policy.product || "Δεν έχει καταχωριστεί προϊόν")}</span>
-        </div>`)
-      .join("");
-
     const detailItems = [
       ["Όνομα", c.firstName],
       ["Επώνυμο", c.lastName],
@@ -1781,7 +3819,72 @@
       ["Περιοχή", c.area],
       ["ΤΚ", c.postalCode],
       ["Σημειώσεις", c.notes]
-    ];
+    ].filter(([, value]) =>
+      value !== "" &&
+      value !== null &&
+      value !== undefined
+    );
+
+    const policiesHtml = (c.policies || []).map(policy => {
+      const coverage = policy.coverage;
+      const summary = coverageSummaryItems(coverage);
+      const preview = summary.slice(0, 4);
+      const populatedCount = coverageSummaryItems(coverage).length;
+      const statusText = coverage
+        ? (coverageHasData(coverage) ? `${populatedCount} στοιχεία` : "Κενή καρτέλα")
+        : "Χωρίς καλύψεις";
+      const statusClass = coverage
+        ? (coverageHasData(coverage) ? "saved" : "empty")
+        : "";
+
+      return `
+        <article class="policy-coverage-card">
+          <button class="policy-coverage-toggle" type="button" data-policy-toggle="${escapeHtml(policy.id)}" aria-haspopup="dialog">
+            <span class="policy-coverage-title">
+              <span class="policy-coverage-number">${escapeHtml(policy.number)}</span>
+              <span class="policy-coverage-product">${escapeHtml(policy.product || "Δεν έχει καταχωριστεί προϊόν")}</span>
+              <span class="policy-member-count">Καλυπτόμενα μέλη: ${(policy.coveredMembers || []).length}</span>
+            </span>
+            <span>
+              <span class="coverage-status ${statusClass}">${escapeHtml(statusText)}</span>
+              <span class="policy-toggle-arrow">›</span>
+            </span>
+          </button>
+
+          ${preview.length ? `
+            <div class="coverage-preview">
+              ${preview.map(([label, value]) => `
+                <div class="coverage-preview-item">
+                  <b>${escapeHtml(label)}</b>
+                  ${escapeHtml(value)}
+                </div>`).join("")}
+            </div>` : ""}
+
+        </article>`;
+    }).join("");
+
+    const personalPanel = `
+      <div class="detail-tab-panel">
+        ${detailItems.length
+          ? `<div class="details-grid">
+              ${detailItems.map(([label, value]) => `
+                <div class="detail">
+                  <b>${escapeHtml(label)}</b>
+                  ${escapeHtml(value)}
+                </div>`).join("")}
+            </div>`
+          : `<div class="summary-empty">Δεν υπάρχουν συμπληρωμένα προσωπικά στοιχεία.</div>`}
+      </div>`;
+
+    const coveragesPanel = `
+      <div class="detail-tab-panel">
+        <div class="coverage-intro">
+          Οι καλύψεις αποθηκεύονται ξεχωριστά για κάθε αριθμό συμβολαίου. Πάτησε ένα συμβόλαιο για να ανοίξει η φόρμα σε ξεχωριστό παράθυρο.
+        </div>
+        ${(c.policies || []).length
+          ? `<div class="policy-coverages-list">${policiesHtml}</div>`
+          : `<div class="coverage-no-policy">Δεν υπάρχει καταχωρισμένο συμβόλαιο για αυτόν τον ασφαλισμένο.</div>`}
+      </div>`;
 
     els.detail.innerHTML = `
       <div class="customer-detail-card">
@@ -1796,29 +3899,57 @@
         <div class="selected-actions">
           ${c.phone ? `<a class="btn btn-success btn-small" href="tel:${escapeHtml(c.phone)}" style="text-decoration:none">Κλήση</a>` : ""}
           ${c.email ? `<a class="btn btn-secondary btn-small" href="mailto:${escapeHtml(c.email)}" style="text-decoration:none">Email</a>` : ""}
-          <button class="btn btn-secondary btn-small" type="button" data-detail-edit="${escapeHtml(c.id)}">Επεξεργασία</button>
+          <button class="btn btn-secondary btn-small" type="button" data-detail-edit="${escapeHtml(c.id)}">Επεξεργασία στοιχείων</button>
           <button class="btn btn-danger btn-small" type="button" data-detail-delete="${escapeHtml(c.id)}">Διαγραφή</button>
         </div>
 
-        <div class="details-grid">
-          <div class="detail policy-detail">
-            <b>Συμβόλαιο</b>
-            ${policies ? `<div class="policy-list">${policies}</div>` : "—"}
-          </div>
-          ${detailItems.map(([label, value]) => `
-            <div class="detail">
-              <b>${label}</b>
-              ${value ? escapeHtml(value) : "—"}
-            </div>`).join("")}
+        <div class="detail-tabs" role="tablist">
+          <button class="detail-tab ${activeDetailTab === "personal" ? "active" : ""}" type="button" data-detail-tab="personal">
+            Προσωπικά στοιχεία
+          </button>
+          <button class="detail-tab ${activeDetailTab === "coverages" ? "active" : ""}" type="button" data-detail-tab="coverages">
+            Συμβόλαια & Καλύψεις
+            <span class="detail-tab-count">${(c.policies || []).length}</span>
+          </button>
         </div>
+
+        ${activeDetailTab === "coverages" ? coveragesPanel : personalPanel}
       </div>`;
 
     els.detail.querySelector("[data-detail-edit]")?.addEventListener("click", () => editCustomer(c.id));
     els.detail.querySelector("[data-detail-delete]")?.addEventListener("click", () => askDelete(c.id));
+
+    els.detail.querySelectorAll("[data-detail-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeDetailTab = button.dataset.detailTab;
+        if (activeDetailTab === "personal") expandedPolicyId = null;
+        renderCustomerDetail();
+      });
+    });
+
+    els.detail.querySelectorAll("[data-policy-toggle]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeDetailTab = "coverages";
+        expandedPolicyId = null;
+        openCoverageModal(button.dataset.policyToggle);
+      });
+    });
   }
 
   function selectCustomer(id) {
     selectedCustomerId = id;
+    const customer = customers.find(item => item.id === id);
+    const query = normalize(els.search.value);
+
+    if (customer && isPolicySearch(query)) {
+      const matchedPolicy = matchingPolicies(customer, query)[0];
+      activeDetailTab = "coverages";
+      expandedPolicyId = null;
+    } else {
+      activeDetailTab = "personal";
+      expandedPolicyId = null;
+    }
+
     render();
 
     if (isMobileSearchMode()) {
@@ -1839,10 +3970,6 @@
           .filter(c => customerMatchesSearch(c, query))
           .sort((a, b) => customerDisplayName(a).localeCompare(customerDisplayName(b), "el"))
       : [];
-
-    if (selectedCustomerId && !filtered.some(customer => customer.id === selectedCustomerId)) {
-      selectedCustomerId = null;
-    }
 
     $("totalCustomers").textContent = insuredCustomers.length;
     $("visibleCustomers").textContent = filtered.length;
@@ -1870,7 +3997,7 @@
         <div class="empty">
           <span class="emoji">🔍</span>
           <strong>Δεν βρέθηκαν αποτελέσματα</strong>
-          <div style="margin-top:6px">Η αναζήτηση γίνεται μόνο με ονοματεπώνυμο, επώνυμο ή αριθμό συμβολαίου.</div>
+          <div style="margin-top:6px">Η αναζήτηση γίνεται από την αρχή του ονοματεπώνυμου, του επωνύμου ή του αριθμού συμβολαίου.</div>
         </div>`;
       renderCustomerDetail();
       return;
@@ -2047,12 +4174,52 @@
 
   els.mobileSearchClose.addEventListener("click", closeMobileSearchModal);
 
+  els.coverageModalClose.addEventListener("click", closeCoverageModal);
+  els.memberModalClose.addEventListener("click", closeMemberModal);
+  els.memberDetailModalClose.addEventListener("click", closeMemberDetailModal);
+  els.memberCoverageModalClose.addEventListener("click", closeMemberCoverageModal);
+
+  els.coverageModal.addEventListener("click", event => {
+    if (event.target === els.coverageModal) closeCoverageModal();
+  });
+  els.memberModal.addEventListener("click", event => {
+    if (event.target === els.memberModal) closeMemberModal();
+  });
+  els.memberDetailModal.addEventListener("click", event => {
+    if (event.target === els.memberDetailModal) closeMemberDetailModal();
+  });
+  els.memberCoverageModal.addEventListener("click", event => {
+    if (event.target === els.memberCoverageModal) closeMemberCoverageModal();
+  });
+
   els.mobileSearchModal.addEventListener("click", event => {
     if (event.target === els.mobileSearchModal) closeMobileSearchModal();
   });
 
   document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && !els.mobileSearchModal.classList.contains("hidden")) {
+    if (event.key !== "Escape") return;
+
+    if (!els.memberCoverageModal.classList.contains("hidden")) {
+      closeMemberCoverageModal();
+      return;
+    }
+
+    if (!els.memberModal.classList.contains("hidden")) {
+      closeMemberModal();
+      return;
+    }
+
+    if (!els.memberDetailModal.classList.contains("hidden")) {
+      closeMemberDetailModal();
+      return;
+    }
+
+    if (!els.coverageModal.classList.contains("hidden")) {
+      closeCoverageModal();
+      return;
+    }
+
+    if (!els.mobileSearchModal.classList.contains("hidden")) {
       closeMobileSearchModal();
     }
   });
@@ -2067,7 +4234,7 @@
   $("exportBtn").addEventListener("click", () => {
     const payload = {
       app: "Προσωπικό Χαρτοφυλάκιο",
-      version: 4,
+      version: 6,
       exportedAt: new Date().toISOString(),
       customers
     };
@@ -2116,7 +4283,12 @@
         .eq("id", deleteId);
       if (error) throw error;
 
-      if (selectedCustomerId === deleteId) selectedCustomerId = null;
+      if (selectedCustomerId === deleteId) {
+        selectedCustomerId = null;
+        activeDetailTab = "personal";
+        expandedPolicyId = null;
+        closeCoverageModal();
+      }
       closeModal();
       resetForm();
       await loadCustomersFromDatabase({ quiet: true });
@@ -2203,6 +4375,14 @@
     currentUser = null;
     customers = [];
     selectedCustomerId = null;
+    activeDetailTab = "personal";
+    expandedPolicyId = null;
+    coverageModalPolicyId = null;
+    memberModalPolicyId = null;
+    memberModalMemberId = null;
+    memberCoverageMemberId = null;
+    coverageOptions = { hospitalPrograms: [], diagnosticPackages: [], ifeOptions: [] };
+    closeCoverageModal();
     els.search.value = "";
     els.mobileSearch.value = "";
     closeMobileSearchModal();
