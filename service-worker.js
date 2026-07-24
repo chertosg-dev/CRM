@@ -1,8 +1,6 @@
-const BUILD = "tsertos-crm-v4-20260724";
+const BUILD = "tsertos-crm-v5-20260724";
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
-});
+self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
@@ -13,15 +11,13 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  const request = event.request;
-
-  if (request.method !== "GET") return;
+  if (event.request.method !== "GET") return;
 
   event.respondWith((async () => {
     try {
-      return await fetch(request, { cache: "no-store" });
+      return await fetch(event.request, { cache: "no-store" });
     } catch (error) {
-      const cached = await caches.match(request);
+      const cached = await caches.match(event.request);
       if (cached) return cached;
       throw error;
     }
