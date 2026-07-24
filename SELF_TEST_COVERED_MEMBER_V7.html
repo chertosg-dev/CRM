@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>TSERTOS CRM V7 – Έλεγχος καλυπτόμενου μέλους</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#eef3fa;font-family:system-ui;color:#122347}
+    .test-head{position:sticky;top:0;z-index:10;padding:14px;background:#061b43;color:#fff}
+    .test-head strong{display:block;font-size:17px}
+    .test-head span{display:block;margin-top:4px;color:#c6d4ea;font-size:12px}
+    .result{margin:12px;padding:14px;border-radius:15px;background:#fff;box-shadow:0 10px 28px rgba(18,45,94,.1);font-weight:850}
+    .pending{color:#6b7890}.pass{color:#118355;background:#eaf8f2}.fail{color:#bd303b;background:#fff0f1}
+    iframe{display:block;width:100%;height:calc(100dvh - 135px);border:0;background:#fff}
+  </style>
+</head>
+<body>
+  <header class="test-head">
+    <strong>Αυτόματος έλεγχος καλυπτόμενου μέλους V7</strong>
+    <span>Δοκιμή: συμβόλαιο → καλυπτόμενα μέλη → Μαρία Παπαδοπούλου → επεξεργασία στοιχείων</span>
+  </header>
+  <div class="result pending" id="result">Εκτελείται ο έλεγχος…</div>
+  <iframe id="appFrame" src="./index.html?demo=1&selftest=1"></iframe>
+
+  <script>
+    const resultBox = document.getElementById("result");
+    const frame = document.getElementById("appFrame");
+
+    const fail = message => {
+      resultBox.className = "result fail";
+      resultBox.textContent = "ΑΠΟΤΥΧΙΑ: " + message;
+    };
+
+    const pass = message => {
+      resultBox.className = "result pass";
+      resultBox.textContent = "ΕΠΙΤΥΧΙΑ: " + message;
+    };
+
+    frame.addEventListener("load", () => {
+      setTimeout(() => {
+        try {
+          const win = frame.contentWindow;
+          const doc = frame.contentDocument;
+
+          if (typeof win.openCoverageModal !== "function") {
+            fail("Δεν φορτώθηκε η λειτουργία συμβολαίου.");
+            return;
+          }
+
+          win.openCoverageModal("demo-policy", "members");
+
+          setTimeout(() => {
+            const memberButton = doc.querySelector('[data-member-detail="demo-member"]');
+            if (!memberButton) {
+              fail("Δεν εμφανίστηκε η κάρτα του μέλους.");
+              return;
+            }
+
+            memberButton.click();
+
+            setTimeout(() => {
+              const policyModal = doc.getElementById("coverageModal");
+              const detailModal = doc.getElementById("memberDetailModal");
+
+              if (detailModal.classList.contains("hidden")) {
+                fail("Η καρτέλα του μέλους παρέμεινε κλειστή.");
+                return;
+              }
+
+              const policyZ = Number(getComputedStyle(policyModal).zIndex);
+              const detailZ = Number(getComputedStyle(detailModal).zIndex);
+
+              if (!(detailZ > policyZ)) {
+                fail(`Η καρτέλα μέλους είναι πίσω από το συμβόλαιο (${detailZ} ≤ ${policyZ}).`);
+                return;
+              }
+
+              const editButton = detailModal.querySelector("[data-detail-edit-member]");
+              if (!editButton) {
+                fail("Δεν βρέθηκε το κουμπί επεξεργασίας στοιχείων.");
+                return;
+              }
+
+              editButton.click();
+
+              setTimeout(() => {
+                const editModal = doc.getElementById("memberModal");
+                const surname = editModal.querySelector('input[name="last_name"]');
+
+                if (editModal.classList.contains("hidden")) {
+                  fail("Η φόρμα επεξεργασίας δεν άνοιξε.");
+                  return;
+                }
+
+                if (!surname || surname.value !== "Παπαδοπούλου") {
+                  fail("Η φόρμα δεν φόρτωσε τα στοιχεία του μέλους.");
+                  return;
+                }
+
+                const editZ = Number(getComputedStyle(editModal).zIndex);
+                if (!(editZ > detailZ)) {
+                  fail(`Η επεξεργασία είναι πίσω από την καρτέλα μέλους (${editZ} ≤ ${detailZ}).`);
+                  return;
+                }
+
+                pass("Η καρτέλα μέλους και η επεξεργασία στοιχείων ανοίγουν κανονικά.");
+              }, 250);
+            }, 250);
+          }, 250);
+        } catch (error) {
+          fail(error.message || String(error));
+        }
+      }, 1200);
+    });
+  </script>
+</body>
+</html>
