@@ -1,0 +1,1 @@
+window.TSERTOS_AUTO_POLICY_SEED = [];

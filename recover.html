@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.1" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.1" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.0.0" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.0.0" />
 
 
 <style>
@@ -2582,22 +2582,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .life-policy-collapsible-body{padding-top:10px}
   @media(max-width:560px){.life-policy-number-button{padding:12px}.life-policy-number-icon{width:36px;height:36px}}
 </style>
-
-<style id="tsertos-local-only-mode">
-  .local-only-mode #signOutBtn{display:none!important}
-</style>
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.1
+  RENEWALS · V9.8.3
 </div>
 
 <section class="auth-screen" id="authScreen">
     <div class="auth-card">
       <div class="auth-logo">🔐</div>
       <h1>Είσοδος στο χαρτοφυλάκιο</h1>
-      <p>Τα στοιχεία αποθηκεύονται μόνιμα και αποκλειστικά σε αυτό το iPhone.</p>
+      <p>Τα στοιχεία αποθηκεύονται πλέον στην ασφαλή online βάση Supabase και συγχρονίζονται σε κινητό και υπολογιστή.</p>
 
       <div id="normalAuthFields">
         <div class="field">
@@ -2636,7 +2632,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   <div class="busy-overlay hidden" id="busyOverlay">
     <div class="busy-card">
       <div class="busy-spinner"></div>
-      <strong id="busyTitle">Αποθήκευση στο iPhone…</strong>
+      <strong id="busyTitle">Γίνεται συγχρονισμός…</strong>
       <div id="busyText" style="margin-top:6px;color:#667085;font-size:13px"></div>
     </div>
   </div>
@@ -2668,7 +2664,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <button class="crm-menu-button" id="topMenuBtn" type="button" aria-label="Μενού">☰</button>
 
         <div class="top-menu-panel" id="topMenuPanel">
-          <span class="sync-status" id="syncStatus">Τοπική αποθήκευση iPhone</span>
+          <span class="sync-status" id="syncStatus">Σύνδεση στη βάση…</span>
           <button class="btn btn-ghost" id="exportBtn">Εξαγωγή backup</button>
           <button class="btn btn-ghost" id="importBtn">Εισαγωγή backup</button>
           <button class="btn btn-ghost" id="lifeCoverageImportBtn">❤️ Εισαγωγή καλύψεων ζωής (Excel)</button>
@@ -2822,8 +2818,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
         <div class="migration-banner hidden" id="migrationBanner">
           <div>
-            <strong>Η τοπική βάση είναι κενή</strong>
-            <span>Εισήγαγε backup ή μετέφερε μία φορά τα αρχικά ενσωματωμένα δεδομένα.</span>
+            <strong>Η online βάση είναι κενή</strong>
+            <span>Μετέφερε μία φορά τους 174 ασφαλισμένους, τα 243 συμβόλαια και τα προϊόντα που είναι ήδη ενσωματωμένα στην εφαρμογή.</span>
           </div>
           <button class="btn btn-primary" id="seedImportBtn" type="button">Μεταφορά αρχικών δεδομένων</button>
         </div>
@@ -2969,19 +2965,22 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="local-supabase.js"></script>
 <script src="auto-policies-seed.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
-  const LOCAL_ONLY_MODE = true;
+  const SUPABASE_URL = "https://exzjhcivqpwueqgkpivs.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zFcNXgTlrs9WqZmXc7vWXg_vAC9vya5";
   const DEMO_MODE = new URLSearchParams(window.location.search).get("demo") === "1";
   const AUTO_POLICY_SEED = Array.isArray(window.TSERTOS_AUTO_POLICY_SEED)
     ? window.TSERTOS_AUTO_POLICY_SEED
     : [];
-  let passwordRecoveryMode = false;
-  const supabaseClient = window.createLocalSupabaseClient
-    ? window.createLocalSupabaseClient()
+  let passwordRecoveryMode = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+  const supabaseClient = window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      })
     : (DEMO_MODE ? {} : null);
   const SEED_VERSION = "supabase_cloud_2026_07_19_v1";
   const SEED_MARKER_KEY = STORAGE_KEY + "_seed_" + SEED_VERSION;
@@ -3311,7 +3310,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.syncStatus.className = "sync-status" + (type ? " " + type : "");
   }
 
-  function setBusy(isBusy, title = "Αποθήκευση στο iPhone…", text = "") {
+  function setBusy(isBusy, title = "Γίνεται συγχρονισμός…", text = "") {
     els.busyTitle.textContent = title;
     els.busyText.textContent = text;
     els.busyOverlay.classList.toggle("hidden", !isBusy);
@@ -3347,22 +3346,22 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   function databaseErrorMessage(error) {
     const message = String(error?.message || error || "Άγνωστο σφάλμα");
     if (message.includes("auto_policies") && (message.includes("does not exist") || message.includes("schema cache"))) {
-      return "Δεν ήταν δυνατή η πρόσβαση στην τοπική βάση αυτοκινήτων.";
+      return "Η βάση αυτοκινήτων λείπει ή χρειάζεται αναβάθμιση. Εκτέλεσε ξανά ολόκληρο το SUPABASE_AUTO_POLICIES.sql στο SQL Editor του Supabase.";
     }
     if (message.includes("auto_policies_owner_number_unique")) {
       return "Ο ίδιος αριθμός συμβολαίου αυτοκινήτου υπάρχει ήδη.";
     }
     if (message.includes("covered_members") || message.includes("covered_member_coverages")) {
-      return "Δεν ήταν δυνατή η αποθήκευση των καλυπτόμενων μελών στο iPhone.";
+      return "Δεν έχουν δημιουργηθεί οι πίνακες καλυπτόμενων μελών. Εκτέλεσε το SUPABASE_COVERED_MEMBERS.sql στο SQL Editor.";
     }
     if (message.includes("policy_coverages") || message.includes("hospital_program_options") || message.includes("diagnostic_package_options") || message.includes("ife_options")) {
-      return "Δεν ήταν δυνατή η αποθήκευση των καλύψεων στο iPhone.";
+      return "Δεν έχει ολοκληρωθεί η βάση καλύψεων. Εκτέλεσε το SUPABASE_DATABASE_WITH_COVERAGES.sql στο SQL Editor.";
     }
     if (message.includes("relation") && message.includes("does not exist")) {
-      return "Το τοπικό αρχείο δεδομένων χρειάζεται επαναδημιουργία από backup.";
+      return "Δεν έχουν δημιουργηθεί ακόμη οι βασικοί πίνακες. Εκτέλεσε πρώτα το SUPABASE_SETUP.sql και μετά το SUPABASE_DATABASE_WITH_COVERAGES.sql.";
     }
     if (message.includes("row-level security")) {
-      return "Η τοπική βάση απέρριψε την ενέργεια για λόγους ασφαλείας.";
+      return "Η βάση απέρριψε την ενέργεια λόγω ρυθμίσεων ασφαλείας. Έλεγξε το SQL setup και κάνε ξανά είσοδο.";
     }
     if (message.includes("duplicate key") || message.includes("policies_owner_number_unique")) {
       return "Ο ίδιος αριθμός συμβολαίου υπάρχει ήδη σε άλλη εγγραφή.";
@@ -3959,12 +3958,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     );
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
-    els.migrationBanner.classList.toggle("hidden", customers.length !== 0 || !SEED_CUSTOMERS.length);
-    els.autoMigrationBanner.classList.toggle("hidden", autoPolicies.length !== 0 || !AUTO_POLICY_SEED.length);
+    els.migrationBanner.classList.toggle("hidden", customers.length !== 0);
+    els.autoMigrationBanner.classList.toggle("hidden", autoPolicies.length !== 0);
     els.autoSeedImportBtn.disabled = !autoDatabaseReady;
     els.autoMigrationText.textContent = autoDatabaseReady
       ? `Έτοιμα για μεταφορά τα ${AUTO_POLICY_SEED.length} συμβόλαια του Excel.`
-      : "Δεν ήταν δυνατή η πρόσβαση στην τοπική βάση αυτοκινήτων.";
+      : "Εκτέλεσε πρώτα το SUPABASE_AUTO_POLICIES.sql στο SQL Editor του Supabase.";
     const renewalNotes = [];
     if (autoRenewalInfo.renewedCount) {
       renewalNotes.push(`Ανανεώθηκαν αυτόματα ${autoRenewalInfo.renewedCount} αυτοκίνητα`);
@@ -3975,8 +3974,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const renewalNote = renewalNotes.length ? ` · ${renewalNotes.join(" · ")}` : "";
     setSyncStatus(
       autoRenewalError
-        ? `Τοπική βάση · Αποτυχία αυτόματης ανανέωσης`
-        : `Αποθηκεύεται τοπικά στο iPhone${renewalNote}`,
+        ? `Συνδεδεμένος · Αποτυχία αυτόματης ανανέωσης`
+        : `Συνδεδεμένος: ${currentUser.email || "λογαριασμός"}${renewalNote}`,
       autoRenewalError ? "error" : "online"
     );
     render();
@@ -4088,18 +4087,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   async function importRecordsIntoDatabase(records) {
     if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
-    if (customers.length) throw new Error("Για ασφάλεια, η μαζική εισαγωγή επιτρέπεται μόνο όταν η τοπική βάση είναι κενή.");
+    if (customers.length) throw new Error("Για ασφάλεια, η μαζική εισαγωγή επιτρέπεται μόνο όταν η online βάση είναι κενή.");
 
     const prepared = records.map(source => {
       const customer = sanitizeCustomer(source);
       return {
-        dbId: String(customer.id || "").trim() || makeDatabaseUuid(),
+        dbId: makeDatabaseUuid(),
         customer,
         policies: normalizePolicies(customer.policies).map(policy => ({
-          dbId: String(policy.id || "").trim() || makeDatabaseUuid(),
+          dbId: makeDatabaseUuid(),
           policy,
           members: (policy.coveredMembers || []).map(member => ({
-            dbId: String(member.id || "").trim() || makeDatabaseUuid(),
+            dbId: makeDatabaseUuid(),
             member: sanitizeCoveredMember(member)
           }))
         }))
@@ -4258,7 +4257,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       console.error(error);
       if (newAutoIds.length) await supabaseClient.from("auto_policies").delete().in("id", newAutoIds);
       if (newInsuredIds.length) await supabaseClient.from("insureds").delete().in("id", newInsuredIds);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       setBusy(false);
@@ -5194,7 +5193,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast(memberId ? "Τα στοιχεία του μέλους αποθηκεύτηκαν." : "Το καλυπτόμενο μέλος προστέθηκε.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       submitButton.disabled = false;
@@ -5217,7 +5216,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Το καλυπτόμενο μέλος διαγράφηκε.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     }
   }
@@ -5298,7 +5297,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Οι καλύψεις του μέλους αποθηκεύτηκαν.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       submitButton.disabled = false;
@@ -5325,7 +5324,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Οι καλύψεις του μέλους καθαρίστηκαν.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     }
   }
@@ -5397,7 +5396,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Οι καλύψεις αποθηκεύτηκαν στη βάση.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       submitButton.disabled = false;
@@ -5424,7 +5423,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Οι καλύψεις καθαρίστηκαν.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     }
   }
@@ -5857,7 +5856,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function openAutoCustomerPicker() {
     if (!autoDatabaseReady) {
-      showToast("Δεν είναι διαθέσιμη η τοπική βάση αυτοκινήτων.");
+      showToast("Εκτέλεσε πρώτα το SUPABASE_AUTO_POLICIES.sql στο Supabase.");
       return;
     }
 
@@ -5923,7 +5922,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function openAutoPolicyModal(customerId, policyId = null) {
     if (!autoDatabaseReady) {
-      showToast("Δεν είναι διαθέσιμη η τοπική βάση αυτοκινήτων.");
+      showToast("Εκτέλεσε πρώτα το SUPABASE_AUTO_POLICIES.sql στο Supabase.");
       return;
     }
     const customer = customers.find(item => item.id === customerId);
@@ -6016,7 +6015,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast(existingPolicy ? "Το συμβόλαιο αυτοκινήτου ενημερώθηκε." : "Το συμβόλαιο αυτοκινήτου αποθηκεύτηκε.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       submitButton.disabled = false;
@@ -6034,7 +6033,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Το συμβόλαιο αυτοκινήτου διαγράφηκε.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     }
   }
@@ -6546,7 +6545,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       }
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       els.saveBtn.disabled = false;
@@ -6698,19 +6697,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     try {
       const parsed = JSON.parse(await file.text());
       const imported = Array.isArray(parsed) ? parsed : parsed.customers;
-      const importedAutoPolicies = Array.isArray(parsed?.autoPolicies) ? parsed.autoPolicies : [];
       if (!Array.isArray(imported)) throw new Error("Το αρχείο backup δεν είναι έγκυρο.");
-      setBusy(true, "Εισαγωγή backup…", "Τα δεδομένα αποθηκεύονται τοπικά στο iPhone.");
+      setBusy(true, "Εισαγωγή backup…", "Τα δεδομένα μεταφέρονται στην online βάση.");
       await importRecordsIntoDatabase(imported);
-      for (let index = 0; index < importedAutoPolicies.length; index += 75) {
-        const rows = importedAutoPolicies.slice(index, index + 75).map(policy =>
-          toDatabaseAutoPolicy(policy.insuredId, policy, true)
-        );
-        const { error } = await supabaseClient.from("auto_policies").insert(rows);
-        if (error) throw error;
-      }
       await loadCustomersFromDatabase({ quiet: true });
-      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι και ${autoPolicies.length} αυτοκίνητα στο iPhone.`);
+      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι στη βάση.`);
     } catch (error) {
       console.error(error);
       showToast(databaseErrorMessage(error));
@@ -6900,7 +6891,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     if (window.AndroidBridge?.pickLifeCoverageExcel) {
       window.AndroidBridge.pickLifeCoverageExcel();
     } else {
-      showToast("Η εισαγωγή Excel δεν είναι διαθέσιμη σε αυτή την εγκατάσταση.");
+      showToast("Η εισαγωγή Excel είναι διαθέσιμη από την εφαρμογή Android.");
     }
   });
 
@@ -6930,7 +6921,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       showToast("Ο ασφαλισμένος διαγράφηκε από τη βάση.");
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα συγχρονισμού", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       $("confirmDelete").disabled = false;
@@ -7004,7 +6995,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     if (error) {
       setAuthMessage(databaseErrorMessage(error), "error");
     } else {
-      setAuthMessage("Στάλθηκε νέο email. Άνοιξε τον πιο πρόσφατο σύνδεσμο από το iPhone για να ορίσεις νέο κωδικό.", "success");
+      setAuthMessage("Στάλθηκε νέο email. Άνοιξε τον πιο πρόσφατο σύνδεσμο από το Samsung για να ορίσεις νέο κωδικό.", "success");
     }
     els.forgotPasswordBtn.disabled = false;
   }
@@ -7045,14 +7036,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   async function handleSignedIn(session) {
     currentUser = session.user;
     showApplication();
-    setBusy(true, "Άνοιγμα τοπικών δεδομένων…", "Χωρίς σύνδεση στο internet");
+    setBusy(true, "Σύνδεση στην online βάση…", currentUser.email || "");
     try {
       await loadCustomersFromDatabase();
       resetForm();
       render();
     } catch (error) {
       console.error(error);
-      setSyncStatus("Σφάλμα τοπικής αποθήκευσης", "error");
+      setSyncStatus("Σφάλμα σύνδεσης", "error");
       showToast(databaseErrorMessage(error));
     } finally {
       setBusy(false);
@@ -7219,7 +7210,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     if (!supabaseClient) {
       showAuthScreen();
-      setAuthMessage("Δεν φορτώθηκε η τοπική βάση δεδομένων της εφαρμογής.", "error");
+      setAuthMessage("Δεν φορτώθηκε η σύνδεση Supabase. Έλεγξε τη σύνδεση στο διαδίκτυο.", "error");
       return;
     }
 
@@ -7308,16 +7299,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.1";
-</script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js").catch(error => {
-        console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
-      });
-    });
-  }
+  document.getElementById("tsertosBuildBadge").textContent = "RENEWALS - V9.8.3";
 </script>
 </body>
 </html>
