@@ -2582,6 +2582,19 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .life-policy-collapsible-body{padding-top:10px}
   @media(max-width:560px){.life-policy-number-button{padding:12px}.life-policy-number-icon{width:36px;height:36px}}
 </style>
+
+<style id="tsertos-mobile-backup-button">
+  .floating-backup-button{display:none}
+  @media(max-width:900px){
+    .floating-backup-button{
+      position:fixed;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:100200;
+      display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;
+      padding:11px 15px;border:1px solid rgba(255,255,255,.55);border-radius:14px;
+      background:linear-gradient(135deg,#f2b629,#ffd978);color:#061b43;
+      box-shadow:0 10px 28px rgba(6,27,67,.30);font-size:13px;font-weight:950;
+    }
+  }
+</style>
 </head>
 <body>
 
@@ -2638,6 +2651,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   </div>
 
   <div class="app-shell hidden" id="appShell">
+    <button class="floating-backup-button" id="floatingBackupBtn" type="button">⬇ Εξαγωγή backup</button>
     <section class="crm-hero">
     <header class="topbar">
       <div class="brand crm-brand">
@@ -7253,6 +7267,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const menuButton = document.getElementById("topMenuBtn");
     const menuPanel = document.getElementById("topMenuPanel");
     const cancelButton = document.getElementById("cancelEditBtn");
+    const floatingBackupButton = document.getElementById("floatingBackupBtn");
 
     const openFormDrawer = () => {
       formPanel?.classList.add("drawer-open");
@@ -7271,6 +7286,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     toggleButton?.addEventListener("click", openFormDrawer);
     backdrop?.addEventListener("click", closeFormDrawer);
     cancelButton?.addEventListener("click", closeFormDrawer);
+    floatingBackupButton?.addEventListener("click", () => document.getElementById("exportBtn")?.click());
 
     menuButton?.addEventListener("click", event => {
       event.stopPropagation();
@@ -7299,7 +7315,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "RENEWALS - V9.8.3";
+  document.getElementById("tsertosBuildBadge").textContent = "RECOVERY - V9.8.4";
 </script>
 </body>
 </html>

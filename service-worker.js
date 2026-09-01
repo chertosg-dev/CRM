@@ -1,4 +1,4 @@
-const CACHE_NAME = "tsertos-crm-pwa-v9.9.1";
+const CACHE_NAME = "tsertos-crm-pwa-v9.9.2";
 const APP_SHELL = [
   "./",
   "./index.html",

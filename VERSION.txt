@@ -1,4 +1,4 @@
 TSERTOS Insurance CRM PWA
-Έκδοση: 9.9.1 OFFLINE
+Έκδοση: 9.9.2 OFFLINE
 Αποθήκευση: Τοπική IndexedDB στο iPhone
 Εγκατάσταση: Safari → Προσθήκη στην οθόνη Αφετηρίας
