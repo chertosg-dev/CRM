@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.3" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.3" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.4" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.4" />
 
 
 <style>
@@ -2587,36 +2587,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .local-only-mode #signOutBtn{display:none!important}
 </style>
 
-<style id="tsertos-mobile-backup-button">
-  .floating-backup-button,.floating-import-button{display:none}
-  @media(max-width:900px){
-    .floating-backup-button{
-      position:fixed;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:100200;
-      display:flex;align-items:center;justify-content:center;gap:7px;min-height:46px;
-      padding:11px 15px;border:1px solid rgba(255,255,255,.55);border-radius:14px;
-      background:linear-gradient(135deg,#f2b629,#ffd978);color:#061b43;
-      box-shadow:0 10px 28px rgba(6,27,67,.30);font-size:13px;font-weight:950;
-    }
-    .floating-import-button{
-      position:fixed;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:100200;
-      display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;
-      padding:12px 16px;border:1px solid rgba(255,255,255,.45);border-radius:14px;
-      background:linear-gradient(135deg,#115be8,#2778ff);color:#fff;
-      box-shadow:0 10px 28px rgba(6,27,67,.30);font-size:13px;font-weight:950;
-    }
-  }
-</style>
-  <style>
-.floating-backup-button,
-.floating-import-button {
-  display: none !important;
-}
-</style>
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.3
+  PWA OFFLINE · V9.9.4
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2668,8 +2643,6 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   </div>
 
   <div class="app-shell hidden" id="appShell">
-    <button class="floating-backup-button" id="floatingBackupBtn" type="button">⬇ Εξαγωγή backup</button>
-    <button class="floating-import-button" id="floatingImportBtn" type="button">⬆ Εισαγωγή βάσης</button>
     <section class="crm-hero">
     <header class="topbar">
       <div class="brand crm-brand">
@@ -7290,8 +7263,6 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const menuButton = document.getElementById("topMenuBtn");
     const menuPanel = document.getElementById("topMenuPanel");
     const cancelButton = document.getElementById("cancelEditBtn");
-    const floatingBackupButton = document.getElementById("floatingBackupBtn");
-    const floatingImportButton = document.getElementById("floatingImportBtn");
 
     const openFormDrawer = () => {
       formPanel?.classList.add("drawer-open");
@@ -7310,8 +7281,6 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     toggleButton?.addEventListener("click", openFormDrawer);
     backdrop?.addEventListener("click", closeFormDrawer);
     cancelButton?.addEventListener("click", closeFormDrawer);
-    floatingBackupButton?.addEventListener("click", () => document.getElementById("exportBtn")?.click());
-    floatingImportButton?.addEventListener("click", () => document.getElementById("importBtn")?.click());
 
     menuButton?.addEventListener("click", event => {
       event.stopPropagation();
@@ -7340,7 +7309,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.3";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.4";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
