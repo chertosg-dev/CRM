@@ -1,13 +1,13 @@
-const CACHE_NAME = "tsertos-crm-pwa-v9.9.6";
+const CACHE_NAME = "tsertos-crm-pwa-v9.9.7";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./local-supabase.js?v=9.9.6",
-  "./auto-policies-seed.js?v=9.9.6",
-  "./manifest.webmanifest?v=9.9.6",
+  "./local-supabase.js?v=9.9.7",
+  "./auto-policies-seed.js?v=9.9.7",
+  "./manifest.webmanifest?v=9.9.7",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png?v=9.9.6"
+  "./apple-touch-icon.png?v=9.9.7"
 ];
 
 self.addEventListener("install", event => {

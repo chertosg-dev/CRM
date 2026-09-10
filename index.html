@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.6" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.6" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.7" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.7" />
 
 
 <style>
@@ -2596,11 +2596,45 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
+<style id="tsertos-swiftkey-search-fix">
+  @media(max-width:760px){
+    body.mobile-search-open .crm-hero{overflow:visible!important}
+    body.mobile-search-open .mobile-search-shell{
+      position:fixed!important;
+      top:0!important;
+      right:0!important;
+      left:0!important;
+      z-index:47001!important;
+      width:100%!important;
+      padding:calc(9px + env(safe-area-inset-top)) 10px 9px!important;
+      background:#071d48!important;
+      box-shadow:0 7px 24px rgba(3,18,45,.34)!important;
+    }
+    body.mobile-search-open .mobile-search-modal{
+      z-index:47000!important;
+      padding-top:calc(76px + env(safe-area-inset-top))!important;
+    }
+    body.mobile-search-open #mobileSearchInput{
+      opacity:1!important;
+      background:#fff!important;
+      color:#13264b!important;
+      -webkit-text-fill-color:#13264b!important;
+      caret-color:#145cf2!important;
+    }
+    body.mobile-search-open #mobileSearchInput::placeholder{
+      color:#71809a!important;
+      -webkit-text-fill-color:#71809a!important;
+    }
+    body.mobile-search-open .mobile-search-input .search-icon{color:#52627e!important}
+    body.mobile-search-open .mobile-search-clear{background:#e9eef6!important;color:#344054!important}
+  }
+</style>
+
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.6
+  PWA OFFLINE · V9.9.7
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2982,8 +3016,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="local-supabase.js?v=9.9.6"></script>
-<script src="auto-policies-seed.js?v=9.9.6"></script>
+<script src="local-supabase.js?v=9.9.7"></script>
+<script src="auto-policies-seed.js?v=9.9.7"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -7323,12 +7357,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.6";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.7";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.6").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.7").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
