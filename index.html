@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.7" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.7" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.8" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.8" />
 
 
 <style>
@@ -2601,7 +2601,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     body.mobile-search-open .crm-hero{overflow:visible!important}
     body.mobile-search-open .mobile-search-shell{
       position:fixed!important;
-      top:0!important;
+      top:var(--tsertos-visual-top,0px)!important;
       right:0!important;
       left:0!important;
       z-index:47001!important;
@@ -2611,6 +2611,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       box-shadow:0 7px 24px rgba(3,18,45,.34)!important;
     }
     body.mobile-search-open .mobile-search-modal{
+      top:var(--tsertos-visual-top,0px)!important;
+      bottom:auto!important;
+      height:var(--tsertos-visual-height,100dvh)!important;
       z-index:47000!important;
       padding-top:calc(76px + env(safe-area-inset-top))!important;
     }
@@ -2630,11 +2633,77 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
+<style id="tsertos-iphone-alignment-fix">
+  @media(max-width:760px){
+    .topbar{
+      gap:14px!important;
+      padding:calc(14px + env(safe-area-inset-top)) 14px 10px!important;
+    }
+    .crm-brand{
+      width:100%!important;
+      padding:0 3px!important;
+    }
+    .top-actions{
+      display:grid!important;
+      grid-template-columns:repeat(5,minmax(0,1fr))!important;
+      gap:8px!important;
+      width:100%!important;
+      margin:0!important;
+    }
+    #renewalsBtn,
+    #toggleCustomerFormBtn,
+    #newAutoPolicyBtn,
+    #quickBackupBtn,
+    #topMenuBtn{
+      width:100%!important;
+      min-width:0!important;
+      margin:0!important;
+    }
+    .mobile-search-shell,
+    body.mobile-search-open .mobile-search-shell{
+      padding-right:14px!important;
+      padding-left:14px!important;
+    }
+    #tsertosDashboard{
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      grid-auto-rows:1fr!important;
+      gap:10px!important;
+      padding:9px 14px 16px!important;
+    }
+    #tsertosDashboard>.tsertos-stat{
+      grid-column:auto!important;
+      width:100%!important;
+      min-width:0!important;
+      height:100%!important;
+    }
+    .layout{
+      padding-right:12px!important;
+      padding-left:12px!important;
+    }
+    .mobile-search-modal{
+      padding-right:10px!important;
+      padding-left:10px!important;
+    }
+    .mobile-search-results-host .customer-list{
+      align-content:start!important;
+      grid-auto-rows:max-content!important;
+    }
+    .mobile-search-results-host .customer-card{
+      height:auto!important;
+      min-height:0!important;
+    }
+    #tsertosBuildBadge{
+      right:10px!important;
+      bottom:calc(8px + env(safe-area-inset-bottom))!important;
+    }
+  }
+</style>
+
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.7
+  PWA OFFLINE · V9.9.8
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3016,8 +3085,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="local-supabase.js?v=9.9.7"></script>
-<script src="auto-policies-seed.js?v=9.9.7"></script>
+<script src="local-supabase.js?v=9.9.8"></script>
+<script src="auto-policies-seed.js?v=9.9.8"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -7354,15 +7423,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
 
 <script>
-(function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
+(function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach(c=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column','auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.7";
+(function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
+</script>
+<script>
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.8";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.7").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.8").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
