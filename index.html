@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.4" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.4" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.6" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.6" />
 
 
 <style>
@@ -2587,11 +2587,20 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .local-only-mode #signOutBtn{display:none!important}
 </style>
 
+<style id="tsertos-quick-backup-button">
+  .crm-backup-button{min-height:43px;border:1px solid rgba(255,255,255,.18)!important;background:rgba(242,182,41,.17)!important;color:#fff!important;box-shadow:none!important}
+  .crm-backup-button span{color:#f2b629;font-size:18px}
+  @media(max-width:900px){
+    .crm-backup-button{width:43px;padding:0!important;font-size:0}
+    .crm-backup-button span{font-size:21px}
+  }
+</style>
+
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.4
+  PWA OFFLINE · V9.9.6
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2665,6 +2674,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         </button>
         <button class="btn crm-auto-button" id="newAutoPolicyBtn" type="button">
           <span>🚗</span> Νέο αυτοκίνητο
+        </button>
+        <button class="btn crm-backup-button" id="quickBackupBtn" type="button" title="Εξαγωγή backup">
+          <span>⬇</span> Backup
         </button>
         <button class="crm-menu-button" id="topMenuBtn" type="button" aria-label="Μενού">☰</button>
 
@@ -2970,8 +2982,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="local-supabase.js"></script>
-<script src="auto-policies-seed.js"></script>
+<script src="local-supabase.js?v=9.9.6"></script>
+<script src="auto-policies-seed.js?v=9.9.6"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -7263,6 +7275,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const menuButton = document.getElementById("topMenuBtn");
     const menuPanel = document.getElementById("topMenuPanel");
     const cancelButton = document.getElementById("cancelEditBtn");
+    const quickBackupButton = document.getElementById("quickBackupBtn");
 
     const openFormDrawer = () => {
       formPanel?.classList.add("drawer-open");
@@ -7281,6 +7294,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     toggleButton?.addEventListener("click", openFormDrawer);
     backdrop?.addEventListener("click", closeFormDrawer);
     cancelButton?.addEventListener("click", closeFormDrawer);
+    quickBackupButton?.addEventListener("click", () => document.getElementById("exportBtn")?.click());
 
     menuButton?.addEventListener("click", event => {
       event.stopPropagation();
@@ -7309,12 +7323,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){function g(){const d=document.getElementById('tsertosDashboard');document.documentElement.style.setProperty('overflow-x','hidden','important');document.body.style.setProperty('overflow-x','hidden','important');if(!d||!matchMedia('(max-width:900px)').matches)return;d.style.setProperty('display','grid','important');d.style.setProperty('grid-template-columns','minmax(0,1fr) minmax(0,1fr)','important');d.style.setProperty('overflow-x','hidden','important');[...d.children].forEach((c,i)=>{c.style.setProperty('min-width','0','important');c.style.setProperty('max-width','100%','important');c.style.setProperty('grid-column',i===4?'1 / -1':'auto','important')});}window.applyV9MobileGrid=g;addEventListener('DOMContentLoaded',g);addEventListener('load',g);addEventListener('resize',g)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.4";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.6";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.6").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });

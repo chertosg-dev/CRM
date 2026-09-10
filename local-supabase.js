@@ -10,6 +10,25 @@
     "covered_member_coverages", "hospital_program_options",
     "diagnostic_package_options", "ife_options", "auto_policies"
   ];
+  const DEFAULT_HOSPITAL_PROGRAMS = [
+    "Βασική προστασία", "Προνομιακή προστασία", "Full Lux 0€", "Full Α 0€",
+    "Full Α 500€", "Full B 500€", "Full Α 750€", "Full Β 750€",
+    "Full Α 1.500€", "Full Β 1.500€", "Full Α 3.000€", "Full Β 3.000€",
+    "Full Α 6.000€", "Full Β 6.000€", "Full Α 10.000€", "Full Β 10.000€",
+    "Full Health Ειδικό (χωρίς διαβήτη)", "Full Health Ειδικό (με διαβήτη)",
+    "Full Health Plus Α 1.500€", "Full Health Plus Β 1.500€",
+    "Full Health Plus Α 3.000€", "Full Health Β 3.000€",
+    "Full Health Plus Α 6.000€", "Full Health Β 6.000€", "Full Health Value",
+    "ΠΛΕΟΝΕΚΤΙΚΟ"
+  ];
+  const DEFAULT_DIAGNOSTIC_PACKAGES = [
+    "Full Απεριόριστο 0%", "Full 700€ 0%", "Full 700€ 10%",
+    "Full 2.000€ 0%", "Full 2.000€ 10%", "Full Διάγνωση Ειδική Μέριμνα"
+  ];
+  const DEFAULT_IFE_OPTIONS = [
+    ["500", "500€"], ["700", "700€"], ["1000", "1.000€"],
+    ["2000", "2.000€"], ["3000", "3.000€"]
+  ];
   const nativeStore = window.webkit?.messageHandlers?.localStore;
   const BROWSER_DATABASE_NAME = "tsertos-insurance-crm";
   const BROWSER_STORE_NAME = "app-state";
@@ -80,13 +99,51 @@
     });
   }
 
+  function mergeDefaultOptions(rows, defaults, idPrefix) {
+    const existingRows = Array.isArray(rows) ? rows : [];
+    const existingValues = new Set(
+      existingRows.map(row => String(row?.value ?? "")).filter(Boolean)
+    );
+
+    defaults.forEach((option, index) => {
+      const value = Array.isArray(option) ? option[0] : option;
+      const label = Array.isArray(option) ? option[1] : null;
+      if (existingValues.has(String(value))) return;
+      existingRows.push({
+        id: `local-${idPrefix}-${index + 1}`,
+        value: String(value),
+        ...(label ? { label } : {}),
+        sort_order: index + 1,
+        active: true
+      });
+      existingValues.add(String(value));
+    });
+
+    return existingRows;
+  }
+
   function normalizeState(input) {
     const state = input && typeof input === "object" ? input : {};
-    state.schema_version = 1;
+    state.schema_version = 2;
     state.tables = state.tables && typeof state.tables === "object" ? state.tables : {};
     REQUIRED_TABLES.forEach(table => {
       if (!Array.isArray(state.tables[table])) state.tables[table] = [];
     });
+    state.tables.hospital_program_options = mergeDefaultOptions(
+      state.tables.hospital_program_options,
+      DEFAULT_HOSPITAL_PROGRAMS,
+      "hospital"
+    );
+    state.tables.diagnostic_package_options = mergeDefaultOptions(
+      state.tables.diagnostic_package_options,
+      DEFAULT_DIAGNOSTIC_PACKAGES,
+      "diagnostic"
+    );
+    state.tables.ife_options = mergeDefaultOptions(
+      state.tables.ife_options,
+      DEFAULT_IFE_OPTIONS,
+      "ife"
+    );
     return state;
   }
 
@@ -104,6 +161,7 @@
         }
       }
       this.state = normalizeState(await this.loading);
+      await persistentStore.postMessage({ action: "save", state: this.state });
       return this.state;
     },
 
