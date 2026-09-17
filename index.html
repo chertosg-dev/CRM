@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.13" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.13" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.14" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.14" />
 
 
 <style>
@@ -2652,6 +2652,16 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
+<style id="tsertos-backup-recovery-fix">
+  .backup-recovery-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+  .backup-recovery-button{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+  @media(max-width:900px){
+    .crm-hero,.topbar{overflow:visible!important}
+    .backup-recovery-actions{width:100%;justify-content:stretch}
+    .backup-recovery-actions .btn{flex:1;min-height:46px;text-align:center}
+  }
+</style>
+
 <style id="tsertos-swiftkey-search-fix">
   @media(max-width:760px){
     body.mobile-search-open .crm-hero{overflow:visible!important}
@@ -2760,7 +2770,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.13
+  PWA OFFLINE · V9.9.14
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2846,7 +2856,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="top-menu-panel" id="topMenuPanel">
           <span class="sync-status" id="syncStatus">Τοπική αποθήκευση iPhone</span>
           <button class="btn btn-ghost" id="exportBtn">Εξαγωγή backup</button>
-          <button class="btn btn-ghost" id="importBtn">Εισαγωγή backup</button>
+          <label class="btn btn-ghost backup-recovery-button" id="importBtn" for="importFile" role="button">Εισαγωγή backup</label>
           <button class="btn btn-ghost" id="lifeCoverageImportBtn">❤️ Εισαγωγή καλύψεων ζωής (Excel)</button>
           <button class="btn btn-ghost" id="signOutBtn">Αποσύνδεση</button>
         </div>
@@ -3000,9 +3010,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="migration-banner hidden" id="migrationBanner">
           <div>
             <strong>Η τοπική βάση είναι κενή</strong>
-            <span>Εισήγαγε backup ή μετέφερε μία φορά τα αρχικά ενσωματωμένα δεδομένα.</span>
+            <span>Πάτησε «Επαναφορά από backup» και επίλεξε το αρχείο JSON από τα Αρχεία του iPhone.</span>
           </div>
-          <button class="btn btn-primary" id="seedImportBtn" type="button">Μεταφορά αρχικών δεδομένων</button>
+          <div class="backup-recovery-actions">
+            <label class="btn btn-primary backup-recovery-button" for="importFile">⬆ Επαναφορά από backup</label>
+            <button class="btn btn-secondary" id="seedImportBtn" type="button">Μεταφορά αρχικών δεδομένων</button>
+          </div>
         </div>
 
         <div class="migration-banner hidden" id="autoMigrationBanner">
@@ -3160,10 +3173,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.9.13"></script>
-<script src="receipt-xlsx.js?v=9.9.13"></script>
-<script src="local-supabase.js?v=9.9.13"></script>
-<script src="auto-policies-seed.js?v=9.9.13"></script>
+<script src="jszip.min.js?v=9.9.14"></script>
+<script src="receipt-xlsx.js?v=9.9.14"></script>
+<script src="local-supabase.js?v=9.9.14"></script>
+<script src="auto-policies-seed.js?v=9.9.14"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -4179,7 +4192,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     );
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
-    els.migrationBanner.classList.toggle("hidden", customers.length !== 0 || !SEED_CUSTOMERS.length);
+    els.migrationBanner.classList.toggle("hidden", customers.length !== 0);
+    els.seedImportBtn.classList.toggle("hidden", !SEED_CUSTOMERS.length);
     els.autoMigrationBanner.classList.toggle("hidden", autoPolicies.length !== 0 || !AUTO_POLICY_SEED.length);
     els.autoSeedImportBtn.disabled = !autoDatabaseReady;
     els.autoMigrationText.textContent = autoDatabaseReady
@@ -7278,7 +7292,6 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     showToast("Το backup δημιουργήθηκε.");
   });
 
-  $("importBtn").addEventListener("click", () => $("importFile").click());
   $("importFile").addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -7888,9 +7901,13 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     menuButton?.addEventListener("click", event => {
       event.stopPropagation();
       menuPanel?.classList.toggle("open");
+      menuButton.setAttribute("aria-expanded", menuPanel?.classList.contains("open") ? "true" : "false");
     });
     document.addEventListener("click", event => {
-      if (!event.target.closest(".top-actions")) menuPanel?.classList.remove("open");
+      if (!event.target.closest(".top-actions")) {
+        menuPanel?.classList.remove("open");
+        menuButton?.setAttribute("aria-expanded", "false");
+      }
     });
   });
 </script>
@@ -7915,12 +7932,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.13";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.14";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.13").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.14").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
