@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.11" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.11" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.12" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.12" />
 
 
 <style>
@@ -2576,6 +2576,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .receipts-toolbar-copy strong{display:block;color:#17305d;font-size:14px}
   .receipts-toolbar-copy span{display:block;margin-top:3px;color:#687792;font-size:11px;line-height:1.4}
   .receipts-import{flex:0 0 auto;min-height:42px;padding:9px 13px;border:0;border-radius:12px;background:linear-gradient(135deg,#145cf2,#2778ff);color:#fff;font-size:12px;font-weight:900;cursor:pointer}
+  .receipts-search-shell{position:sticky;top:-20px;z-index:7;margin:0 -20px 13px;padding:10px 20px;border-bottom:1px solid #e4eaf3;background:rgba(255,255,255,.97);backdrop-filter:blur(10px)}
+  .receipts-search{display:flex;align-items:center;gap:9px;padding:0 12px;border:1px solid #cbd8eb;border-radius:13px;background:#fff;box-shadow:0 5px 15px rgba(18,45,94,.06)}
+  .receipts-search:focus-within{border-color:#145cf2;box-shadow:0 0 0 3px rgba(20,92,242,.11)}
+  .receipts-search>span{flex:0 0 auto;color:#52627e;font-size:17px}
+  .receipts-search input{width:100%;min-width:0;height:46px;padding:0;border:0!important;outline:0!important;background:#fff!important;color:#17305d!important;-webkit-text-fill-color:#17305d!important;font-size:16px;box-shadow:none!important}
+  .receipts-search input::placeholder{color:#7b8799;-webkit-text-fill-color:#7b8799}
   .receipts-tabs{display:flex;gap:7px;margin-bottom:13px;padding:5px;overflow-x:auto;border:1px solid #dfe7f2;border-radius:14px;background:#eef3f9;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .receipts-tabs::-webkit-scrollbar{display:none}
   .receipts-tab{min-width:max-content;flex:0 0 auto;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:#52627e;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
@@ -2609,6 +2615,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     .crm-receipts-button>b{position:absolute;top:-6px;right:-5px;min-width:20px;height:20px;padding:0 5px;font-size:10px}
   }
   @media(max-width:560px){
+    .receipts-search-shell{top:-10px;margin-right:-10px;margin-left:-10px;padding-right:10px;padding-left:10px}
     .receipts-toolbar{align-items:stretch;flex-direction:column}
     .receipts-import{width:100%}
     .receipts-tab{font-size:10px}
@@ -2753,7 +2760,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.11
+  PWA OFFLINE · V9.9.12
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3153,10 +3160,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.9.11"></script>
-<script src="receipt-xlsx.js?v=9.9.11"></script>
-<script src="local-supabase.js?v=9.9.11"></script>
-<script src="auto-policies-seed.js?v=9.9.11"></script>
+<script src="jszip.min.js?v=9.9.12"></script>
+<script src="receipt-xlsx.js?v=9.9.12"></script>
+<script src="local-supabase.js?v=9.9.12"></script>
+<script src="auto-policies-seed.js?v=9.9.12"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3194,6 +3201,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   let editingAutoPolicyId = null;
   let pendingAutoAfterCustomerSave = false;
   let activeReceiptsTab = "all";
+  let receiptSearchQuery = "";
   let coverageOptions = {
     hospitalPrograms: [],
     diagnosticPackages: [],
@@ -6153,6 +6161,35 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
   }
 
+  function applyReceiptSearchFilter() {
+    const cards = [...els.receiptsModalBody.querySelectorAll("[data-receipt-search]")];
+    const tokens = normalize(receiptSearchQuery).split(" ").filter(Boolean);
+    let visibleCount = 0;
+    let visibleTotal = 0;
+    cards.forEach(card => {
+      const searchable = normalize(card.dataset.receiptSearch || "");
+      const matches = tokens.every(token => searchable.includes(token));
+      card.hidden = !matches;
+      if (matches) {
+        visibleCount += 1;
+        visibleTotal += Number(card.dataset.receiptFinalAmount || 0);
+      }
+    });
+    const summary = els.receiptsModalBody.querySelector("#receiptVisibleSummary");
+    const total = els.receiptsModalBody.querySelector("#receiptVisibleTotal");
+    const empty = els.receiptsModalBody.querySelector("#receiptsSearchEmpty");
+    const activeLabel = activeReceiptsTab === "all"
+      ? "όλες τις ημερομηνίες"
+      : receiptMonthLabel(activeReceiptsTab);
+    if (summary) {
+      summary.textContent = receiptSearchQuery.trim()
+        ? `${visibleCount} αποτελέσματα για «${receiptSearchQuery.trim()}»`
+        : `${visibleCount} αποδείξεις για ${activeLabel}`;
+    }
+    if (total) total.textContent = formatMoney(visibleTotal) || "0,00 €";
+    if (empty) empty.classList.toggle("hidden", !receiptSearchQuery.trim() || visibleCount > 0);
+  }
+
   function renderReceiptsModal() {
     const monthGroups = receiptMonthGroups();
     if (activeReceiptsTab !== "all" && !monthGroups.some(([key]) => key === activeReceiptsTab)) {
@@ -6177,6 +6214,13 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         </div>
         <button class="receipts-import" id="receiptImportNow" type="button">⬆ Εισαγωγή Excel</button>
       </div>
+      <div class="receipts-search-shell">
+        <label class="receipts-search" for="receiptSearchInput">
+          <span aria-hidden="true">🔎</span>
+          <input id="receiptSearchInput" type="search" inputmode="search" autocomplete="off" enterkeyhint="search"
+            value="${escapeHtml(receiptSearchQuery)}" placeholder="Αναζήτηση με ονοματεπώνυμο…" aria-label="Αναζήτηση απόδειξης με ονοματεπώνυμο" />
+        </label>
+      </div>
       <div class="receipts-tabs" role="tablist" aria-label="Περίοδος αποδείξεων">
         ${monthGroups.map(([monthKey, rows]) => `
           <button class="receipts-tab ${activeReceiptsTab === monthKey ? "active" : ""}" type="button" data-receipts-tab="${escapeHtml(monthKey)}">
@@ -6185,13 +6229,17 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <button class="receipts-tab ${activeReceiptsTab === "all" ? "active" : ""}" type="button" data-receipts-tab="all">Όλες: ${paymentReceipts.length} αποδείξεις</button>
       </div>
       <div class="receipts-summary">
-        <span>${visibleRows.length} αποδείξεις για ${escapeHtml(activeLabel)}</span>
-        <strong>${escapeHtml(formatMoney(total) || "0,00 €")}</strong>
+        <span id="receiptVisibleSummary">${visibleRows.length} αποδείξεις για ${escapeHtml(activeLabel)}</span>
+        <strong id="receiptVisibleTotal">${escapeHtml(formatMoney(total) || "0,00 €")}</strong>
       </div>
       ${visibleRows.length ? `
         <div class="receipts-list">
           ${visibleRows.map(receipt => `
-            <article class="receipt-card" role="button" tabindex="0" data-copy-receipt-rf="${escapeHtml(receipt.rf_code)}" data-copy-receipt-amount="${escapeHtml(receipt.final_amount)}" aria-label="Αντιγραφή κωδικού RF και ποσού για ${escapeHtml(receipt.full_name)}">
+            <article class="receipt-card" role="button" tabindex="0"
+              data-receipt-search="${escapeHtml([receipt.full_name, receipt.policy_number, receipt.receipt_number].filter(Boolean).join(" "))}"
+              data-receipt-final-amount="${escapeHtml(receipt.final_amount)}"
+              data-copy-receipt-rf="${escapeHtml(receipt.rf_code)}" data-copy-receipt-amount="${escapeHtml(receipt.final_amount)}"
+              aria-label="Αντιγραφή κωδικού RF και ποσού για ${escapeHtml(receipt.full_name)}">
               <div class="receipt-card-head">
                 <div class="receipt-card-name">
                   ${escapeHtml(receipt.full_name || "Χωρίς ονοματεπώνυμο")}
@@ -6211,6 +6259,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
                 <span>Αντιγραφή</span>
               </div>
             </article>`).join("")}
+        </div>
+        <div class="receipts-empty hidden" id="receiptsSearchEmpty">
+          <span>🔎</span>
+          <strong>Δεν βρέθηκε απόδειξη</strong>
+          <p>Δοκίμασε διαφορετικό όνομα ή έλεγξε την ορθογραφία.</p>
         </div>` : `
         <div class="receipts-empty">
           <span>🧾</span>
@@ -6220,6 +6273,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     els.receiptsModalBody.querySelector("#receiptImportNow")?.addEventListener("click", () => {
       els.receiptExcelFile.click();
+    });
+    const receiptSearchInput = els.receiptsModalBody.querySelector("#receiptSearchInput");
+    receiptSearchInput?.addEventListener("input", event => {
+      receiptSearchQuery = event.target.value;
+      applyReceiptSearchFilter();
+    });
+    receiptSearchInput?.addEventListener("focus", () => {
+      setTimeout(() => receiptSearchInput.scrollIntoView({ block: "start", behavior: "smooth" }), 120);
     });
     els.receiptsModalBody.querySelectorAll("[data-receipts-tab]").forEach(button => {
       button.addEventListener("click", () => {
@@ -6237,10 +6298,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         }
       });
     });
+    applyReceiptSearchFilter();
   }
 
   function openReceiptsModal() {
-    activeReceiptsTab = defaultReceiptsTab();
+    receiptSearchQuery = "";
+    activeReceiptsTab = "all";
     renderReceiptsModal();
     els.receiptsModal.classList.remove("hidden");
   }
@@ -6348,7 +6411,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
     await loadCustomersFromDatabase({ quiet: true });
     render();
-    activeReceiptsTab = defaultReceiptsTab();
+    activeReceiptsTab = "all";
     renderReceiptsModal();
     showToast(`Αποθηκεύτηκαν ${uniqueRows.length} αποδείξεις στο iPhone.`);
     return true;
@@ -7852,12 +7915,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.11";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.12";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.11").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.12").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
