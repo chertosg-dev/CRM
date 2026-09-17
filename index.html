@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.10" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.10" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.11" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.11" />
 
 
 <style>
@@ -2753,7 +2753,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.10
+  PWA OFFLINE · V9.9.11
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3153,10 +3153,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.9.10"></script>
-<script src="receipt-xlsx.js?v=9.9.10"></script>
-<script src="local-supabase.js?v=9.9.10"></script>
-<script src="auto-policies-seed.js?v=9.9.10"></script>
+<script src="jszip.min.js?v=9.9.11"></script>
+<script src="receipt-xlsx.js?v=9.9.11"></script>
+<script src="local-supabase.js?v=9.9.11"></script>
+<script src="auto-policies-seed.js?v=9.9.11"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -6125,12 +6125,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.receiptsModal.classList.add("hidden");
   }
 
-  async function copyReceiptRf(rfCode) {
-    const text = String(rfCode || "").trim();
-    if (!text) {
+  async function copyReceiptRf(rfCode, amount) {
+    const rfText = String(rfCode || "").trim();
+    if (!rfText) {
       showToast("Δεν υπάρχει κωδικός RF σε αυτή την απόδειξη.");
       return;
     }
+    const amountText = formatMoney(amount) || "—";
+    const text = `${rfText}\nΠοσό: ${amountText}`;
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -6144,7 +6146,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         document.execCommand("copy");
         textarea.remove();
       }
-      showToast("Ο κωδικός RF αντιγράφηκε.");
+      showToast("Αντιγράφηκαν ο κωδικός RF και το ποσό.");
     } catch (error) {
       console.error(error);
       showToast("Δεν αντιγράφηκε ο κωδικός RF.");
@@ -6173,7 +6175,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <strong>Excel ανείσπρακτων αποδείξεων</strong>
           <span>Η νέα εισαγωγή αντικαθιστά μόνο την προηγούμενη λίστα αποδείξεων.</span>
         </div>
-        <button class="receipts-import" id="receiptImportNow" type="button">Εισαγωγή Excel</button>
+        <button class="receipts-import" id="receiptImportNow" type="button">⬆ Εισαγωγή Excel</button>
       </div>
       <div class="receipts-tabs" role="tablist" aria-label="Περίοδος αποδείξεων">
         ${monthGroups.map(([monthKey, rows]) => `
@@ -6189,7 +6191,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       ${visibleRows.length ? `
         <div class="receipts-list">
           ${visibleRows.map(receipt => `
-            <article class="receipt-card" role="button" tabindex="0" data-copy-receipt-rf="${escapeHtml(receipt.rf_code)}" aria-label="Αντιγραφή κωδικού RF για ${escapeHtml(receipt.full_name)}">
+            <article class="receipt-card" role="button" tabindex="0" data-copy-receipt-rf="${escapeHtml(receipt.rf_code)}" data-copy-receipt-amount="${escapeHtml(receipt.final_amount)}" aria-label="Αντιγραφή κωδικού RF και ποσού για ${escapeHtml(receipt.full_name)}">
               <div class="receipt-card-head">
                 <div class="receipt-card-name">
                   ${escapeHtml(receipt.full_name || "Χωρίς ονοματεπώνυμο")}
@@ -6226,7 +6228,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       });
     });
     els.receiptsModalBody.querySelectorAll("[data-copy-receipt-rf]").forEach(card => {
-      const copy = () => copyReceiptRf(card.dataset.copyReceiptRf);
+      const copy = () => copyReceiptRf(card.dataset.copyReceiptRf, card.dataset.copyReceiptAmount);
       card.addEventListener("click", copy);
       card.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") {
@@ -7850,12 +7852,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.10";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.11";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.10").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.11").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
