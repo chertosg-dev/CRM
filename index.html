@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.9.8" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.8" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.9" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.9" />
 
 
 <style>
@@ -2567,6 +2567,54 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
+<style id="tsertos-receipts">
+  .crm-receipts-button{position:relative;min-height:43px;border:1px solid rgba(255,255,255,.22)!important;background:linear-gradient(135deg,rgba(125,75,190,.42),rgba(91,53,160,.34))!important;color:#fff!important;box-shadow:none!important}
+  .crm-receipts-button>span{color:#fff;font-size:18px}
+  .crm-receipts-button>b{display:grid;place-items:center;min-width:23px;height:23px;margin-left:2px;padding:0 6px;border-radius:999px;background:#f2b629;color:#061b43;font-size:11px;font-weight:950;line-height:1}
+  .receipts-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;padding:12px;border:1px solid #d9e4f3;border-radius:15px;background:#f7faff}
+  .receipts-toolbar-copy{min-width:0}
+  .receipts-toolbar-copy strong{display:block;color:#17305d;font-size:14px}
+  .receipts-toolbar-copy span{display:block;margin-top:3px;color:#687792;font-size:11px;line-height:1.4}
+  .receipts-import{flex:0 0 auto;min-height:42px;padding:9px 13px;border:0;border-radius:12px;background:linear-gradient(135deg,#145cf2,#2778ff);color:#fff;font-size:12px;font-weight:900;cursor:pointer}
+  .receipts-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:13px;padding:5px;border:1px solid #dfe7f2;border-radius:14px;background:#eef3f9}
+  .receipts-tab{min-width:0;padding:10px 7px;border:0;border-radius:10px;background:transparent;color:#52627e;font-size:11px;font-weight:900;cursor:pointer}
+  .receipts-tab.active{background:#fff;color:#145cf2;box-shadow:0 4px 12px rgba(18,45,94,.10)}
+  .receipts-tab b{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-left:3px;padding:0 5px;border-radius:999px;background:#dbe8ff;color:#174891;font-size:10px}
+  .receipts-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;padding:0 2px;color:#687792;font-size:11px}
+  .receipts-summary strong{color:#17305d;font-size:15px}
+  .receipts-list{display:grid;gap:11px}
+  .receipt-card{width:100%;overflow:hidden;padding:0;border:1px solid #dfe7f2;border-radius:17px;background:#fff;color:inherit;text-align:left;box-shadow:0 8px 22px rgba(18,45,94,.07);cursor:pointer}
+  .receipt-card:active{transform:scale(.995);background:#fbfdff}
+  .receipt-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:11px;padding:14px 15px;border-bottom:1px solid #e8edf5;background:linear-gradient(135deg,#fbfcff,#f1f5ff)}
+  .receipt-card-name{min-width:0;color:#17305d;font-size:16px;font-weight:950;overflow-wrap:anywhere}
+  .receipt-card-name small{display:block;margin-top:4px;color:#71809a;font-size:10px;font-weight:800}
+  .receipt-amount{flex:0 0 auto;color:#0e7b4f;font-size:19px;font-weight:950;white-space:nowrap}
+  .receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 13px}
+  .receipt-grid>div{min-width:0;padding:9px 10px;border-radius:11px;background:#f5f8fc}
+  .receipt-grid small{display:block;margin-bottom:4px;color:#71809a;font-size:9px;font-weight:850;text-transform:uppercase}
+  .receipt-grid b{display:block;color:#24395f;font-size:12px;font-weight:850;overflow-wrap:anywhere}
+  .receipt-rf{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 13px 13px;padding:12px 13px;border:1px solid #cfe0ff;border-radius:12px;background:#edf4ff;color:#174891}
+  .receipt-rf-copy{min-width:0}
+  .receipt-rf-copy small{display:block;margin-bottom:4px;font-size:9px;font-weight:900;text-transform:uppercase}
+  .receipt-rf-copy b{display:block;font-size:12px;font-weight:950;overflow-wrap:anywhere;word-break:break-all}
+  .receipt-rf>span{flex:0 0 auto;padding:7px 8px;border-radius:9px;background:#145cf2;color:#fff;font-size:10px;font-weight:900}
+  .receipts-empty{display:grid;place-items:center;min-height:235px;padding:28px;text-align:center;color:#687792}
+  .receipts-empty>span{display:grid;place-items:center;width:58px;height:58px;margin-bottom:12px;border-radius:50%;background:#eee7ff;color:#7047c8;font-size:27px}
+  .receipts-empty strong{color:#17305d;font-size:17px}
+  .receipts-empty p{max-width:470px;margin:7px 0 0;font-size:12px;line-height:1.5}
+  @media(max-width:900px){
+    .crm-receipts-button{width:48px;padding:0!important;font-size:0}
+    .crm-receipts-button>span{font-size:21px}
+    .crm-receipts-button>b{position:absolute;top:-6px;right:-5px;min-width:20px;height:20px;padding:0 5px;font-size:10px}
+  }
+  @media(max-width:560px){
+    .receipts-toolbar{align-items:stretch;flex-direction:column}
+    .receipts-import{width:100%}
+    .receipts-tab{font-size:10px}
+    .receipt-grid{grid-template-columns:1fr}
+  }
+</style>
+
 <style id="tsertos-life-policy-disclosures">
   .life-policy-list{display:grid;gap:13px}
   .life-policy-collapsible{min-width:0;border:0}
@@ -2645,12 +2693,13 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
     .top-actions{
       display:grid!important;
-      grid-template-columns:repeat(5,minmax(0,1fr))!important;
+      grid-template-columns:repeat(6,minmax(0,1fr))!important;
       gap:8px!important;
       width:100%!important;
       margin:0!important;
     }
     #renewalsBtn,
+    #receiptsBtn,
     #toggleCustomerFormBtn,
     #newAutoPolicyBtn,
     #quickBackupBtn,
@@ -2703,7 +2752,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.9.8
+  PWA OFFLINE · V9.9.9
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2772,6 +2821,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <button class="btn crm-renewals-button" id="renewalsBtn" type="button" title="Ανανεώσεις αυτοκινήτων τρέχοντος μήνα">
           <span>📅</span> Ανανεώσεις <b id="renewalsCount">0</b>
         </button>
+        <button class="btn crm-receipts-button" id="receiptsBtn" type="button" title="Αποδείξεις προς είσπραξη">
+          <span>🧾</span> Αποδείξεις <b id="receiptsCount">0</b>
+        </button>
         <button class="btn crm-new-button" id="toggleCustomerFormBtn" type="button">
           <span>＋</span> Νέος πελάτης
         </button>
@@ -2791,6 +2843,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <button class="btn btn-ghost" id="signOutBtn">Αποσύνδεση</button>
         </div>
         <input class="hidden" type="file" id="importFile" accept=".json,application/json" />
+        <input class="hidden" type="file" id="receiptExcelFile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
       </div>
     </header>
     <div class="mobile-search-shell" id="mobileSearchShell">
@@ -3074,6 +3127,20 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
+  <div class="coverage-popup-modal hidden" id="receiptsModal" role="dialog" aria-modal="true" aria-labelledby="receiptsModalTitle">
+    <div class="coverage-popup-window">
+      <div class="coverage-popup-head">
+        <div class="coverage-popup-heading">
+          <span>Εισπράξεις ζωής</span>
+          <h2 id="receiptsModalTitle">Αποδείξεις</h2>
+          <p id="receiptsModalSubtitle"></p>
+        </div>
+        <button class="coverage-popup-close" id="receiptsModalClose" type="button" aria-label="Κλείσιμο">×</button>
+      </div>
+      <div class="coverage-popup-body" id="receiptsModalBody"></div>
+    </div>
+  </div>
+
   <div class="modal hidden" id="confirmModal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <h2 style="margin-top:0">Διαγραφή πελάτη</h2>
@@ -3085,8 +3152,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="local-supabase.js?v=9.9.8"></script>
-<script src="auto-policies-seed.js?v=9.9.8"></script>
+<script src="jszip.min.js?v=9.9.9"></script>
+<script src="receipt-xlsx.js?v=9.9.9"></script>
+<script src="local-supabase.js?v=9.9.9"></script>
+<script src="auto-policies-seed.js?v=9.9.9"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3105,6 +3174,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   const INSURED_SEED_IDS = new Set(SEED_CUSTOMERS.map(customer => customer.id));
   let customers = [];
   let autoPolicies = [];
+  let paymentReceipts = [];
   let autoDatabaseReady = false;
   let currentUser = null;
   let pendingDeleteId = null;
@@ -3122,6 +3192,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   let memberCoverageMemberId = null;
   let editingAutoPolicyId = null;
   let pendingAutoAfterCustomerSave = false;
+  let activeReceiptsTab = "current";
   let coverageOptions = {
     hospitalPrograms: [],
     diagnosticPackages: [],
@@ -3154,6 +3225,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     newAutoPolicyBtn: $("newAutoPolicyBtn"),
     renewalsBtn: $("renewalsBtn"),
     renewalsCount: $("renewalsCount"),
+    receiptsBtn: $("receiptsBtn"),
+    receiptsCount: $("receiptsCount"),
+    receiptExcelFile: $("receiptExcelFile"),
     lifeCoverageImportBtn: $("lifeCoverageImportBtn"),
     busyOverlay: $("busyOverlay"),
     busyTitle: $("busyTitle"),
@@ -3212,6 +3286,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     renewalsModalTitle: $("renewalsModalTitle"),
     renewalsModalSubtitle: $("renewalsModalSubtitle"),
     renewalsModalBody: $("renewalsModalBody"),
+    receiptsModal: $("receiptsModal"),
+    receiptsModalClose: $("receiptsModalClose"),
+    receiptsModalTitle: $("receiptsModalTitle"),
+    receiptsModalSubtitle: $("receiptsModalSubtitle"),
+    receiptsModalBody: $("receiptsModalBody"),
     list: $("customerList"),
     detail: $("customerDetail"),
     formTitle: $("formTitle"),
@@ -3957,7 +4036,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       memberCoveragesResult,
       hospitalProgramsResult,
       diagnosticPackagesResult,
-      ifeOptionsResult
+      ifeOptionsResult,
+      receiptsResult
     ] = await Promise.all([
       supabaseClient
         .from("insureds")
@@ -3989,7 +4069,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         .from("ife_options")
         .select("value, label, sort_order")
         .eq("active", true)
-        .order("sort_order", { ascending: true })
+        .order("sort_order", { ascending: true }),
+      supabaseClient
+        .from("payment_receipts")
+        .select("*")
+        .order("due_date", { ascending: true })
     ]);
 
     const results = [
@@ -4000,7 +4084,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       memberCoveragesResult,
       hospitalProgramsResult,
       diagnosticPackagesResult,
-      ifeOptionsResult
+      ifeOptionsResult,
+      receiptsResult
     ];
     const failed = results.find(result => result.error);
     if (failed) throw failed.error;
@@ -4032,6 +4117,16 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       }
       autoPolicies = autoRows.map(fromDatabaseAutoPolicy);
     }
+
+    paymentReceipts = (receiptsResult.data || []).map(row => ({
+      ...row,
+      policy_number: String(row.policy_number || ""),
+      receipt_number: String(row.receipt_number || ""),
+      full_name: String(row.full_name || ""),
+      rf_code: String(row.rf_code || ""),
+      amount: Number(row.amount || 0),
+      final_amount: Number(row.final_amount || 0)
+    }));
 
     coverageOptions = {
       hospitalPrograms: (hospitalProgramsResult.data || []).map(item => item.value),
@@ -5971,6 +6066,273 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.renewalsModal.classList.remove("hidden");
   }
 
+  function receiptMonthKey(isoDate) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ""))
+      ? String(isoDate).slice(0, 7)
+      : "";
+  }
+
+  function shiftedMonthKey(monthsAhead = 0) {
+    const today = parseIsoDate(currentLocalIsoDate());
+    if (!today) return "";
+    return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + monthsAhead, 1))
+      .toISOString().slice(0, 7);
+  }
+
+  function receiptMonthLabel(monthKey) {
+    if (!/^\d{4}-\d{2}$/.test(String(monthKey || ""))) return "";
+    const [year, month] = monthKey.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("el-GR", {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC"
+    });
+  }
+
+  function receiptRowsForTab(tab = activeReceiptsTab) {
+    const currentKey = shiftedMonthKey(0);
+    const nextKey = shiftedMonthKey(1);
+    return paymentReceipts
+      .filter(receipt => {
+        const key = receiptMonthKey(receipt.due_date);
+        if (tab === "current") return key === currentKey;
+        if (tab === "next") return key === nextKey;
+        return true;
+      })
+      .sort((left, right) =>
+        String(left.due_date || "").localeCompare(String(right.due_date || ""))
+        || String(left.full_name || "").localeCompare(String(right.full_name || ""), "el")
+      );
+  }
+
+  function closeReceiptsModal() {
+    els.receiptsModal.classList.add("hidden");
+  }
+
+  async function copyReceiptRf(rfCode) {
+    const text = String(rfCode || "").trim();
+    if (!text) {
+      showToast("Δεν υπάρχει κωδικός RF σε αυτή την απόδειξη.");
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+      }
+      showToast("Ο κωδικός RF αντιγράφηκε.");
+    } catch (error) {
+      console.error(error);
+      showToast("Δεν αντιγράφηκε ο κωδικός RF.");
+    }
+  }
+
+  function renderReceiptsModal() {
+    const currentRows = receiptRowsForTab("current");
+    const nextRows = receiptRowsForTab("next");
+    const visibleRows = receiptRowsForTab(activeReceiptsTab);
+    const tabLabels = {
+      current: receiptMonthLabel(shiftedMonthKey(0)),
+      next: receiptMonthLabel(shiftedMonthKey(1)),
+      all: "όλες τις ημερομηνίες"
+    };
+    const total = visibleRows.reduce((sum, receipt) => sum + Number(receipt.final_amount || 0), 0);
+
+    els.receiptsModalTitle.textContent = "Αποδείξεις προς είσπραξη";
+    els.receiptsModalSubtitle.textContent = paymentReceipts.length
+      ? `${paymentReceipts.length} αποδείξεις αποθηκευμένες τοπικά στο iPhone`
+      : "Εισήγαγε το Excel με τις ανείσπρακτες αποδείξεις";
+
+    els.receiptsModalBody.innerHTML = `
+      <div class="receipts-toolbar">
+        <div class="receipts-toolbar-copy">
+          <strong>Excel ανείσπρακτων αποδείξεων</strong>
+          <span>Η νέα εισαγωγή αντικαθιστά μόνο την προηγούμενη λίστα αποδείξεων.</span>
+        </div>
+        <button class="receipts-import" id="receiptImportNow" type="button">Εισαγωγή Excel</button>
+      </div>
+      <div class="receipts-tabs" role="tablist" aria-label="Περίοδος αποδείξεων">
+        <button class="receipts-tab ${activeReceiptsTab === "current" ? "active" : ""}" type="button" data-receipts-tab="current">Τρέχων <b>${currentRows.length}</b></button>
+        <button class="receipts-tab ${activeReceiptsTab === "next" ? "active" : ""}" type="button" data-receipts-tab="next">Επόμενος <b>${nextRows.length}</b></button>
+        <button class="receipts-tab ${activeReceiptsTab === "all" ? "active" : ""}" type="button" data-receipts-tab="all">Όλες <b>${paymentReceipts.length}</b></button>
+      </div>
+      <div class="receipts-summary">
+        <span>${visibleRows.length} αποδείξεις για ${escapeHtml(tabLabels[activeReceiptsTab])}</span>
+        <strong>${escapeHtml(formatMoney(total) || "0,00 €")}</strong>
+      </div>
+      ${visibleRows.length ? `
+        <div class="receipts-list">
+          ${visibleRows.map(receipt => `
+            <article class="receipt-card" role="button" tabindex="0" data-copy-receipt-rf="${escapeHtml(receipt.rf_code)}" aria-label="Αντιγραφή κωδικού RF για ${escapeHtml(receipt.full_name)}">
+              <div class="receipt-card-head">
+                <div class="receipt-card-name">
+                  ${escapeHtml(receipt.full_name || "Χωρίς ονοματεπώνυμο")}
+                  <small>Απόδειξη ${escapeHtml(receipt.receipt_number || "—")}</small>
+                </div>
+                <div class="receipt-amount">${escapeHtml(formatMoney(receipt.final_amount) || "—")}</div>
+              </div>
+              <div class="receipt-grid">
+                <div><small>Αριθμός συμβολαίου</small><b>${escapeHtml(receipt.policy_number || "—")}</b></div>
+                <div><small>Λήξη οφειλής</small><b>${escapeHtml(formatDate(receipt.due_date) || "—")}</b></div>
+                <div><small>Ποσό απόδειξης</small><b>${escapeHtml(formatMoney(receipt.amount) || "—")}</b></div>
+                <div><small>Τελικό ποσό</small><b>${escapeHtml(formatMoney(receipt.final_amount) || "—")}</b></div>
+              </div>
+              <div class="receipt-rf">
+                <div class="receipt-rf-copy"><small>Κωδικός πληρωμής RF</small><b>${escapeHtml(receipt.rf_code || "—")}</b></div>
+                <span>Αντιγραφή</span>
+              </div>
+            </article>`).join("")}
+        </div>` : `
+        <div class="receipts-empty">
+          <span>🧾</span>
+          <strong>Δεν υπάρχουν αποδείξεις</strong>
+          <p>${paymentReceipts.length ? `Δεν βρέθηκαν αποδείξεις για ${escapeHtml(tabLabels[activeReceiptsTab])}.` : "Πάτησε «Εισαγωγή Excel» και επίλεξε το αρχείο ανείσπρακτων αποδείξεων."}</p>
+        </div>`}`;
+
+    els.receiptsModalBody.querySelector("#receiptImportNow")?.addEventListener("click", () => {
+      els.receiptExcelFile.click();
+    });
+    els.receiptsModalBody.querySelectorAll("[data-receipts-tab]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeReceiptsTab = button.dataset.receiptsTab;
+        renderReceiptsModal();
+      });
+    });
+    els.receiptsModalBody.querySelectorAll("[data-copy-receipt-rf]").forEach(card => {
+      const copy = () => copyReceiptRf(card.dataset.copyReceiptRf);
+      card.addEventListener("click", copy);
+      card.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          copy();
+        }
+      });
+    });
+  }
+
+  function openReceiptsModal() {
+    activeReceiptsTab = "current";
+    renderReceiptsModal();
+    els.receiptsModal.classList.remove("hidden");
+  }
+
+  function receiptHeaderKey(value) {
+    return normalize(value).replace(/[^a-z0-9α-ω]/g, "");
+  }
+
+  function receiptExcelDate(value, rowNumber, label) {
+    if (!hasExcelValue(value)) throw new Error(`Γραμμή ${rowNumber}: λείπει το πεδίο «${label}».`);
+    if (typeof value === "number" || /^\d+(\.\d+)?$/.test(String(value).trim())) {
+      const serial = Number(value);
+      if (serial > 20000 && serial < 80000) {
+        return new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86400000)
+          .toISOString().slice(0, 10);
+      }
+    }
+    const text = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const greekDate = text.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+    if (greekDate) return `${greekDate[3]}-${greekDate[2].padStart(2, "0")}-${greekDate[1].padStart(2, "0")}`;
+    throw new Error(`Γραμμή ${rowNumber}: μη έγκυρη ημερομηνία στο πεδίο «${label}».`);
+  }
+
+  function receiptColumn(headerIndexes, candidates) {
+    for (const candidate of candidates) {
+      const index = headerIndexes.get(receiptHeaderKey(candidate));
+      if (index !== undefined) return index;
+    }
+    return -1;
+  }
+
+  async function importReceiptExcel(file) {
+    if (!window.TsertosXlsx?.readFirstSheet) throw new Error("Δεν φορτώθηκε ο αναγνώστης Excel.");
+    const rows = await window.TsertosXlsx.readFirstSheet(file);
+    const headerRowIndex = rows.findIndex(row => {
+      const keys = new Set((row || []).map(receiptHeaderKey));
+      return keys.has(receiptHeaderKey("Συμβόλαιο")) && keys.has(receiptHeaderKey("Κωδ. ΔΙΑΣ"));
+    });
+    if (headerRowIndex < 0) throw new Error("Δεν βρέθηκαν οι στήλες «Συμβόλαιο» και «Κωδ. ΔΙΑΣ».");
+
+    const headerIndexes = new Map(rows[headerRowIndex].map((header, index) => [receiptHeaderKey(header), index]));
+    const columns = {
+      policy: receiptColumn(headerIndexes, ["Συμβόλαιο"]),
+      receipt: receiptColumn(headerIndexes, ["Απόδειξη"]),
+      lastName: receiptColumn(headerIndexes, ["Επίθετο Ασφ/νου", "Επίθετο Ασφαλισμένου"]),
+      firstName: receiptColumn(headerIndexes, ["Όνομα Ασφ/νου", "Όνομα Ασφαλισμένου"]),
+      startDate: receiptColumn(headerIndexes, ["Έναρξη Οφειλής"]),
+      dueDate: receiptColumn(headerIndexes, ["Λήξη Οφειλής"]),
+      amount: receiptColumn(headerIndexes, ["Είσπραξη"]),
+      finalAmount: receiptColumn(headerIndexes, ["Ανείσ/κτο", "Ανείσπρακτο"]),
+      rf: receiptColumn(headerIndexes, ["Κωδ. ΔΙΑΣ", "Κωδικός ΔΙΑΣ", "RF"])
+    };
+    const missing = Object.entries(columns).filter(([, index]) => index < 0).map(([key]) => key);
+    if (missing.length) throw new Error("Λείπουν απαραίτητες στήλες από το Excel αποδείξεων.");
+
+    const importedAt = new Date().toISOString();
+    const parsedRows = [];
+    rows.slice(headerRowIndex + 1).forEach((row, offset) => {
+      if (!Array.isArray(row)) return;
+      const rowNumber = headerRowIndex + offset + 2;
+      const policyNumber = String(row[columns.policy] ?? "").trim();
+      const receiptNumber = String(row[columns.receipt] ?? "").trim();
+      const rfCode = String(row[columns.rf] ?? "").trim().replace(/\s+/g, "");
+      const lastName = String(row[columns.lastName] ?? "").trim();
+      const firstName = String(row[columns.firstName] ?? "").trim();
+      if (!policyNumber && !receiptNumber && !rfCode && !lastName && !firstName) return;
+      if (!policyNumber || !receiptNumber || !rfCode || (!lastName && !firstName)) {
+        throw new Error(`Γραμμή ${rowNumber}: λείπει συμβόλαιο, απόδειξη, ονοματεπώνυμο ή RF.`);
+      }
+      const amount = excelAmount(row[columns.amount], rowNumber, "Είσπραξη");
+      const finalAmount = excelAmount(row[columns.finalAmount], rowNumber, "Ανείσπρακτο");
+      if (finalAmount === undefined) throw new Error(`Γραμμή ${rowNumber}: λείπει το τελικό ποσό.`);
+      const startDate = receiptExcelDate(row[columns.startDate], rowNumber, "Έναρξη Οφειλής");
+      const dueDate = receiptExcelDate(row[columns.dueDate], rowNumber, "Λήξη Οφειλής");
+      parsedRows.push({
+        id: `receipt-${policyNumber}-${receiptNumber}`,
+        owner_id: currentUser.id,
+        policy_number: policyNumber,
+        receipt_number: receiptNumber,
+        full_name: [lastName, firstName].filter(Boolean).join(" "),
+        rf_code: rfCode,
+        amount: amount ?? finalAmount,
+        final_amount: finalAmount,
+        debt_start_date: startDate,
+        due_date: dueDate,
+        imported_at: importedAt,
+        source_file: file.name || "Excel αποδείξεων"
+      });
+    });
+    if (!parsedRows.length) throw new Error("Το Excel δεν περιέχει αποδείξεις.");
+
+    const uniqueRows = [...new Map(parsedRows.map(row => [row.id, row])).values()];
+    const confirmed = window.confirm(
+      `Βρέθηκαν ${uniqueRows.length} αποδείξεις. Να αντικατασταθεί η προηγούμενη λίστα αποδείξεων;`
+    );
+    if (!confirmed) return false;
+
+    setBusy(true, "Εισαγωγή αποδείξεων…", "Τα στοιχεία αποθηκεύονται μόνο σε αυτό το iPhone.");
+    const deletion = await supabaseClient.from("payment_receipts").delete();
+    if (deletion.error) throw deletion.error;
+    for (let index = 0; index < uniqueRows.length; index += 100) {
+      const insertion = await supabaseClient.from("payment_receipts").insert(uniqueRows.slice(index, index + 100));
+      if (insertion.error) throw insertion.error;
+    }
+    await loadCustomersFromDatabase({ quiet: true });
+    render();
+    activeReceiptsTab = "current";
+    renderReceiptsModal();
+    showToast(`Αποθηκεύτηκαν ${uniqueRows.length} αποδείξεις στο iPhone.`);
+    return true;
+  }
+
   function openAutoCustomerPicker() {
     if (!autoDatabaseReady) {
       showToast("Δεν είναι διαθέσιμη η τοπική βάση αυτοκινήτων.");
@@ -6478,6 +6840,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       if (counter) counter.textContent = String(value);
     });
     els.renewalsCount.textContent = String(currentMonthAutoRenewals().length);
+    els.receiptsCount.textContent = String(paymentReceipts.length);
 
     if (!query) {
       els.list.innerHTML = `
@@ -6681,6 +7044,20 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   els.newAutoPolicyBtn.addEventListener("click", openAutoCustomerPicker);
   els.renewalsBtn.addEventListener("click", openRenewalsModal);
+  els.receiptsBtn.addEventListener("click", openReceiptsModal);
+  els.receiptExcelFile.addEventListener("change", async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await importReceiptExcel(file);
+    } catch (error) {
+      console.error(error);
+      showToast(databaseErrorMessage(error));
+    } finally {
+      setBusy(false);
+      event.target.value = "";
+    }
+  });
 
   els.search.addEventListener("input", () => {
     setSearchValue(els.search.value, "desktop");
@@ -6707,6 +7084,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   els.memberCoverageModalClose.addEventListener("click", closeMemberCoverageModal);
   els.autoPolicyModalClose.addEventListener("click", closeAutoPolicyModal);
   els.renewalsModalClose.addEventListener("click", closeRenewalsModal);
+  els.receiptsModalClose.addEventListener("click", closeReceiptsModal);
 
   els.coverageModal.addEventListener("click", event => {
     if (event.target === els.coverageModal) closeCoverageModal();
@@ -6726,6 +7104,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   els.renewalsModal.addEventListener("click", event => {
     if (event.target === els.renewalsModal) closeRenewalsModal();
   });
+  els.receiptsModal.addEventListener("click", event => {
+    if (event.target === els.receiptsModal) closeReceiptsModal();
+  });
 
   els.mobileSearchModal.addEventListener("click", event => {
     if (event.target === els.mobileSearchModal) closeMobileSearchModal();
@@ -6733,6 +7114,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
+
+    if (!els.receiptsModal.classList.contains("hidden")) {
+      closeReceiptsModal();
+      return;
+    }
 
     if (!els.renewalsModal.classList.contains("hidden")) {
       closeRenewalsModal();
@@ -6785,10 +7171,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   $("exportBtn").addEventListener("click", () => {
     const payload = {
       app: "Προσωπικό Χαρτοφυλάκιο",
-      version: 7,
+      version: 8,
       exportedAt: new Date().toISOString(),
       customers,
-      autoPolicies
+      autoPolicies,
+      paymentReceipts
     };
     const backupText = JSON.stringify(payload, null, 2);
     const backupName = `portfolio-backup-${new Date().toISOString().slice(0,10)}.json`;
@@ -6815,6 +7202,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       const parsed = JSON.parse(await file.text());
       const imported = Array.isArray(parsed) ? parsed : parsed.customers;
       const importedAutoPolicies = Array.isArray(parsed?.autoPolicies) ? parsed.autoPolicies : [];
+      const hasPaymentReceipts = Array.isArray(parsed?.paymentReceipts);
+      const importedPaymentReceipts = hasPaymentReceipts ? parsed.paymentReceipts : [];
       if (!Array.isArray(imported)) throw new Error("Το αρχείο backup δεν είναι έγκυρο.");
       setBusy(true, "Εισαγωγή backup…", "Τα δεδομένα αποθηκεύονται τοπικά στο iPhone.");
       await importRecordsIntoDatabase(imported);
@@ -6825,8 +7214,20 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         const { error } = await supabaseClient.from("auto_policies").insert(rows);
         if (error) throw error;
       }
+      if (hasPaymentReceipts) {
+        const deletion = await supabaseClient.from("payment_receipts").delete();
+        if (deletion.error) throw deletion.error;
+        for (let index = 0; index < importedPaymentReceipts.length; index += 100) {
+          const rows = importedPaymentReceipts.slice(index, index + 100).map(receipt => ({
+            ...receipt,
+            owner_id: currentUser.id
+          }));
+          const { error } = await supabaseClient.from("payment_receipts").insert(rows);
+          if (error) throw error;
+        }
+      }
       await loadCustomersFromDatabase({ quiet: true });
-      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι και ${autoPolicies.length} αυτοκίνητα στο iPhone.`);
+      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι, ${autoPolicies.length} αυτοκίνητα και ${paymentReceipts.length} αποδείξεις στο iPhone.`);
     } catch (error) {
       console.error(error);
       showToast(databaseErrorMessage(error));
@@ -7181,6 +7582,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     currentUser = null;
     customers = [];
     autoPolicies = [];
+    paymentReceipts = [];
     autoDatabaseReady = false;
     selectedCustomerId = null;
     activeDetailTab = "personal";
@@ -7429,12 +7831,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.8";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.9";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js?v=9.9.8").catch(error => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.9").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
       });
     });
