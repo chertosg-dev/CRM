@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.1";
+  const VERSION = "1.1.2";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -69,6 +69,8 @@
   let visualPageIndex = 0;
   let visualDraft = [];
   let visualRenderSeq = 0;
+  let visualPageCssScale = 1;
+  let visualDragState = null;
 
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[ch]);
@@ -657,7 +659,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.1.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.2.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -676,10 +678,10 @@
     $("formsMapList").innerHTML = `
       <div class="forms-visual-toolbar">
         <div class="forms-field forms-visual-source"><label for="formsVisualSource">Πεδίο CRM που θα τοποθετήσεις</label><select id="formsVisualSource">${visualOptionMarkup("")}</select></div>
-        <div class="forms-field forms-visual-size"><label for="formsVisualFontSize">Μέγεθος</label><select id="formsVisualFontSize"><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11" selected>11</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option></select></div>
+        <div class="forms-field forms-visual-size"><label for="formsVisualFontSize">Μέγεθος νέου πεδίου</label><select id="formsVisualFontSize"><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10" selected>10</option><option value="11">11</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option></select></div>
         <div class="forms-visual-pages"><button class="forms-secondary" id="formsVisualPrev" type="button">‹</button><span id="formsVisualPageLabel">Σελίδα</span><button class="forms-secondary" id="formsVisualNext" type="button">›</button></div>
       </div>
-      <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε ένα πεδίο CRM και μετά πάτησε ακριβώς πάνω στο σημείο του εντύπου όπου θέλεις να εμφανίζεται.</div>
+      <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε πεδίο CRM και πάτησε στο σημείο του εντύπου. Μετά μπορείς να <strong>σύρεις την τιμή</strong> για ακριβή θέση, να αλλάξεις το μέγεθός της ή να τη μετακινήσεις 1 βήμα με τα βελάκια.</div>
       <div class="forms-visual-canvas-shell"><div class="forms-visual-canvas-wrap" id="formsVisualCanvasWrap"><canvas id="formsVisualCanvas"></canvas><div class="forms-visual-markers" id="formsVisualMarkers"></div></div></div>
       <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
 
@@ -702,19 +704,43 @@
     $("formsVisualNext")?.addEventListener("click", () => changeVisualPage(1));
     $("formsVisualCanvas")?.addEventListener("click", addVisualFieldFromClick);
     $("formsVisualList")?.addEventListener("change", event => {
-      const select = event.target.closest("select[data-visual-source-id]");
-      if (!select) return;
-      const item = visualDraft.find(field => field.id === select.dataset.visualSourceId);
-      if (item) item.sourceKey = select.value;
-      renderVisualMarkers();
+      const sourceSelect = event.target.closest("select[data-visual-source-id]");
+      if (sourceSelect) {
+        const item = visualDraft.find(field => field.id === sourceSelect.dataset.visualSourceId);
+        if (item) item.sourceKey = sourceSelect.value;
+        renderVisualMarkers();
+        return;
+      }
+      const fontSelect = event.target.closest("select[data-visual-font-id]");
+      if (fontSelect) {
+        const item = visualDraft.find(field => field.id === fontSelect.dataset.visualFontId);
+        if (item) item.fontSize = Number(fontSelect.value || 10);
+        renderVisualMarkers();
+      }
     });
     $("formsVisualList")?.addEventListener("click", event => {
+      const nudge = event.target.closest("[data-nudge-id]");
+      if (nudge) {
+        const item = visualDraft.find(field => field.id === nudge.dataset.nudgeId);
+        const canvas = $("formsVisualCanvas");
+        if (item && canvas) {
+          const width = parseFloat(canvas.style.width) || canvas.clientWidth || 1;
+          const height = parseFloat(canvas.style.height) || canvas.clientHeight || 1;
+          const dx = Number(nudge.dataset.dx || 0) / width;
+          const dy = Number(nudge.dataset.dy || 0) / height;
+          item.xRatio = Math.max(0, Math.min(1, Number(item.xRatio || 0) + dx));
+          item.yRatio = Math.max(0, Math.min(1, Number(item.yRatio || 0) + dy));
+          renderVisualMarkers();
+        }
+        return;
+      }
       const remove = event.target.closest("[data-remove-visual]");
       if (!remove) return;
       visualDraft = visualDraft.filter(field => field.id !== remove.dataset.removeVisual);
       renderVisualMarkers();
       renderVisualFieldList();
     });
+    $("formsVisualMarkers")?.addEventListener("pointerdown", beginVisualDrag);
     await renderVisualPage();
     renderVisualFieldList();
   }
@@ -737,6 +763,7 @@
     const base = page.getViewport({ scale: 1 });
     const available = Math.max(280, Math.min(900, (wrap.parentElement?.clientWidth || 760) - 20));
     const cssScale = available / base.width;
+    visualPageCssScale = cssScale;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const viewport = page.getViewport({ scale: cssScale * dpr });
     const cssWidth = viewport.width / dpr;
@@ -767,12 +794,79 @@
     const rect = canvas.getBoundingClientRect();
     const xRatio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const yRatio = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    const fontSize = Number($("formsVisualFontSize")?.value || 11);
+    const fontSize = Number($("formsVisualFontSize")?.value || 10);
     visualDraft.push({ id: uid(), pageIndex: visualPageIndex, xRatio, yRatio, sourceKey, fontSize });
     const help = $("formsVisualHelp");
     if (help) { help.textContent = `Τοποθετήθηκε: ${sourceLabel(sourceKey)}. Μπορείς να συνεχίσεις με άλλο πεδίο.`; help.classList.remove("warning"); }
     renderVisualMarkers();
     renderVisualFieldList();
+  }
+
+  function visualPreviewText(sourceKey) {
+    try {
+      const value = sourceValue(sourceKey, buildContext());
+      if (value !== "" && value !== null && value !== undefined) return String(value);
+    } catch (_) {}
+    const samples = {
+      "person.afm": "123456789",
+      "insured.afm": "123456789",
+      "person.adt": "ΑΒ123456",
+      "contract.number": "12345678",
+      "policy.number": "12345678",
+      "auto.policyNumber": "12345678",
+      "auto.registrationNumber": "ΙΚΧ1234",
+      "person.streetNumber": "12",
+      "person.postalCode": "18531",
+      "person.phone": "6900000000",
+      "insured.phone": "6900000000",
+      "date.today": "19/09/2026"
+    };
+    return samples[sourceKey] || sourceLabel(sourceKey) || "Κείμενο";
+  }
+
+  function beginVisualDrag(event) {
+    const marker = event.target.closest(".forms-visual-marker[data-visual-id]");
+    if (!marker) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = marker.dataset.visualId;
+    const item = visualDraft.find(field => field.id === id);
+    const canvas = $("formsVisualCanvas");
+    if (!item || !canvas) return;
+    visualDragState = { id, marker };
+    marker.classList.add("dragging");
+    try { marker.setPointerCapture(event.pointerId); } catch (_) {}
+    updateVisualDragPosition(event);
+    marker.addEventListener("pointermove", updateVisualDragPosition);
+    marker.addEventListener("pointerup", endVisualDrag, { once: true });
+    marker.addEventListener("pointercancel", endVisualDrag, { once: true });
+  }
+
+  function updateVisualDragPosition(event) {
+    if (!visualDragState) return;
+    const item = visualDraft.find(field => field.id === visualDragState.id);
+    const canvas = $("formsVisualCanvas");
+    if (!item || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    item.xRatio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    item.yRatio = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    const marker = visualDragState.marker;
+    marker.style.left = `${item.xRatio * rect.width}px`;
+    marker.style.top = `${item.yRatio * rect.height}px`;
+  }
+
+  function endVisualDrag(event) {
+    const marker = visualDragState?.marker;
+    if (marker) {
+      marker.classList.remove("dragging");
+      marker.removeEventListener("pointermove", updateVisualDragPosition);
+    }
+    visualDragState = null;
+    renderVisualMarkers();
+  }
+
+  function fontOptions(selected = 10) {
+    return [6,7,8,9,10,11,12,14,16,18].map(size => `<option value="${size}"${Number(selected) === size ? " selected" : ""}>${size} pt</option>`).join("");
   }
 
   function renderVisualMarkers() {
@@ -782,7 +876,10 @@
     const width = parseFloat(canvas.style.width) || canvas.clientWidth || 1;
     const height = parseFloat(canvas.style.height) || canvas.clientHeight || 1;
     const current = visualDraft.filter(item => Number(item.pageIndex || 0) === visualPageIndex);
-    host.innerHTML = current.map((item, index) => `<div class="forms-visual-marker" style="left:${item.xRatio * width}px;top:${item.yRatio * height}px" title="${esc(sourceLabel(item.sourceKey))}"><span>${index + 1}</span><b>${esc(sourceLabel(item.sourceKey))}</b></div>`).join("");
+    host.innerHTML = current.map((item, index) => {
+      const sizePx = Math.max(4.5, Number(item.fontSize || 10) * visualPageCssScale);
+      return `<div class="forms-visual-marker" data-visual-id="${esc(item.id)}" style="left:${item.xRatio * width}px;top:${item.yRatio * height}px;font-size:${sizePx}px" title="Σύρε για ακριβή θέση · ${esc(sourceLabel(item.sourceKey))}"><span>${index + 1}</span><b>${esc(visualPreviewText(item.sourceKey))}</b></div>`;
+    }).join("");
   }
 
   function renderVisualFieldList() {
@@ -792,13 +889,14 @@
       host.innerHTML = `<div class="forms-empty">Δεν έχεις τοποθετήσει ακόμη πεδίο. Διάλεξε πεδίο CRM και πάτησε πάνω στο PDF.</div>`;
       return;
     }
-    host.innerHTML = visualDraft.map((item,index) => `<div class="forms-visual-list-row"><div class="forms-visual-index">${index + 1}</div><div class="forms-visual-list-main"><small>Σελίδα ${Number(item.pageIndex || 0) + 1} · ${Number(item.fontSize || 11)} pt</small><select data-visual-source-id="${esc(item.id)}">${visualOptionMarkup(item.sourceKey || "")}</select></div><button class="forms-danger forms-visual-remove" type="button" data-remove-visual="${esc(item.id)}">×</button></div>`).join("");
+    host.innerHTML = visualDraft.map((item,index) => `<div class="forms-visual-list-row"><div class="forms-visual-index">${index + 1}</div><div class="forms-visual-list-main"><small>Σελίδα ${Number(item.pageIndex || 0) + 1}</small><select data-visual-source-id="${esc(item.id)}">${visualOptionMarkup(item.sourceKey || "")}</select><div class="forms-visual-adjust"><label>Μέγεθος <select data-visual-font-id="${esc(item.id)}">${fontOptions(Number(item.fontSize || 10))}</select></label><div class="forms-visual-nudges" aria-label="Μικρομετακίνηση"><button type="button" data-nudge-id="${esc(item.id)}" data-dx="-1" data-dy="0" title="Αριστερά">←</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="1" data-dy="0" title="Δεξιά">→</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="0" data-dy="-1" title="Πάνω">↑</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="0" data-dy="1" title="Κάτω">↓</button></div></div></div><button class="forms-danger forms-visual-remove" type="button" data-remove-visual="${esc(item.id)}">×</button></div>`).join("");
   }
 
   function closeMapping() {
     currentMapTemplate = null;
     visualPdfDoc = null;
     visualDraft = [];
+    visualDragState = null;
     $("formsMapModal")?.classList.add("hidden");
   }
 
@@ -832,15 +930,19 @@
     }
   }
 
-  async function textPngData(text, fontSize = 11) {
+  async function textPngData(text, fontSize = 10) {
     const value = String(text ?? "");
-    const scale = 3;
+    const scale = 4;
     const family = `-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif`;
     const measure = document.createElement("canvas").getContext("2d");
     measure.font = `${fontSize}px ${family}`;
-    const measured = Math.max(2, Math.ceil(measure.measureText(value).width));
-    const logicalWidth = measured + 5;
-    const logicalHeight = Math.ceil(fontSize * 1.45) + 2;
+    const metrics = measure.measureText(value);
+    const left = Math.ceil(Math.max(0, metrics.actualBoundingBoxLeft || 0));
+    const right = Math.ceil(Math.max(2, metrics.actualBoundingBoxRight || metrics.width || 2));
+    const ascent = Math.ceil(Math.max(fontSize * 0.7, metrics.actualBoundingBoxAscent || fontSize));
+    const descent = Math.ceil(Math.max(1, metrics.actualBoundingBoxDescent || fontSize * 0.2));
+    const logicalWidth = Math.max(3, left + right + 2);
+    const logicalHeight = Math.max(3, ascent + descent + 2);
     const canvas = document.createElement("canvas");
     canvas.width = logicalWidth * scale;
     canvas.height = logicalHeight * scale;
@@ -849,8 +951,8 @@
     ctx.clearRect(0, 0, logicalWidth, logicalHeight);
     ctx.fillStyle = "#000";
     ctx.font = `${fontSize}px ${family}`;
-    ctx.textBaseline = "top";
-    ctx.fillText(value, 2, 1);
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(value, 1 + left, 1 + ascent);
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("Δεν δημιουργήθηκε η εικόνα κειμένου.");
     return { bytes: new Uint8Array(await blob.arrayBuffer()), width: logicalWidth, height: logicalHeight };
@@ -866,7 +968,7 @@
       const pageIndex = Math.max(0, Math.min(doc.getPageCount() - 1, Number(item.pageIndex || 0)));
       const page = doc.getPage(pageIndex);
       const { width: pageWidth, height: pageHeight } = page.getSize();
-      const pngData = await textPngData(value, Number(item.fontSize || 11));
+      const pngData = await textPngData(value, Number(item.fontSize || 10));
       const image = await doc.embedPng(pngData.bytes);
       let drawWidth = pngData.width;
       let drawHeight = pngData.height;

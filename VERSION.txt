@@ -1,10 +1,11 @@
-TSERTOS CRM PWA
-Version: 9.11.1
-Build: FORMS_VISUAL_EDITOR_CACHE_FIX
+TSERTOS Insurance CRM
+Version: 9.11.2
+Build: FORMS_VISUAL_POSITION_FONT_FIX
 Date: 2026-09-19
 
 Changes:
-- Fix visual PDF mapping editor opening on iPhone/PWA.
-- Correct all cache/service-worker version references to V9.11.1.
-- Show explicit PDF loading/error state in Fields editor.
-- Avoid blocking worker prefetch and add iOS PDF.js fallback.
+- Visual PDF fields can be dragged directly on the PDF for exact placement.
+- Each placed field has its own font-size selector (6–18 pt).
+- One-step arrow nudges allow precise up/down/left/right positioning.
+- The visual marker previews the actual CRM value when available, instead of a large label.
+- Text PNG is tightly cropped so the saved PDF position better matches the visual placement.
