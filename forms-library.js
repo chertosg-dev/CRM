@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.0.0";
+  const VERSION = "1.0.1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -31,9 +31,14 @@
     ["insured.phone", "Τηλέφωνο κύριου ασφαλισμένου", "Κύριος ασφαλισμένος"],
     ["insured.email", "Email κύριου ασφαλισμένου", "Κύριος ασφαλισμένος"],
     ["insured.address", "Διεύθυνση κύριου ασφαλισμένου", "Κύριος ασφαλισμένος"],
-    ["policy.number", "Αριθμός συμβολαίου", "Συμβόλαιο"],
-    ["policy.product", "Προϊόν συμβολαίου", "Συμβόλαιο"],
-    ["policy.startDate", "Ημερομηνία έναρξης", "Συμβόλαιο"],
+    ["contract.number", "Αριθμός επιλεγμένου συμβολαίου", "Επιλεγμένο συμβόλαιο"],
+    ["contract.type", "Τύπος συμβολαίου (Ζωής / Αυτοκινήτου)", "Επιλεγμένο συμβόλαιο"],
+    ["contract.product", "Προϊόν / Πακέτο επιλεγμένου συμβολαίου", "Επιλεγμένο συμβόλαιο"],
+    ["contract.startDate", "Ημερομηνία έναρξης επιλεγμένου συμβολαίου", "Επιλεγμένο συμβόλαιο"],
+    ["contract.endDate", "Ημερομηνία λήξης επιλεγμένου συμβολαίου", "Επιλεγμένο συμβόλαιο"],
+    ["policy.number", "Αριθμός συμβολαίου Ζωής", "Ζωής"],
+    ["policy.product", "Προϊόν συμβολαίου Ζωής", "Ζωής"],
+    ["policy.startDate", "Ημερομηνία έναρξης Ζωής", "Ζωής"],
     ["policy.tariff", "Τιμολόγιο", "Συμβόλαιο"],
     ["policy.hospitalProgram", "Νοσοκομειακό πρόγραμμα", "Συμβόλαιο"],
     ["policy.diagnosticPackage", "Διαγνωστικές εξετάσεις", "Συμβόλαιο"],
@@ -94,7 +99,9 @@
 
   function customersArray() {
     try {
-      return Array.isArray(customers) ? customers : [];
+      const api = window.TSERTOS_CRM_FORMS_API;
+      const items = api?.getCustomers?.();
+      return Array.isArray(items) ? items : [];
     } catch (_) {
       return [];
     }
@@ -102,7 +109,9 @@
 
   function autoPoliciesArray() {
     try {
-      return Array.isArray(autoPolicies) ? autoPolicies : [];
+      const api = window.TSERTOS_CRM_FORMS_API;
+      const items = api?.getAutoPolicies?.();
+      return Array.isArray(items) ? items : [];
     } catch (_) {
       return [];
     }
@@ -209,9 +218,9 @@
     if (has("αριθμος οδου", "street number", "address no")) return "person.streetNumber";
     if (has("οδος", "street")) return "person.street";
     if (has("διευθυν", "address")) return "person.address";
-    if (has("αρ συμβολ", "αριθμος συμβολ", "policy number", "contract number")) return "policy.number";
-    if (has("προϊον", "product")) return "policy.product";
-    if (has("ημερ εναρξ", "ημερομηνια εναρξ", "start date")) return "policy.startDate";
+    if (has("αρ συμβολ", "αριθμος συμβολ", "policy number", "contract number")) return "contract.number";
+    if (has("προϊον", "product")) return "contract.product";
+    if (has("ημερ εναρξ", "ημερομηνια εναρξ", "start date")) return "contract.startDate";
     if (has("τιμολογ", "tariff")) return "policy.tariff";
     if (has("κυκλοφορ", "πινακ", "registration")) return "auto.registrationNumber";
     if (has("σημερινη", "today", "ημερομηνια αιτησης", "date")) return "date.today";
@@ -269,7 +278,7 @@
             <section class="forms-section">
               <h3>2. Συμβόλαιο και πρόσωπο</h3>
               <div class="forms-grid">
-                <div class="forms-field"><label for="formsPolicySelect">Συμβόλαιο</label><select id="formsPolicySelect"><option value="">Χωρίς συγκεκριμένο συμβόλαιο</option></select></div>
+                <div class="forms-field"><label for="formsPolicySelect">Συμβόλαιο (Ζωής / Αυτοκινήτου)</label><select id="formsPolicySelect"><option value="">Χωρίς συγκεκριμένο συμβόλαιο</option></select></div>
                 <div class="forms-field"><label for="formsPersonSelect">Πρόσωπο</label><select id="formsPersonSelect"><option value="insured">Κύριος ασφαλισμένος</option></select></div>
               </div>
             </section>
@@ -397,7 +406,8 @@
       ].filter(Boolean).join(" "));
       return haystack.includes(q);
     }).slice(0, 30);
-    host.innerHTML = matches.length ? matches.map(customer => `<button class="forms-customer-option" type="button" data-customer-id="${esc(customer.id)}"><strong>${esc(displayName(customer))}</strong><span>${[customer.afm && `ΑΦΜ ${customer.afm}`, customer.phone].filter(Boolean).map(esc).join(" · ")}</span></button>`).join("") : `<div class="forms-empty">Δεν βρέθηκε πελάτης.</div>`;
+    const allCustomers = customersArray();
+    host.innerHTML = matches.length ? matches.map(customer => `<button class="forms-customer-option" type="button" data-customer-id="${esc(customer.id)}"><strong>${esc(displayName(customer))}</strong><span>${[customer.afm && `ΑΦΜ ${customer.afm}`, customer.phone].filter(Boolean).map(esc).join(" · ")}</span></button>`).join("") : `<div class="forms-empty">${allCustomers.length ? "Δεν βρέθηκε πελάτης." : "Δεν είναι ακόμη διαθέσιμα τα στοιχεία πελατών του CRM. Κλείσε και ξανάνοιξε τα Έντυπα."}</div>`;
     host.classList.add("open");
   }
 
@@ -443,10 +453,10 @@
     const autos = customer ? autoPoliciesArray().filter(item => String(item.insuredId) === String(customer.id)) : [];
     const options = [`<option value="">Χωρίς συγκεκριμένο συμβόλαιο</option>`];
     if (regular.length) {
-      options.push(`<optgroup label="Συμβόλαια">${regular.map(policy => `<option value="policy:${esc(policy.id || policy.number)}">${esc(policy.number || "Χωρίς αριθμό")}${policy.product ? ` — ${esc(policy.product)}` : ""}</option>`).join("")}</optgroup>`);
+      options.push(`<optgroup label="Συμβόλαια Ζωής">${regular.map(policy => `<option value="policy:${esc(policy.id || policy.number)}">${esc(policy.number || "Χωρίς αριθμό")}${policy.product ? ` — ${esc(policy.product)}` : ""}</option>`).join("")}</optgroup>`);
     }
     if (autos.length) {
-      options.push(`<optgroup label="Αυτοκίνητα">${autos.map(policy => `<option value="auto:${esc(policy.id)}">${esc(policy.policyNumber || "Συμβόλαιο")}${policy.registrationNumber ? ` — ${esc(policy.registrationNumber)}` : ""}</option>`).join("")}</optgroup>`);
+      options.push(`<optgroup label="Συμβόλαια Αυτοκινήτου">${autos.map(policy => `<option value="auto:${esc(policy.id)}">${esc(policy.policyNumber || "Συμβόλαιο")}${policy.registrationNumber ? ` — ${esc(policy.registrationNumber)}` : ""}</option>`).join("")}</optgroup>`);
     }
     select.innerHTML = options.join("");
     if ([...select.options].some(option => option.value === selectedPolicySource)) select.value = selectedPolicySource;
@@ -505,6 +515,11 @@
     const policy = context.regularPolicy || {};
     const coverage = context.coverage || {};
     const auto = context.autoPolicy || {};
+    const selectedContractIsAuto = Boolean(context.autoPolicy);
+    const contractNumber = selectedContractIsAuto ? (auto.policyNumber || "") : (policy.number || "");
+    const contractProduct = selectedContractIsAuto ? (auto.packageName || auto.product || "") : (policy.product || "");
+    const contractStartDate = selectedContractIsAuto ? formatDateGR(auto.startDate) : formatDateGR(coverage.startDate);
+    const contractEndDate = selectedContractIsAuto ? formatDateGR(auto.endDate) : "";
     const values = {
       "person.fullName": displayName(person),
       "person.firstName": person.firstName || "",
@@ -527,6 +542,11 @@
       "insured.phone": insured.phone || "",
       "insured.email": insured.email || "",
       "insured.address": fullAddress(insured),
+      "contract.number": contractNumber,
+      "contract.type": selectedContractIsAuto ? "Αυτοκινήτου" : (context.regularPolicy ? "Ζωής" : ""),
+      "contract.product": contractProduct,
+      "contract.startDate": contractStartDate,
+      "contract.endDate": contractEndDate,
       "policy.number": policy.number || "",
       "policy.product": policy.product || "",
       "policy.startDate": formatDateGR(coverage.startDate),
