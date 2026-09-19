@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.0";
+  const VERSION = "1.1.1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -175,14 +175,26 @@
     });
   }
 
-  function loadExternalScript(src) {
+  function loadExternalScript(src, timeoutMs = 12000) {
     return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = src;
-      script.async = true;
-      script.onload = resolve;
-      script.onerror = () => reject(new Error(`Δεν φορτώθηκε ${src}`));
-      document.head.appendChild(script);
+      const existing = [...document.scripts].find(node => node.src === src);
+      if (existing?.dataset?.loaded === "1") { resolve(); return; }
+      const script = existing || document.createElement("script");
+      let settled = false;
+      const finish = (fn, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        fn(value);
+      };
+      const timer = setTimeout(() => finish(reject, new Error(`Χρόνος αναμονής κατά τη φόρτωση ${src}`)), timeoutMs);
+      script.onload = () => { script.dataset.loaded = "1"; finish(resolve); };
+      script.onerror = () => finish(reject, new Error(`Δεν φορτώθηκε ${src}`));
+      if (!existing) {
+        script.src = src;
+        script.async = true;
+        document.head.appendChild(script);
+      }
     });
   }
 
@@ -203,20 +215,9 @@
   }
 
   async function configurePdfJsWorker(pdfjs) {
-    if (pdfJsWorkerObjectURL) {
-      try { pdfjs.GlobalWorkerOptions.workerSrc = pdfJsWorkerObjectURL; } catch (_) {}
-      return pdfjs;
-    }
-    try {
-      const response = await fetch(PDF_JS_WORKER, { mode: "cors", cache: "force-cache" });
-      if (!response.ok) throw new Error(`Worker HTTP ${response.status}`);
-      const blob = await response.blob();
-      pdfJsWorkerObjectURL = URL.createObjectURL(blob);
-      pdfjs.GlobalWorkerOptions.workerSrc = pdfJsWorkerObjectURL;
-    } catch (error) {
-      console.warn("PDF.js worker fallback", error);
-      try { pdfjs.GlobalWorkerOptions.workerSrc = PDF_JS_WORKER; } catch (_) {}
-    }
+    // Μην μπλοκάρεις το άνοιγμα του editor περιμένοντας ξεχωριστό fetch του worker.
+    // Σε iPhone/PWA αυτό μπορούσε να αφήσει το κουμπί «Πεδία» να φαίνεται ότι κόλλησε.
+    try { pdfjs.GlobalWorkerOptions.workerSrc = PDF_JS_WORKER; } catch (_) {}
     return pdfjs;
   }
 
@@ -651,10 +652,14 @@
     $("formsMapModal").classList.remove("hidden");
 
     if (!fields.length) {
-      openVisualMapping(template).catch(error => {
-        console.error(error);
-        $("formsMapList").innerHTML = `<div class="forms-empty">Δεν μπόρεσε να ανοίξει η οπτική αντιστοίχιση: ${esc(error?.message || "άγνωστο σφάλμα")}</div>`;
-        $("formsMapSaveBtn").disabled = true;
+      $("formsMapSaveBtn").disabled = true;
+      $("formsMapList").innerHTML = `<div class="forms-empty forms-visual-loading"><strong>Άνοιγμα PDF…</strong><br><small>Φορτώνεται η σελίδα του εντύπου για οπτική αντιστοίχιση.</small></div>`;
+      requestAnimationFrame(() => {
+        openVisualMapping(template).catch(error => {
+          console.error(error);
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.1.</small></div>`;
+          $("formsMapSaveBtn").disabled = true;
+        });
       });
       return;
     }
@@ -679,8 +684,20 @@
       <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
 
     const pdfjs = await ensurePdfJs();
-    const bytes = new Uint8Array(await template.pdfBlob.arrayBuffer());
-    visualPdfDoc = await pdfjs.getDocument({ data: bytes }).promise;
+    const sourceBuffer = await template.pdfBlob.arrayBuffer();
+    try {
+      visualPdfDoc = await pdfjs.getDocument({ data: new Uint8Array(sourceBuffer.slice(0)) }).promise;
+    } catch (firstError) {
+      // Εφεδρική λειτουργία για iOS/WebKit: φόρτωση του worker και στο main thread,
+      // ώστε το PDF.js να μπορεί να χρησιμοποιήσει fake-worker αν το Worker μπλοκάρεται.
+      console.warn("PDF.js normal worker failed; trying main-thread fallback", firstError);
+      try {
+        await loadExternalScript(PDF_JS_WORKER, 12000);
+        visualPdfDoc = await pdfjs.getDocument({ data: new Uint8Array(sourceBuffer.slice(0)) }).promise;
+      } catch (fallbackError) {
+        throw new Error(`Η προεπισκόπηση PDF δεν φόρτωσε (${fallbackError?.message || firstError?.message || "σφάλμα PDF.js"}).`);
+      }
+    }
     $("formsVisualPrev")?.addEventListener("click", () => changeVisualPage(-1));
     $("formsVisualNext")?.addEventListener("click", () => changeVisualPage(1));
     $("formsVisualCanvas")?.addEventListener("click", addVisualFieldFromClick);

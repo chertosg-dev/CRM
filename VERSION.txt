@@ -1,7 +1,10 @@
-TSERTOS Insurance CRM PWA
-Έκδοση: 9.11.0 VISUAL PDF MAPPING
-Αποθήκευση CRM: Τοπική IndexedDB στο iPhone
-Βιβλιοθήκη PDF: Τοπική IndexedDB στο iPhone
-Νέο: Οπτική αντιστοίχιση πεδίων για απλά και σαρωμένα PDF χωρίς AcroForm.
-Χρήση: Επιλέγεις πεδίο CRM, πατάς πάνω στο σημείο του PDF και η θέση αποθηκεύεται για όλες τις επόμενες συμπληρώσεις.
-Υποστήριξη: Συνεχίζει να υποστηρίζει και PDF με κανονικά διαδραστικά πεδία.
+TSERTOS CRM PWA
+Version: 9.11.1
+Build: FORMS_VISUAL_EDITOR_CACHE_FIX
+Date: 2026-09-19
+
+Changes:
+- Fix visual PDF mapping editor opening on iPhone/PWA.
+- Correct all cache/service-worker version references to V9.11.1.
+- Show explicit PDF loading/error state in Fields editor.
+- Avoid blocking worker prefetch and add iOS PDF.js fallback.

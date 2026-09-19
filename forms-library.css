@@ -52,3 +52,7 @@
 .forms-visual-list-wrap{margin-top:12px}.forms-visual-list-wrap h4{margin:0 0 8px;color:var(--forms-ink);font-size:13px}.forms-visual-list{display:grid;gap:7px}
 .forms-visual-list-row{display:grid;grid-template-columns:30px minmax(0,1fr) 38px;gap:8px;align-items:center;padding:8px;border:1px solid var(--forms-line);border-radius:11px;background:#fff}.forms-visual-index{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#edf3ff;color:#164baf;font-size:11px;font-weight:900}.forms-visual-list-main{display:grid;gap:4px}.forms-visual-list-main small{color:var(--forms-muted);font-size:9px}.forms-visual-list-main select{width:100%;min-height:37px;border:1px solid #ccd7e6;border-radius:9px;padding:6px 8px;background:#fff}.forms-visual-remove{width:36px;height:36px;padding:0!important;font-size:20px;line-height:1}
 @media(max-width:700px){.forms-map-modal{padding:0}.forms-map-window.visual-mode{width:100%;height:100dvh;max-height:100dvh;border-radius:0}.forms-visual-toolbar{grid-template-columns:1fr 88px}.forms-visual-pages{grid-column:1/-1;justify-content:center}.forms-visual-canvas-shell{max-height:49dvh;padding:6px}.forms-map-list{padding:9px}.forms-visual-marker b{display:none}.forms-visual-marker{padding-right:3px}}
+/* V9.11.1 */
+.forms-visual-loading{padding:28px 16px!important;text-align:center;line-height:1.6}
+.forms-visual-loading strong{font-size:15px;color:var(--forms-ink)}
+.forms-visual-loading small{color:var(--forms-muted)}
