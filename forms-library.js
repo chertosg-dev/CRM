@@ -1,12 +1,15 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.0.1";
+  const VERSION = "1.1.0";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
   const PDF_LIB_PRIMARY = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const PDF_LIB_FALLBACK = "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js";
+  const PDF_JS_PRIMARY = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+  const PDF_JS_FALLBACK = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  const PDF_JS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
 
   const sourceDefinitions = [
     ["", "— Να μη συμπληρώνεται —", ""],
@@ -60,6 +63,12 @@
   let generatedObjectURL = null;
   let currentMapTemplate = null;
   let pdfLibPromise = null;
+  let pdfJsPromise = null;
+  let pdfJsWorkerObjectURL = null;
+  let visualPdfDoc = null;
+  let visualPageIndex = 0;
+  let visualDraft = [];
+  let visualRenderSeq = 0;
 
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[ch]);
@@ -191,6 +200,48 @@
         throw error;
       });
     return pdfLibPromise;
+  }
+
+  async function configurePdfJsWorker(pdfjs) {
+    if (pdfJsWorkerObjectURL) {
+      try { pdfjs.GlobalWorkerOptions.workerSrc = pdfJsWorkerObjectURL; } catch (_) {}
+      return pdfjs;
+    }
+    try {
+      const response = await fetch(PDF_JS_WORKER, { mode: "cors", cache: "force-cache" });
+      if (!response.ok) throw new Error(`Worker HTTP ${response.status}`);
+      const blob = await response.blob();
+      pdfJsWorkerObjectURL = URL.createObjectURL(blob);
+      pdfjs.GlobalWorkerOptions.workerSrc = pdfJsWorkerObjectURL;
+    } catch (error) {
+      console.warn("PDF.js worker fallback", error);
+      try { pdfjs.GlobalWorkerOptions.workerSrc = PDF_JS_WORKER; } catch (_) {}
+    }
+    return pdfjs;
+  }
+
+  function ensurePdfJs() {
+    if (window.pdfjsLib?.getDocument) return configurePdfJsWorker(window.pdfjsLib);
+    if (pdfJsPromise) return pdfJsPromise;
+    pdfJsPromise = loadExternalScript(PDF_JS_PRIMARY)
+      .catch(() => loadExternalScript(PDF_JS_FALLBACK))
+      .then(() => {
+        if (!window.pdfjsLib?.getDocument) throw new Error("Δεν φορτώθηκε η προεπισκόπηση PDF.");
+        return configurePdfJsWorker(window.pdfjsLib);
+      })
+      .catch(error => {
+        pdfJsPromise = null;
+        throw error;
+      });
+    return pdfJsPromise;
+  }
+
+  function sourceLabel(key) {
+    return sourceDefinitions.find(item => item[0] === key)?.[1] || key || "Πεδίο";
+  }
+
+  function visualOptionMarkup(selectedValue = "") {
+    return optionMarkup(selectedValue);
   }
 
   function fieldType(field) {
@@ -351,11 +402,14 @@
     }
     host.innerHTML = templates.map(template => {
       const fieldCount = Array.isArray(template.fields) ? template.fields.length : 0;
-      const mapped = Object.values(template.mapping || {}).filter(Boolean).length;
-      const ready = fieldCount > 0 && mapped > 0;
+      const acroMapped = Object.values(template.mapping || {}).filter(Boolean).length;
+      const visualCount = Array.isArray(template.visualFields) ? template.visualFields.length : 0;
+      const mapped = acroMapped + visualCount;
+      const ready = mapped > 0;
+      const fieldLabel = fieldCount ? `${fieldCount} πεδία PDF` : `${visualCount} οπτικά πεδία`;
       return `<article class="forms-template-card ${template.id === selectedTemplateId ? "selected" : ""}" data-template-id="${esc(template.id)}">
         <div class="forms-template-name">${esc(template.name || template.originalName || "Έντυπο")}</div>
-        <div class="forms-template-meta"><span class="forms-chip">${fieldCount} πεδία PDF</span><span class="forms-chip ${ready ? "ready" : "warning"}">${mapped} αντιστοιχισμένα</span></div>
+        <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${mapped} αντιστοιχισμένα</span></div>
         <div class="forms-template-actions"><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
       </article>`;
     }).join("");
@@ -376,6 +430,7 @@
         pdfBlob: file,
         fields,
         mapping,
+        visualFields: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         version: 1
@@ -384,7 +439,8 @@
       selectedTemplateId = template.id;
       await refreshTemplates();
       if (!fields.length) {
-        setStatus("Το PDF προστέθηκε, αλλά δεν έχει διαδραστικά πεδία φόρμας. Θα χρειαστεί οπτική τοποθέτηση πεδίων σε επόμενη έκδοση.", "warning");
+        setStatus("Το PDF προστέθηκε. Δεν έχει έτοιμα πεδία φόρμας, οπότε θα ορίσουμε οπτικά τις θέσεις συμπλήρωσης.", "warning");
+        openMapping(template.id);
       } else {
         setStatus(`Το έντυπο προστέθηκε. Εντοπίστηκαν ${fields.length} πεδία PDF.`, "success");
         openMapping(template.id);
@@ -590,30 +646,163 @@
     currentMapTemplate = template;
     $("formsMapSubtitle").textContent = template.name || template.originalName || "Έντυπο";
     const fields = template.fields || [];
-    const host = $("formsMapList");
-    if (!fields.length) {
-      host.innerHTML = `<div class="forms-empty">Το PDF δεν περιέχει διαδραστικά πεδία φόρμας. Η οπτική τοποθέτηση πεδίων πάνω σε επίπεδα PDF θα προστεθεί στο επόμενο στάδιο.</div>`;
-      $("formsMapSaveBtn").disabled = true;
-    } else {
-      $("formsMapSaveBtn").disabled = false;
-      host.innerHTML = fields.map((field,index) => `<div class="forms-map-row"><div class="forms-map-name"><strong title="${esc(field.name)}">${esc(field.name)}</strong><small>${esc(field.type)}</small></div><select data-map-index="${index}" data-field-name="${esc(field.name)}">${optionMarkup((template.mapping || {})[field.name] || "")}</select></div>`).join("");
-    }
+    const mapWindow = $("formsMapModal")?.querySelector(".forms-map-window");
+    mapWindow?.classList.toggle("visual-mode", !fields.length);
     $("formsMapModal").classList.remove("hidden");
+
+    if (!fields.length) {
+      openVisualMapping(template).catch(error => {
+        console.error(error);
+        $("formsMapList").innerHTML = `<div class="forms-empty">Δεν μπόρεσε να ανοίξει η οπτική αντιστοίχιση: ${esc(error?.message || "άγνωστο σφάλμα")}</div>`;
+        $("formsMapSaveBtn").disabled = true;
+      });
+      return;
+    }
+
+    $("formsMapSaveBtn").disabled = false;
+    const host = $("formsMapList");
+    host.innerHTML = fields.map((field,index) => `<div class="forms-map-row"><div class="forms-map-name"><strong title="${esc(field.name)}">${esc(field.name)}</strong><small>${esc(field.type)}</small></div><select data-map-index="${index}" data-field-name="${esc(field.name)}">${optionMarkup((template.mapping || {})[field.name] || "")}</select></div>`).join("");
+  }
+
+  async function openVisualMapping(template) {
+    visualDraft = (template.visualFields || []).map(item => ({ ...item }));
+    visualPageIndex = visualDraft[0]?.pageIndex || 0;
+    $("formsMapSaveBtn").disabled = false;
+    $("formsMapList").innerHTML = `
+      <div class="forms-visual-toolbar">
+        <div class="forms-field forms-visual-source"><label for="formsVisualSource">Πεδίο CRM που θα τοποθετήσεις</label><select id="formsVisualSource">${visualOptionMarkup("")}</select></div>
+        <div class="forms-field forms-visual-size"><label for="formsVisualFontSize">Μέγεθος</label><select id="formsVisualFontSize"><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11" selected>11</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option></select></div>
+        <div class="forms-visual-pages"><button class="forms-secondary" id="formsVisualPrev" type="button">‹</button><span id="formsVisualPageLabel">Σελίδα</span><button class="forms-secondary" id="formsVisualNext" type="button">›</button></div>
+      </div>
+      <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε ένα πεδίο CRM και μετά πάτησε ακριβώς πάνω στο σημείο του εντύπου όπου θέλεις να εμφανίζεται.</div>
+      <div class="forms-visual-canvas-shell"><div class="forms-visual-canvas-wrap" id="formsVisualCanvasWrap"><canvas id="formsVisualCanvas"></canvas><div class="forms-visual-markers" id="formsVisualMarkers"></div></div></div>
+      <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
+
+    const pdfjs = await ensurePdfJs();
+    const bytes = new Uint8Array(await template.pdfBlob.arrayBuffer());
+    visualPdfDoc = await pdfjs.getDocument({ data: bytes }).promise;
+    $("formsVisualPrev")?.addEventListener("click", () => changeVisualPage(-1));
+    $("formsVisualNext")?.addEventListener("click", () => changeVisualPage(1));
+    $("formsVisualCanvas")?.addEventListener("click", addVisualFieldFromClick);
+    $("formsVisualList")?.addEventListener("change", event => {
+      const select = event.target.closest("select[data-visual-source-id]");
+      if (!select) return;
+      const item = visualDraft.find(field => field.id === select.dataset.visualSourceId);
+      if (item) item.sourceKey = select.value;
+      renderVisualMarkers();
+    });
+    $("formsVisualList")?.addEventListener("click", event => {
+      const remove = event.target.closest("[data-remove-visual]");
+      if (!remove) return;
+      visualDraft = visualDraft.filter(field => field.id !== remove.dataset.removeVisual);
+      renderVisualMarkers();
+      renderVisualFieldList();
+    });
+    await renderVisualPage();
+    renderVisualFieldList();
+  }
+
+  async function changeVisualPage(delta) {
+    if (!visualPdfDoc) return;
+    const next = Math.max(0, Math.min(visualPdfDoc.numPages - 1, visualPageIndex + delta));
+    if (next === visualPageIndex) return;
+    visualPageIndex = next;
+    await renderVisualPage();
+  }
+
+  async function renderVisualPage() {
+    if (!visualPdfDoc) return;
+    const seq = ++visualRenderSeq;
+    const canvas = $("formsVisualCanvas");
+    const wrap = $("formsVisualCanvasWrap");
+    if (!canvas || !wrap) return;
+    const page = await visualPdfDoc.getPage(visualPageIndex + 1);
+    const base = page.getViewport({ scale: 1 });
+    const available = Math.max(280, Math.min(900, (wrap.parentElement?.clientWidth || 760) - 20));
+    const cssScale = available / base.width;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const viewport = page.getViewport({ scale: cssScale * dpr });
+    const cssWidth = viewport.width / dpr;
+    const cssHeight = viewport.height / dpr;
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+    wrap.style.width = `${cssWidth}px`;
+    wrap.style.height = `${cssHeight}px`;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    if (seq !== visualRenderSeq) return;
+    $("formsVisualPageLabel").textContent = `Σελίδα ${visualPageIndex + 1} / ${visualPdfDoc.numPages}`;
+    $("formsVisualPrev").disabled = visualPageIndex <= 0;
+    $("formsVisualNext").disabled = visualPageIndex >= visualPdfDoc.numPages - 1;
+    renderVisualMarkers();
+  }
+
+  function addVisualFieldFromClick(event) {
+    const sourceKey = $("formsVisualSource")?.value || "";
+    if (!sourceKey) {
+      const help = $("formsVisualHelp");
+      if (help) { help.textContent = "Πρώτα διάλεξε ποιο πεδίο του CRM θέλεις να τοποθετήσεις."; help.classList.add("warning"); }
+      return;
+    }
+    const canvas = $("formsVisualCanvas");
+    const rect = canvas.getBoundingClientRect();
+    const xRatio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const yRatio = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    const fontSize = Number($("formsVisualFontSize")?.value || 11);
+    visualDraft.push({ id: uid(), pageIndex: visualPageIndex, xRatio, yRatio, sourceKey, fontSize });
+    const help = $("formsVisualHelp");
+    if (help) { help.textContent = `Τοποθετήθηκε: ${sourceLabel(sourceKey)}. Μπορείς να συνεχίσεις με άλλο πεδίο.`; help.classList.remove("warning"); }
+    renderVisualMarkers();
+    renderVisualFieldList();
+  }
+
+  function renderVisualMarkers() {
+    const host = $("formsVisualMarkers");
+    const canvas = $("formsVisualCanvas");
+    if (!host || !canvas) return;
+    const width = parseFloat(canvas.style.width) || canvas.clientWidth || 1;
+    const height = parseFloat(canvas.style.height) || canvas.clientHeight || 1;
+    const current = visualDraft.filter(item => Number(item.pageIndex || 0) === visualPageIndex);
+    host.innerHTML = current.map((item, index) => `<div class="forms-visual-marker" style="left:${item.xRatio * width}px;top:${item.yRatio * height}px" title="${esc(sourceLabel(item.sourceKey))}"><span>${index + 1}</span><b>${esc(sourceLabel(item.sourceKey))}</b></div>`).join("");
+  }
+
+  function renderVisualFieldList() {
+    const host = $("formsVisualList");
+    if (!host) return;
+    if (!visualDraft.length) {
+      host.innerHTML = `<div class="forms-empty">Δεν έχεις τοποθετήσει ακόμη πεδίο. Διάλεξε πεδίο CRM και πάτησε πάνω στο PDF.</div>`;
+      return;
+    }
+    host.innerHTML = visualDraft.map((item,index) => `<div class="forms-visual-list-row"><div class="forms-visual-index">${index + 1}</div><div class="forms-visual-list-main"><small>Σελίδα ${Number(item.pageIndex || 0) + 1} · ${Number(item.fontSize || 11)} pt</small><select data-visual-source-id="${esc(item.id)}">${visualOptionMarkup(item.sourceKey || "")}</select></div><button class="forms-danger forms-visual-remove" type="button" data-remove-visual="${esc(item.id)}">×</button></div>`).join("");
   }
 
   function closeMapping() {
     currentMapTemplate = null;
+    visualPdfDoc = null;
+    visualDraft = [];
     $("formsMapModal")?.classList.add("hidden");
   }
 
   async function saveMapping() {
     if (!currentMapTemplate) return;
-    const mapping = {};
-    $("formsMapList").querySelectorAll("select[data-field-name]").forEach(select => {
-      mapping[select.dataset.fieldName] = select.value;
-    });
-    const updated = { ...currentMapTemplate, mapping, updatedAt: new Date().toISOString() };
     try {
+      let updated;
+      if ((currentMapTemplate.fields || []).length) {
+        const mapping = {};
+        $("formsMapList").querySelectorAll("select[data-field-name]").forEach(select => {
+          mapping[select.dataset.fieldName] = select.value;
+        });
+        updated = { ...currentMapTemplate, mapping, updatedAt: new Date().toISOString() };
+      } else {
+        if (!visualDraft.length) {
+          const help = $("formsVisualHelp");
+          if (help) { help.textContent = "Τοποθέτησε τουλάχιστον ένα πεδίο πάνω στο PDF πριν την αποθήκευση."; help.classList.add("warning"); }
+          return;
+        }
+        updated = { ...currentMapTemplate, visualFields: visualDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString(), version: 2 };
+      }
       await dbPut(updated);
       await refreshTemplates();
       selectedTemplateId = updated.id;
@@ -624,6 +813,59 @@
       console.error(error);
       setStatus("Δεν αποθηκεύτηκε η αντιστοίχιση.", "error");
     }
+  }
+
+  async function textPngData(text, fontSize = 11) {
+    const value = String(text ?? "");
+    const scale = 3;
+    const family = `-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif`;
+    const measure = document.createElement("canvas").getContext("2d");
+    measure.font = `${fontSize}px ${family}`;
+    const measured = Math.max(2, Math.ceil(measure.measureText(value).width));
+    const logicalWidth = measured + 5;
+    const logicalHeight = Math.ceil(fontSize * 1.45) + 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = logicalWidth * scale;
+    canvas.height = logicalHeight * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+    ctx.fillStyle = "#000";
+    ctx.font = `${fontSize}px ${family}`;
+    ctx.textBaseline = "top";
+    ctx.fillText(value, 2, 1);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Δεν δημιουργήθηκε η εικόνα κειμένου.");
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), width: logicalWidth, height: logicalHeight };
+  }
+
+  async function drawVisualFields(doc, visualFields, context) {
+    let filled = 0;
+    let nonEmpty = 0;
+    for (const item of visualFields || []) {
+      const value = sourceValue(item.sourceKey, context);
+      if (value === "" || value === null || value === undefined) continue;
+      nonEmpty += 1;
+      const pageIndex = Math.max(0, Math.min(doc.getPageCount() - 1, Number(item.pageIndex || 0)));
+      const page = doc.getPage(pageIndex);
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+      const pngData = await textPngData(value, Number(item.fontSize || 11));
+      const image = await doc.embedPng(pngData.bytes);
+      let drawWidth = pngData.width;
+      let drawHeight = pngData.height;
+      const x = Math.max(0, Math.min(pageWidth - 2, Number(item.xRatio || 0) * pageWidth));
+      const maxWidth = Math.max(8, pageWidth - x - 2);
+      if (drawWidth > maxWidth) {
+        const ratio = maxWidth / drawWidth;
+        drawWidth *= ratio;
+        drawHeight *= ratio;
+      }
+      const yTop = Math.max(0, Math.min(pageHeight, Number(item.yRatio || 0) * pageHeight));
+      const y = Math.max(0, pageHeight - yTop - drawHeight);
+      page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
+      filled += 1;
+    }
+    return { filled, nonEmpty };
   }
 
   function setPdfFieldValue(field, type, value) {
@@ -649,9 +891,9 @@
     const customer = currentCustomer();
     if (!template) { setStatus("Επίλεξε πρώτα έντυπο από τη βιβλιοθήκη.", "warning"); return; }
     if (!customer) { setStatus("Επίλεξε πρώτα πελάτη από το CRM.", "warning"); return; }
-    if (!(template.fields || []).length) { setStatus("Αυτό το PDF δεν έχει διαδραστικά πεδία φόρμας ακόμη.", "warning"); return; }
     const mapped = Object.entries(template.mapping || {}).filter(([,value]) => value);
-    if (!mapped.length) { setStatus("Ρύθμισε πρώτα την αντιστοίχιση πεδίων του εντύπου.", "warning"); openMapping(template.id); return; }
+    const visualFields = Array.isArray(template.visualFields) ? template.visualFields.filter(item => item.sourceKey) : [];
+    if (!mapped.length && !visualFields.length) { setStatus("Ρύθμισε πρώτα την αντιστοίχιση πεδίων του εντύπου.", "warning"); openMapping(template.id); return; }
 
     setStatus("Συμπλήρωση του PDF…");
     $("formsFillBtn").disabled = true;
@@ -659,23 +901,31 @@
       const { PDFDocument } = await ensurePdfLib();
       const bytes = await template.pdfBlob.arrayBuffer();
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      const form = doc.getForm();
-      const fields = form.getFields();
-      const byName = new Map(fields.map(field => [field.getName(), field]));
       const context = buildContext();
       let filledCount = 0;
       let nonEmptyCount = 0;
 
-      for (const [fieldName, sourceKey] of mapped) {
-        const field = byName.get(fieldName);
-        if (!field) continue;
-        const value = sourceValue(sourceKey, context);
-        if (value !== "" && value !== null && value !== undefined) nonEmptyCount += 1;
-        try {
-          if (setPdfFieldValue(field, fieldType(field), value)) filledCount += 1;
-        } catch (error) {
-          console.warn("Field fill failed", fieldName, error);
+      if ((template.fields || []).length && mapped.length) {
+        const form = doc.getForm();
+        const fields = form.getFields();
+        const byName = new Map(fields.map(field => [field.getName(), field]));
+        for (const [fieldName, sourceKey] of mapped) {
+          const field = byName.get(fieldName);
+          if (!field) continue;
+          const value = sourceValue(sourceKey, context);
+          if (value !== "" && value !== null && value !== undefined) nonEmptyCount += 1;
+          try {
+            if (setPdfFieldValue(field, fieldType(field), value)) filledCount += 1;
+          } catch (error) {
+            console.warn("Field fill failed", fieldName, error);
+          }
         }
+      }
+
+      if (visualFields.length) {
+        const result = await drawVisualFields(doc, visualFields, context);
+        filledCount += result.filled;
+        nonEmptyCount += result.nonEmpty;
       }
 
       let outBytes;
@@ -691,7 +941,7 @@
       $("formsPreviewFrame").src = generatedObjectURL;
       $("formsPreview").classList.add("show");
       $("formsGeneratedActions").style.display = "flex";
-      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} αντιστοιχισμένα πεδία (${nonEmptyCount} με διαθέσιμη τιμή από το CRM).`, "success");
+      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} πεδία (${nonEmptyCount} με διαθέσιμη τιμή από το CRM).`, "success");
     } catch (error) {
       console.error(error);
       setStatus(`Δεν ολοκληρώθηκε η συμπλήρωση: ${error?.message || "άγνωστο σφάλμα"}`, "error");
