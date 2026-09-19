@@ -1,15 +1,17 @@
-const CACHE_NAME = "tsertos-crm-pwa-v9.9.14";
+const CACHE_NAME = "tsertos-crm-pwa-v9.10.0";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./jszip.min.js?v=9.9.14",
-  "./receipt-xlsx.js?v=9.9.14",
-  "./local-supabase.js?v=9.9.14",
-  "./auto-policies-seed.js?v=9.9.14",
-  "./manifest.webmanifest?v=9.9.14",
+  "./jszip.min.js?v=9.10.0",
+  "./receipt-xlsx.js?v=9.10.0",
+  "./local-supabase.js?v=9.10.0",
+  "./auto-policies-seed.js?v=9.10.0",
+  "./forms-library.css?v=9.10.0",
+  "./forms-library.js?v=9.10.0",
+  "./manifest.webmanifest?v=9.10.0",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png?v=9.9.14"
+  "./apple-touch-icon.png?v=9.10.0"
 ];
 
 self.addEventListener("install", event => {
@@ -28,7 +30,24 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (request.method !== "GET") return;
+
+  const isPdfEngine =
+    (url.hostname === "cdn.jsdelivr.net" || url.hostname === "unpkg.com") &&
+    url.pathname.includes("/pdf-lib@1.17.1/dist/pdf-lib.min.js");
+
+  if (isPdfEngine) {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
+      }))
+    );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith("/recover.html")) return;
 
   if (request.mode === "navigate") {
