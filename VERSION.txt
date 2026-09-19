@@ -1,6 +1,6 @@
 TSERTOS Insurance CRM
-Version: 9.11.2
-Build: FORMS_VISUAL_POSITION_FONT_FIX
+Version: 9.11.3
+Build: FORMS_PDF_BYTES_STORAGE_FIX
 Date: 2026-09-19
 
 Changes:

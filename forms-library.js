@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.2";
+  const VERSION = "1.1.3";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -71,6 +71,7 @@
   let visualRenderSeq = 0;
   let visualPageCssScale = 1;
   let visualDragState = null;
+  let replaceTemplateId = null;
 
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[ch]);
@@ -177,6 +178,48 @@
     });
   }
 
+  function exactArrayBuffer(value) {
+    if (!value) return null;
+    if (value instanceof ArrayBuffer) return value.slice(0);
+    if (ArrayBuffer.isView(value)) {
+      const start = value.byteOffset || 0;
+      const end = start + value.byteLength;
+      return value.buffer.slice(start, end);
+    }
+    return null;
+  }
+
+  async function templatePdfArrayBuffer(template, migrate = true) {
+    const stored = exactArrayBuffer(template?.pdfBytes);
+    if (stored) return stored;
+
+    if (template?.pdfBlob && typeof template.pdfBlob.arrayBuffer === "function") {
+      try {
+        const buffer = await template.pdfBlob.arrayBuffer();
+        if (migrate) {
+          const migrated = { ...template, pdfBytes: buffer.slice(0), updatedAt: new Date().toISOString(), storageVersion: 2 };
+          delete migrated.pdfBlob;
+          await dbPut(migrated);
+          const index = templates.findIndex(item => item.id === migrated.id);
+          if (index >= 0) templates[index] = migrated;
+          if (currentMapTemplate?.id === migrated.id) currentMapTemplate = migrated;
+          Object.keys(template).forEach(key => delete template[key]);
+          Object.assign(template, migrated);
+        }
+        return buffer;
+      } catch (error) {
+        const replacementError = new Error("Το iPhone δεν μπορεί πλέον να διαβάσει το αποθηκευμένο αντίγραφο αυτού του PDF. Πάτησε «↻ PDF» στο έντυπο και επίλεξε ξανά το αρχικό PDF. Οι αντιστοιχίσεις και οι θέσεις σου θα παραμείνουν.");
+        replacementError.code = "PDF_BYTES_UNAVAILABLE";
+        replacementError.cause = error;
+        throw replacementError;
+      }
+    }
+
+    const replacementError = new Error("Δεν υπάρχει διαθέσιμο αντίγραφο του PDF. Πάτησε «↻ PDF» και επίλεξε ξανά το αρχικό αρχείο. Οι αντιστοιχίσεις θα παραμείνουν.");
+    replacementError.code = "PDF_BYTES_UNAVAILABLE";
+    throw replacementError;
+  }
+
   function loadExternalScript(src, timeoutMs = 12000) {
     return new Promise((resolve, reject) => {
       const existing = [...document.scripts].find(node => node.src === src);
@@ -281,9 +324,10 @@
     return "";
   }
 
-  async function inspectPdf(blob) {
+  async function inspectPdf(source) {
     const { PDFDocument } = await ensurePdfLib();
-    const bytes = await blob.arrayBuffer();
+    const bytes = source instanceof Blob ? await source.arrayBuffer() : exactArrayBuffer(source);
+    if (!bytes) throw new Error("Δεν βρέθηκαν δεδομένα PDF.");
     const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
     const form = doc.getForm();
     const fields = form.getFields().map(field => ({ name: field.getName(), type: fieldType(field) }));
@@ -316,6 +360,7 @@
             <div class="forms-sidebar-head">
               <div class="forms-sidebar-head-row"><h3>Αποθηκευμένα έντυπα</h3><button class="forms-add-btn" id="formsAddTemplateBtn" type="button">＋ PDF</button></div>
               <input id="formsPdfInput" type="file" accept="application/pdf,.pdf" hidden />
+              <input id="formsReplacePdfInput" type="file" accept="application/pdf,.pdf" hidden />
             </div>
             <div class="forms-template-list" id="formsTemplateList"></div>
           </aside>
@@ -413,7 +458,7 @@
       return `<article class="forms-template-card ${template.id === selectedTemplateId ? "selected" : ""}" data-template-id="${esc(template.id)}">
         <div class="forms-template-name">${esc(template.name || template.originalName || "Έντυπο")}</div>
         <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${mapped} αντιστοιχισμένα</span></div>
-        <div class="forms-template-actions"><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
+        <div class="forms-template-actions"><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-map-btn" type="button" data-replace-template="${esc(template.id)}" title="Επίλεξε ξανά το ίδιο PDF χωρίς να χαθούν οι αντιστοιχίσεις">↻ PDF</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
       </article>`;
     }).join("");
   }
@@ -422,7 +467,8 @@
     if (!file || !/pdf/i.test(file.type || file.name)) return;
     setStatus("Ανάλυση του PDF…");
     try {
-      const fields = await inspectPdf(file);
+      const pdfBytes = await file.arrayBuffer();
+      const fields = await inspectPdf(pdfBytes);
       const mapping = {};
       fields.forEach(field => { mapping[field.name] = guessSource(field.name); });
       const name = file.name.replace(/\.pdf$/i, "") || "Νέο έντυπο";
@@ -430,7 +476,8 @@
         id: uid(),
         name,
         originalName: file.name,
-        pdfBlob: file,
+        pdfBytes: pdfBytes.slice(0),
+        storageVersion: 2,
         fields,
         mapping,
         visualFields: [],
@@ -451,6 +498,40 @@
     } catch (error) {
       console.error(error);
       setStatus("Δεν μπόρεσα να διαβάσω αυτό το PDF. Έλεγξε ότι δεν είναι κλειδωμένο με κωδικό.", "error");
+    }
+  }
+
+  async function replaceTemplatePdf(id, file) {
+    const existing = templates.find(item => item.id === id);
+    if (!existing || !file) return;
+    setStatus("Ανανέωση του αποθηκευμένου PDF…");
+    try {
+      const pdfBytes = await file.arrayBuffer();
+      const fields = await inspectPdf(pdfBytes);
+      const previousMapping = existing.mapping || {};
+      const mapping = {};
+      fields.forEach(field => { mapping[field.name] = previousMapping[field.name] || guessSource(field.name); });
+      const updated = {
+        ...existing,
+        pdfBytes: pdfBytes.slice(0),
+        storageVersion: 2,
+        originalName: file.name || existing.originalName,
+        fields,
+        mapping,
+        updatedAt: new Date().toISOString()
+      };
+      delete updated.pdfBlob;
+      await dbPut(updated);
+      const index = templates.findIndex(item => item.id === id);
+      if (index >= 0) templates[index] = updated;
+      if (currentMapTemplate?.id === id) currentMapTemplate = updated;
+      renderTemplates();
+      setStatus(`Το PDF ανανεώθηκε. Διατηρήθηκαν ${Array.isArray(updated.visualFields) ? updated.visualFields.length : 0} οπτικά πεδία και οι υπάρχουσες αντιστοιχίσεις.`, "success");
+    } catch (error) {
+      console.error(error);
+      setStatus(`Δεν ανανεώθηκε το PDF: ${error?.message || "άγνωστο σφάλμα"}`, "error");
+    } finally {
+      replaceTemplateId = null;
     }
   }
 
@@ -659,7 +740,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.2.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.3.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -686,7 +767,7 @@
       <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
 
     const pdfjs = await ensurePdfJs();
-    const sourceBuffer = await template.pdfBlob.arrayBuffer();
+    const sourceBuffer = await templatePdfArrayBuffer(template);
     try {
       visualPdfDoc = await pdfjs.getDocument({ data: new Uint8Array(sourceBuffer.slice(0)) }).promise;
     } catch (firstError) {
@@ -1018,7 +1099,7 @@
     $("formsFillBtn").disabled = true;
     try {
       const { PDFDocument } = await ensurePdfLib();
-      const bytes = await template.pdfBlob.arrayBuffer();
+      const bytes = await templatePdfArrayBuffer(template);
       const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const context = buildContext();
       let filledCount = 0;
@@ -1162,12 +1243,26 @@
       if (file) await addTemplateFile(file);
       event.target.value = "";
     });
+    $("formsReplacePdfInput")?.addEventListener("change", async event => {
+      const file = event.target.files?.[0];
+      const id = replaceTemplateId;
+      if (file && id) await replaceTemplatePdf(id, file);
+      event.target.value = "";
+      replaceTemplateId = null;
+    });
     $("formsCustomerSearch")?.addEventListener("input", event => renderCustomerResults(event.target.value));
     $("formsCustomerResults")?.addEventListener("click", event => {
       const option = event.target.closest("[data-customer-id]");
       if (option) selectCustomer(option.dataset.customerId);
     });
     $("formsTemplateList")?.addEventListener("click", event => {
+      const replaceButton = event.target.closest("[data-replace-template]");
+      if (replaceButton) {
+        event.stopPropagation();
+        replaceTemplateId = replaceButton.dataset.replaceTemplate;
+        $("formsReplacePdfInput")?.click();
+        return;
+      }
       const deleteButton = event.target.closest("[data-delete-template]");
       if (deleteButton) { event.stopPropagation(); deleteTemplate(deleteButton.dataset.deleteTemplate); return; }
       const mapButton = event.target.closest("[data-map-template]");
