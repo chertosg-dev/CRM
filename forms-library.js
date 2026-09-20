@@ -866,9 +866,10 @@
     const bounds = detectedBounds || { x: 0, y: 0, w: width, h: height };
     // The left panel occupies approximately one third of the green certificate.
     const sx = Math.max(0, Math.round(bounds.x + bounds.w * 0.002));
-    const sy = Math.max(0, Math.round(bounds.y + bounds.h * 0.006));
-    const sw = Math.max(1, Math.round(bounds.w * 0.34));
-    const sh = Math.max(1, Math.round(bounds.h * 0.985));
+    // Skip the pale green outer margin and start on the actual bordered VEHICLE DATA panel.
+    const sy = Math.max(0, Math.round(bounds.y + bounds.h * 0.026));
+    const sw = Math.max(1, Math.round(bounds.w * 0.335));
+    const sh = Math.max(1, Math.round(bounds.h * 0.970));
     const targetW = 1600;
     const targetH = Math.max(1800, Math.round(targetW * sh / sw));
     const panel = document.createElement("canvas");
@@ -888,7 +889,7 @@
       }
       pctx.putImageData(image, 0, 0);
     } catch (_) {}
-    return { blob: await canvasToBlob(panel), width: targetW, height: targetH, detected: Boolean(detectedBounds) };
+    return { blob: await canvasToBlob(panel), canvas: panel, width: targetW, height: targetH, detected: Boolean(detectedBounds) };
   }
 
   function vehicleRegWordsFromBlocks(blocks) {
@@ -964,12 +965,104 @@
     return out;
   }
 
+  const GREEK_VEHICLE_VALUE_REGIONS = [
+    // Exact value-only regions measured on the official Greek green registration certificate.
+    // Coordinates are relative to the INNER left VEHICLE DATA panel (border to border).
+    ["firstRegistration",       "B",   0.100, 0.315, 0.142, 0.178, 210],
+    ["firstRegistrationGreece", "4",   0.402, 0.625, 0.142, 0.178, 210],
+    ["make",                    "D.1", 0.100, 0.315, 0.174, 0.202, 220],
+    // D.2 spans type / variant / version on up to three successive lines.
+    ["type",                    "D.2", 0.100, 0.595, 0.226, 0.322, 390],
+    ["vin",                     "E",   0.100, 0.665, 0.318, 0.351, 230],
+    ["fuel",                    "P.3", 0.100, 0.600, 0.438, 0.469, 235],
+    ["engineNumber",            "P.5", 0.100, 0.390, 0.470, 0.501, 225],
+    ["color",                   "R",   0.325, 0.575, 0.522, 0.553, 225]
+  ];
+
+  function normalizeVehicleMakeCrop(raw) {
+    const direct = fallbackMakeFromVehicleRegText(raw);
+    if (direct) return direct;
+    const compact = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/1/g, "I").replace(/0/g, "O");
+    const brands = ["FIAT","FORD","OPEL","AUDI","BMW","KIA","SEAT","SKODA","TOYOTA","HONDA","NISSAN","PEUGEOT","RENAULT","CITROEN","HYUNDAI","SUZUKI","MAZDA","VOLVO","JEEP","DACIA","SMART","MINI","SUBARU","TESLA","CUPRA","LEXUS"];
+    return brands.find(brand => compact.includes(brand.replace(/[^A-Z0-9]/g, ""))) || "";
+  }
+
+  function normalizeVehicleVinCrop(raw) {
+    const source = String(raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!source) return "";
+    // VIN never contains I, O or Q. OCR commonly confuses them with 1/0.
+    const corrected = source.replace(/O/g, "0").replace(/Q/g, "0").replace(/I/g, "1");
+    const candidates = [];
+    if (corrected.length === 17) candidates.push(corrected);
+    for (let i = 0; i + 17 <= corrected.length; i += 1) candidates.push(corrected.slice(i, i + 17));
+    for (const candidate of candidates) {
+      if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(candidate)) continue;
+      const digits = (candidate.match(/\d/g) || []).length;
+      const letters = (candidate.match(/[A-Z]/g) || []).length;
+      if (digits >= 5 && letters >= 3) return candidate;
+    }
+    return "";
+  }
+
+  async function buildGreekVehicleFieldSheet(panel) {
+    const sheetW = 1700;
+    const gap = 34;
+    const totalH = GREEK_VEHICLE_VALUE_REGIONS.reduce((sum, row) => sum + row[6] + gap, gap);
+    const sheet = document.createElement("canvas");
+    sheet.width = sheetW; sheet.height = totalH;
+    const ctx = sheet.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, sheetW, totalH);
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    const rows = [];
+    let y = gap;
+    for (const [key, code, x0, x1, y0, y1, rowH] of GREEK_VEHICLE_VALUE_REGIONS) {
+      const sx = Math.round(panel.width * x0), sy = Math.round(panel.height * y0);
+      const sw = Math.max(2, Math.round(panel.width * (x1 - x0))), sh = Math.max(2, Math.round(panel.height * (y1 - y0)));
+      const maxW = sheetW - 80, maxH = rowH - 24;
+      const scale = Math.min(maxW / sw, maxH / sh);
+      const dw = Math.max(2, Math.round(sw * scale)), dh = Math.max(2, Math.round(sh * scale));
+      const dx = 40, dy = y + Math.max(0, Math.round((rowH - dh) / 2));
+      ctx.drawImage(panel.canvas, sx, sy, sw, sh, dx, dy, dw, dh);
+      rows.push({ key, code, y0: y / totalH, y1: (y + rowH) / totalH });
+      y += rowH + gap;
+    }
+    // One final contrast pass on the synthetic sheet. Separators remain white and prevent row mixing.
+    try {
+      const image = ctx.getImageData(0, 0, sheet.width, sheet.height);
+      const data = image.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        const v = gray > 242 ? 255 : Math.max(0, Math.min(255, (gray - 135) * 1.55 + 155));
+        data[i] = data[i + 1] = data[i + 2] = v;
+      }
+      ctx.putImageData(image, 0, 0);
+    } catch (_) {}
+    return { blob: await canvasToBlob(sheet), width: sheet.width, height: sheet.height, rows };
+  }
+
+  function parseGreekVehicleFieldSheet(blocks, sheet) {
+    const words = vehicleRegWordsFromBlocks(blocks);
+    const values = {};
+    for (const row of sheet.rows) {
+      const raw = vehicleRegTextFromRegion(words, sheet.width, sheet.height, { x0: 0, x1: 1, y0: row.y0, y1: row.y1 });
+      if (!raw) continue;
+      let value = "";
+      if (row.code === "B" || row.code === "4") value = validVehicleRegDate(dateFromSpatialVehicleValue(raw));
+      else if (row.code === "D.1") value = normalizeVehicleMakeCrop(raw) || sanitizeVehicleRegValue(row.code, raw);
+      else if (row.code === "E") value = normalizeVehicleVinCrop(raw);
+      else value = sanitizeVehicleRegValue(row.code, raw);
+      if (value) values[row.key] = value;
+    }
+    return values;
+  }
+
   async function ocrGreekVehicleRegistrationTargeted(input, label = "άδεια") {
     const panel = await prepareGreekVehicleRegistrationPanel(input);
-    const detail = await ocrVehicleRegistrationBlob(panel.blob, `${label} · πεδία οχήματος`, "6");
+    const sheet = await buildGreekVehicleFieldSheet(panel);
+    const detail = await ocrVehicleRegistrationBlob(sheet.blob, `${label} · 8 συγκεκριμένα πεδία`, "6");
     return {
       text: detail.text || "",
-      values: parseGreekVehicleRegistrationPanel(detail.blocks, panel.width, panel.height),
+      values: parseGreekVehicleFieldSheet(detail.blocks, sheet),
       detected: panel.detected
     };
   }
@@ -1118,16 +1211,19 @@
     for (let i = 0; i < list.length; i += 1) {
       setStatus(`Στοχευμένη ανάγνωση άδειας ${i + 1}/${list.length}…`);
       let imageText = "";
+      let officialCardDetected = false;
       try {
         const targeted = await ocrGreekVehicleRegistrationTargeted(list[i], `φωτογραφία ${i + 1}/${list.length}`);
         imageText += targeted?.text || "";
+        officialCardDetected = Boolean(targeted?.detected);
         spatialValues = mergeVehicleRegValues(spatialValues, targeted?.values || {});
       } catch (error) {
         console.warn("Targeted vehicle registration OCR failed", error);
       }
 
-      // Only fall back to whole-image OCR for fields still missing. Targeted values always win.
-      if (Object.values(spatialValues).filter(Boolean).length < 6) {
+      // If the official green card was detected, never contaminate missing fields with guesses
+      // from the holder/authority columns. Missing targeted fields stay blank for user review.
+      if (!officialCardDetected && Object.values(spatialValues).filter(Boolean).length < 6) {
         setStatus(`Συμπληρωματικό OCR φωτογραφίας ${i + 1}/${list.length}…`);
         const variants = await prepareVehicleRegistrationVariants(list[i]);
         for (let j = 0; j < variants.length; j += 1) {
@@ -1140,7 +1236,7 @@
         }
       }
 
-      if (Object.values(mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText))).filter(Boolean).length < 4) {
+      if (!officialCardDetected && Object.values(mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText))).filter(Boolean).length < 4) {
         const tiles = await prepareVehicleRegistrationTiles(list[i]);
         for (let j = 0; j < tiles.length; j += 1) {
           const tile = tiles[j];
@@ -1154,7 +1250,7 @@
       parts.push(imageText);
     }
     const text = parts.join("\n");
-    return { text, values: mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(text)) };
+    return { text, values: spatialValues };
   }
 
   async function ocrVehicleRegistrationPdf(file) {
@@ -2603,7 +2699,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.20.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.21.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });

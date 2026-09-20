@@ -1,3 +1,3 @@
 TSERTOS Insurance CRM PWA
-Version: 9.11.20
+Version: 9.11.21
 Build: Greek Vehicle Registration Fixed-Region OCR
