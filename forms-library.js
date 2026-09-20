@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.11";
+  const VERSION = "1.1.14";
   const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 2;
@@ -12,6 +12,8 @@
   const PDF_JS_PRIMARY = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
   const PDF_JS_FALLBACK = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
   const PDF_JS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  const TESSERACT_JS_PRIMARY = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+  const TESSERACT_JS_FALLBACK = "https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js";
 
   const sourceDefinitions = [
     ["", "— Να μη συμπληρώνεται —", ""],
@@ -53,6 +55,14 @@
     ["auto.endDate", "Λήξη αυτοκινήτου", "Αυτοκίνητο"],
     ["auto.packageName", "Πακέτο αυτοκινήτου", "Αυτοκίνητο"],
     ["auto.insuredValue", "Ασφαλιζόμενη αξία", "Αυτοκίνητο"],
+    ["vehicleReg.make", "Μάρκα (D.1)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.type", "Τύπος (D.2)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.firstRegistration", "Ημερομηνία έκδοσης πρώτης άδειας κυκλοφορίας (B)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.firstRegistrationGreece", "Ημερομηνία πρώτης άδειας στην Ελλάδα (4)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.vin", "Αριθμός πλαισίου / VIN (E)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.engineNumber", "Αριθμός κινητήρα (P.5)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.fuel", "Καύσιμο (P.3)", "Άδεια Κυκλοφορίας"],
+    ["vehicleReg.color", "Χρώμα (R)", "Άδεια Κυκλοφορίας"],
     ["date.today", "Τρέχουσα ημερομηνία (ΗΗ/ΜΜ/ΕΕΕΕ)", "Ημερομηνίες"]
   ];
 
@@ -82,6 +92,7 @@
   let currentMapTemplate = null;
   let pdfLibPromise = null;
   let pdfJsPromise = null;
+  let tesseractPromise = null;
   let pdfJsWorkerObjectURL = null;
   let visualPdfDoc = null;
   let visualPageIndex = 0;
@@ -90,6 +101,16 @@
   let visualPageCssScale = 1;
   let visualDragState = null;
   let replaceTemplateId = null;
+  let pickerCategory = "";
+  let pickerSearchQuery = "";
+  let supplementDraft = [];
+  let supplementalFileName = "";
+  let supplementalText = "";
+  let supplementalFormValues = {};
+  let supplementalValues = {};
+  let vehicleRegFileName = "";
+  let vehicleRegText = "";
+  let vehicleRegValues = {};
 
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[ch]);
@@ -303,11 +324,16 @@
   function useTemplate(id, message = "") {
     const template = templates.find(item => item.id === id);
     if (!template) return;
+    const changed = selectedTemplateId !== id;
     rememberSelectedTemplate(id);
+    if (changed) clearSupplementDocument(false);
     const lastUsedAt = new Date().toISOString();
     template.lastUsedAt = lastUsedAt;
     dbPut({ ...template, lastUsedAt }).catch(error => console.warn("Δεν αποθηκεύτηκε το πρόσφατο έντυπο", error));
     renderTemplates();
+    renderSelectedTemplateSummary();
+    renderVehicleRegistrationSection();
+    renderSupplementSection();
     const mappedCount = templateMappedCount(template);
     if (message) setStatus(message, mappedCount ? "success" : "warning");
     else if (mappedCount) setStatus(`Το πρότυπο «${template.name || template.originalName || "Έντυπο"}» είναι έτοιμο με ${mappedCount} αποθηκευμένες αντιστοιχίσεις. Επίλεξε πελάτη και πάτησε «Αυτόματη συμπλήρωση».`, "success");
@@ -360,6 +386,7 @@
       category: template.category || "Λοιπά",
       mapping: { ...(template.mapping || {}) },
       visualFields: Array.isArray(template.visualFields) ? template.visualFields.map(item => ({ ...item })) : [],
+      supplementFields: Array.isArray(template.supplementFields) ? template.supplementFields.map(item => ({ ...item })) : [],
       sourceTemplateId: template.id,
       createdAt: template.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -398,6 +425,7 @@
       ...template,
       mapping: { ...(profile.mapping || {}) },
       visualFields: Array.isArray(profile.visualFields) ? profile.visualFields.map(item => ({ ...item })) : [],
+      supplementFields: Array.isArray(profile.supplementFields) ? profile.supplementFields.map(item => ({ ...item })) : (Array.isArray(template.supplementFields) ? template.supplementFields.map(item => ({ ...item })) : []),
       mappingProfileKey: profile.key,
       category: template.category || profile.category || "Λοιπά",
       updatedAt: new Date().toISOString(),
@@ -624,8 +652,119 @@
     return pdfJsPromise;
   }
 
+  function ensureTesseract() {
+    if (window.Tesseract?.recognize) return Promise.resolve(window.Tesseract);
+    if (tesseractPromise) return tesseractPromise;
+    tesseractPromise = loadExternalScript(TESSERACT_JS_PRIMARY, 25000)
+      .catch(() => loadExternalScript(TESSERACT_JS_FALLBACK, 25000))
+      .then(() => {
+        if (!window.Tesseract?.recognize) throw new Error("Δεν φορτώθηκε η μηχανή OCR.");
+        return window.Tesseract;
+      })
+      .catch(error => {
+        tesseractPromise = null;
+        throw error;
+      });
+    return tesseractPromise;
+  }
+
+  function canvasToBlob(canvas, type = "image/png", quality = 0.95) {
+    return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Δεν δημιουργήθηκε εικόνα για OCR.")), type, quality));
+  }
+
+  function loadImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Δεν ανοίγει η φωτογραφία.")); };
+      img.src = url;
+    });
+  }
+
+  async function prepareVehicleRegistrationImage(file) {
+    const img = await loadImageFile(file);
+    const maxSide = 2400;
+    const rawW = Number(img.naturalWidth || img.width || 1);
+    const rawH = Number(img.naturalHeight || img.height || 1);
+    const scale = Math.min(1, maxSide / Math.max(rawW, rawH));
+    const width = Math.max(1, Math.round(rawW * scale));
+    const height = Math.max(1, Math.round(rawH * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, width, height);
+    try {
+      const image = ctx.getImageData(0, 0, width, height);
+      const data = image.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+        data[i] = data[i + 1] = data[i + 2] = contrasted;
+      }
+      ctx.putImageData(image, 0, 0);
+    } catch (_) {}
+    return canvasToBlob(canvas);
+  }
+
+  async function ocrVehicleRegistrationBlob(blob, label = "εικόνα") {
+    const Tesseract = await ensureTesseract();
+    const result = await Tesseract.recognize(blob, "ell+eng", {
+      logger(message) {
+        if (message?.status === "recognizing text" && Number.isFinite(message.progress)) {
+          setStatus(`OCR ${label}: ${Math.round(message.progress * 100)}%…`);
+        }
+      }
+    });
+    return String(result?.data?.text || "");
+  }
+
+  async function ocrVehicleRegistrationImages(files) {
+    const list = Array.from(files || []).filter(Boolean);
+    const parts = [];
+    for (let i = 0; i < list.length; i += 1) {
+      setStatus(`Προετοιμασία φωτογραφίας ${i + 1}/${list.length}…`);
+      const blob = await prepareVehicleRegistrationImage(list[i]);
+      parts.push(await ocrVehicleRegistrationBlob(blob, `φωτογραφία ${i + 1}/${list.length}`));
+    }
+    return parts.join("\n");
+  }
+
+  async function ocrVehicleRegistrationPdf(file) {
+    const buffer = await file.arrayBuffer();
+    const pdfjs = await ensurePdfJs();
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer.slice(0)) }).promise;
+    const parts = [];
+    for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 2); pageNo += 1) {
+      setStatus(`Προετοιμασία σελίδας ${pageNo}/${Math.min(pdf.numPages, 2)} για OCR…`);
+      const page = await pdf.getPage(pageNo);
+      const base = page.getViewport({ scale: 1 });
+      const scale = Math.min(2.5, 2400 / Math.max(base.width, base.height));
+      const viewport = page.getViewport({ scale: Math.max(1.7, scale) });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+      const blob = await canvasToBlob(canvas);
+      parts.push(await ocrVehicleRegistrationBlob(blob, `σελίδα ${pageNo}`));
+    }
+    return parts.join("\n");
+  }
+
+  function activeSupplementFields() {
+    if (currentMapTemplate) return supplementDraft;
+    return templates.find(item => item.id === selectedTemplateId)?.supplementFields || [];
+  }
+
   function sourceLabel(key) {
-    return sourceDefinitions.find(item => item[0] === key)?.[1] || key || "Πεδίο";
+    const base = sourceDefinitions.find(item => item[0] === key)?.[1];
+    if (base) return base;
+    if (String(key || "").startsWith("supplement.")) {
+      const id = String(key).slice("supplement.".length);
+      const field = activeSupplementFields().find(item => String(item.id) === id);
+      return field?.label || "Πεδίο συμπληρωματικού εγγράφου";
+    }
+    return key || "Πεδίο";
   }
 
   function visualOptionMarkup(selectedValue = "") {
@@ -717,8 +856,17 @@
             <div class="forms-template-list" id="formsTemplateList"></div>
           </aside>
           <main class="forms-workspace">
+            <section class="forms-section forms-template-choice-section">
+              <h3>1. Επιλογή εντύπου</h3>
+              <p class="forms-section-note">Διάλεξε πρώτα κατηγορία και μετά το έτοιμο πρότυπο από τη βιβλιοθήκη.</p>
+              <div class="forms-template-choice-actions">
+                <button class="forms-primary forms-choose-template" id="formsChooseTemplateBtn" type="button">📁 Επιλογή εντύπου</button>
+                <button class="forms-secondary" id="formsQuickAddTemplateBtn" type="button">＋ Νέο PDF</button>
+              </div>
+              <div class="forms-selected-template-summary" id="formsSelectedTemplateSummary"></div>
+            </section>
             <section class="forms-section">
-              <h3>1. Επιλογή πελάτη</h3>
+              <h3>2. Επιλογή πελάτη</h3>
               <div class="forms-field full">
                 <label for="formsCustomerSearch">Αναζήτηση στο CRM</label>
                 <input id="formsCustomerSearch" type="search" autocomplete="off" placeholder="Όνομα, επώνυμο, ΑΦΜ ή τηλέφωνο" />
@@ -727,14 +875,40 @@
               </div>
             </section>
             <section class="forms-section">
-              <h3>2. Συμβόλαιο και πρόσωπο</h3>
+              <h3>3. Συμβόλαιο και πρόσωπο</h3>
               <div class="forms-grid">
                 <div class="forms-field"><label for="formsPolicySelect">Συμβόλαιο (Ζωής / Αυτοκινήτου)</label><select id="formsPolicySelect"><option value="">Χωρίς συγκεκριμένο συμβόλαιο</option></select></div>
                 <div class="forms-field"><label for="formsPersonSelect">Πρόσωπο</label><select id="formsPersonSelect"><option value="insured">Κύριος ασφαλισμένος</option></select></div>
               </div>
             </section>
+            <section class="forms-section" id="formsVehicleRegSection">
+              <h3>4. Άδεια Κυκλοφορίας <span class="forms-optional">(προαιρετικό)</span></h3>
+              <p class="forms-section-note" id="formsVehicleRegNote">Βάλε την άδεια ως PDF, από τις Φωτογραφίες ή με την Κάμερα. Για εικόνες/σαρωμένα PDF γίνεται OCR και μετά εμφανίζονται τα 8 στοιχεία για έλεγχο.</p>
+              <div class="forms-actions-row">
+                <button class="forms-secondary" id="formsVehicleRegUploadBtn" type="button">📄 PDF</button>
+                <button class="forms-secondary" id="formsVehicleRegPhotoBtn" type="button">🖼 Φωτογραφίες</button>
+                <button class="forms-secondary" id="formsVehicleRegCameraBtn" type="button">📷 Κάμερα</button>
+                <button class="forms-secondary" id="formsVehicleRegClearBtn" type="button" style="display:none">Καθαρισμός</button>
+                <input id="formsVehicleRegInput" type="file" accept="application/pdf,.pdf" hidden />
+                <input id="formsVehicleRegPhotoInput" type="file" accept="image/*" multiple hidden />
+                <input id="formsVehicleRegCameraInput" type="file" accept="image/*" capture="environment" hidden />
+              </div>
+              <div class="forms-supplement-file" id="formsVehicleRegFile"></div>
+              <div class="forms-supplement-values" id="formsVehicleRegValues"></div>
+            </section>
+            <section class="forms-section" id="formsSupplementSection">
+              <h3>5. Συμπληρωματικό έγγραφο <span class="forms-optional">(προαιρετικό)</span></h3>
+              <p class="forms-section-note" id="formsSupplementNote">Αν το πρότυπο έχει άλλα πεδία που δεν υπάρχουν στο CRM, μπορείς να ανεβάσεις δεύτερο PDF και να πάρουμε τιμές από αυτό.</p>
+              <div class="forms-actions-row">
+                <button class="forms-secondary" id="formsSupplementUploadBtn" type="button">＋ Συμπληρωματικό PDF</button>
+                <button class="forms-secondary" id="formsSupplementClearBtn" type="button" style="display:none">Καθαρισμός</button>
+                <input id="formsSupplementInput" type="file" accept="application/pdf,.pdf" hidden />
+              </div>
+              <div class="forms-supplement-file" id="formsSupplementFile"></div>
+              <div class="forms-supplement-values" id="formsSupplementValues"></div>
+            </section>
             <section class="forms-section">
-              <h3>3. Αυτόματη συμπλήρωση</h3>
+              <h3>6. Αυτόματη συμπλήρωση</h3>
               <p class="forms-section-note">Επίλεξε έντυπο από τη βιβλιοθήκη. Η αντιστοίχιση πεδίων γίνεται μία φορά για κάθε έντυπο και αποθηκεύεται.</p>
               <div class="forms-actions-row">
                 <button class="forms-primary" id="formsFillBtn" type="button">✨ Αυτόματη συμπλήρωση</button>
@@ -758,6 +932,10 @@
       <div class="forms-map-window">
         <div class="forms-map-head"><div><h3>Αντιστοίχιση πεδίων PDF</h3><p id="formsMapSubtitle"></p></div><button class="forms-close" id="formsMapCloseBtn" type="button">×</button></div>
         <div class="forms-map-list" id="formsMapList"></div>
+        <div class="forms-supplement-defs-panel">
+          <div class="forms-supplement-defs-head"><div><strong>Πεδία από συμπληρωματικό έγγραφο</strong><small>Για στοιχεία που δεν υπάρχουν στο CRM.</small></div><button class="forms-secondary" id="formsAddSupplementFieldBtn" type="button">＋ Πεδίο</button></div>
+          <div class="forms-supplement-defs-list" id="formsSupplementDefsList"></div>
+        </div>
         <div class="forms-map-footer"><button class="forms-secondary" id="formsMapCancelBtn" type="button">Άκυρο</button><button class="forms-primary" id="formsMapSaveBtn" type="button">Αποθήκευση αντιστοίχισης</button></div>
       </div>`;
     document.body.appendChild(mapModal);
@@ -774,6 +952,22 @@
         <div class="forms-name-actions"><button class="forms-secondary" id="formsNameCancelBtn" type="button">Άκυρο</button><button class="forms-primary" id="formsNameConfirmBtn" type="button">Αποθήκευση / Κοινοποίηση</button></div>
       </div>`;
     document.body.appendChild(nameModal);
+
+    const pickerModal = document.createElement("div");
+    pickerModal.id = "formsTemplatePickerModal";
+    pickerModal.className = "forms-picker-modal hidden";
+    pickerModal.innerHTML = `
+      <div class="forms-picker-sheet">
+        <div class="forms-picker-head">
+          <button class="forms-picker-back" id="formsPickerBackBtn" type="button" aria-label="Πίσω">‹</button>
+          <div><h3 id="formsPickerTitle">Επιλογή κατηγορίας</h3><p id="formsPickerSubtitle">Διάλεξε κατηγορία εντύπων</p></div>
+          <button class="forms-close forms-picker-close" id="formsPickerCloseBtn" type="button" aria-label="Κλείσιμο">×</button>
+        </div>
+        <div class="forms-picker-search"><input id="formsPickerSearch" type="search" autocomplete="off" placeholder="🔍 Αναζήτηση εντύπου" /></div>
+        <div class="forms-picker-content" id="formsPickerContent"></div>
+        <div class="forms-picker-footer"><button class="forms-secondary" id="formsPickerAddBtn" type="button">＋ Νέο PDF στη βιβλιοθήκη</button></div>
+      </div>`;
+    document.body.appendChild(pickerModal);
 
     const detailsModal = document.createElement("div");
     detailsModal.id = "formsTemplateDetailsModal";
@@ -851,6 +1045,8 @@
   }
 
   function renderTemplates() {
+    renderSelectedTemplateSummary();
+    if (!$("formsTemplatePickerModal")?.classList.contains("hidden")) renderTemplatePicker();
     const host = $("formsTemplateList");
     if (!host) return;
     const items = visibleTemplatesForLibrary();
@@ -874,6 +1070,77 @@
       return;
     }
     host.innerHTML = items.map(templateCardMarkup).join("");
+  }
+
+  function renderSelectedTemplateSummary() {
+    const host = $("formsSelectedTemplateSummary");
+    if (!host) return;
+    const template = templates.find(item => item.id === selectedTemplateId);
+    if (!template) {
+      host.innerHTML = `<div class="forms-selected-template-empty">Δεν έχει επιλεγεί έντυπο.</div>`;
+      return;
+    }
+    const mapped = templateMappedCount(template);
+    host.innerHTML = `<div class="forms-selected-template-card">
+      <div class="forms-selected-template-main"><span class="forms-selected-template-icon">📄</span><div><strong>${esc(template.name || template.originalName || "Έντυπο")}</strong><small>${esc(template.category || "Λοιπά")} · ${mapped ? `Έτοιμο · ${mapped} πεδία` : "Χωρίς αντιστοίχιση"}</small></div></div>
+      <div class="forms-selected-template-tools">
+        <button type="button" class="forms-secondary" id="formsSelectedChangeBtn">Αλλαγή</button>
+        <button type="button" class="forms-secondary" id="formsSelectedMapBtn">⚙️ Πεδία</button>
+        <button type="button" class="forms-secondary" id="formsSelectedEditBtn">✎ Στοιχεία</button>
+        <button type="button" class="forms-secondary" id="formsSelectedReplaceBtn">↻ PDF</button>
+      </div>
+    </div>`;
+    $("formsSelectedChangeBtn")?.addEventListener("click", openTemplatePicker);
+    $("formsSelectedMapBtn")?.addEventListener("click", () => openMapping(selectedTemplateId));
+    $("formsSelectedEditBtn")?.addEventListener("click", () => editTemplateDetails(selectedTemplateId).catch(console.error));
+    $("formsSelectedReplaceBtn")?.addEventListener("click", () => { replaceTemplateId = selectedTemplateId; $("formsReplacePdfInput")?.click(); });
+  }
+
+  function openTemplatePicker() {
+    pickerCategory = "";
+    pickerSearchQuery = "";
+    if ($("formsPickerSearch")) $("formsPickerSearch").value = "";
+    $("formsTemplatePickerModal")?.classList.remove("hidden");
+    renderTemplatePicker();
+  }
+
+  function closeTemplatePicker() {
+    $("formsTemplatePickerModal")?.classList.add("hidden");
+  }
+
+  function templatePickerItems() {
+    const q = normalizeText(pickerSearchQuery);
+    return templates.filter(template => {
+      if (pickerCategory && !pickerCategory.startsWith("__") && (template.category || "Λοιπά") !== pickerCategory) return false;
+      if (pickerCategory === "__favorites" && !template.favorite) return false;
+      if (pickerCategory === "__recent" && !template.lastUsedAt) return false;
+      if (!q) return true;
+      return normalizeText([template.name, template.originalName, template.category].filter(Boolean).join(" ")).includes(q);
+    }).sort((a,b) => pickerCategory === "__recent"
+      ? String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""))
+      : String(a.name || a.originalName || "").localeCompare(String(b.name || b.originalName || ""), "el"));
+  }
+
+  function renderTemplatePicker() {
+    const host = $("formsPickerContent");
+    if (!host) return;
+    const searching = Boolean(pickerSearchQuery.trim());
+    $("formsPickerBackBtn").style.visibility = (pickerCategory || searching) ? "visible" : "hidden";
+    if (!pickerCategory && !searching) {
+      $("formsPickerTitle").textContent = "Επιλογή κατηγορίας";
+      $("formsPickerSubtitle").textContent = "Διάλεξε κατηγορία και μετά έντυπο";
+      const categories = TEMPLATE_CATEGORIES.map(category => ({ category, count: templates.filter(t => (t.category || "Λοιπά") === category).length })).filter(item => item.count > 0);
+      const favCount = templates.filter(t => t.favorite).length;
+      const recentCount = templates.filter(t => t.lastUsedAt).length;
+      host.innerHTML = `<div class="forms-picker-categories">${categories.map(item => `<button type="button" data-picker-category="${esc(item.category)}"><span>📁</span><strong>${esc(item.category)}</strong><em>${item.count}</em></button>`).join("")}${favCount ? `<button type="button" data-picker-category="__favorites"><span>⭐</span><strong>Αγαπημένα</strong><em>${favCount}</em></button>` : ""}${recentCount ? `<button type="button" data-picker-category="__recent"><span>🕘</span><strong>Πρόσφατα</strong><em>${recentCount}</em></button>` : ""}</div>`;
+      if (!templates.length) host.innerHTML = `<div class="forms-empty">Η βιβλιοθήκη είναι άδεια. Πάτησε «＋ Νέο PDF».</div>`;
+      return;
+    }
+    const items = templatePickerItems();
+    const label = pickerCategory === "__favorites" ? "Αγαπημένα" : pickerCategory === "__recent" ? "Πρόσφατα" : (pickerCategory || "Αποτελέσματα αναζήτησης");
+    $("formsPickerTitle").textContent = label;
+    $("formsPickerSubtitle").textContent = `${items.length} διαθέσιμα έντυπα`;
+    host.innerHTML = items.length ? `<div class="forms-picker-documents">${items.map(template => { const mapped=templateMappedCount(template); return `<button type="button" class="forms-picker-document ${template.id===selectedTemplateId?"selected":""}" data-picker-template="${esc(template.id)}"><span class="forms-picker-doc-icon">📄</span><span><strong>${esc(template.name || template.originalName || "Έντυπο")}</strong><small>${esc(template.category || "Λοιπά")} · ${mapped ? `Έτοιμο · ${mapped} πεδία` : "Χωρίς αντιστοίχιση"}</small></span><b>›</b></button>`; }).join("")}</div>` : `<div class="forms-empty">Δεν βρέθηκε έντυπο.</div>`;
   }
 
   function requestTemplateDetails(defaultName = "", defaultCategory = "Λοιπά", title = "Στοιχεία προτύπου") {
@@ -993,6 +1260,7 @@
           fields,
           mapping: { ...(savedProfile.mapping || {}) },
           visualFields: Array.isArray(savedProfile.visualFields) ? savedProfile.visualFields.map(item => ({ ...item })) : [],
+          supplementFields: Array.isArray(savedProfile.supplementFields) ? savedProfile.supplementFields.map(item => ({ ...item })) : [],
           mappingProfileKey: savedProfile.key,
           category: savedProfile.category || "Λοιπά",
           favorite: false,
@@ -1045,6 +1313,7 @@
         fields,
         mapping,
         visualFields: [],
+        supplementFields: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         version: 1
@@ -1219,6 +1488,8 @@
 
   function sourceValue(key, context) {
     if (!key) return "";
+    if (String(key).startsWith("supplement.")) return supplementalValues[String(key).slice("supplement.".length)] ?? "";
+    if (String(key).startsWith("vehicleReg.")) return vehicleRegValues[String(key).slice("vehicleReg.".length)] ?? "";
     const person = context.person || {};
     const insured = context.insured || {};
     const policy = context.regularPolicy || {};
@@ -1273,6 +1544,322 @@
     return values[key] ?? "";
   }
 
+  const VEHICLE_REG_FIELDS = [
+    ["make", "Μάρκα", "D.1"],
+    ["type", "Τύπος", "D.2"],
+    ["firstRegistration", "Πρώτη άδεια κυκλοφορίας", "B"],
+    ["firstRegistrationGreece", "Πρώτη άδεια στην Ελλάδα", "4"],
+    ["vin", "Αριθμός πλαισίου / VIN", "E"],
+    ["engineNumber", "Αριθμός κινητήρα", "P.5"],
+    ["fuel", "Καύσιμο", "P.3"],
+    ["color", "Χρώμα", "R"]
+  ];
+
+  function renderVehicleRegistrationSection() {
+    const fileHost = $("formsVehicleRegFile");
+    const valuesHost = $("formsVehicleRegValues");
+    const clearBtn = $("formsVehicleRegClearBtn");
+    if (fileHost) fileHost.textContent = vehicleRegFileName ? `🚘 ${vehicleRegFileName}` : "";
+    if (clearBtn) clearBtn.style.display = vehicleRegFileName ? "inline-flex" : "none";
+    if (!valuesHost) return;
+    const hasFile = Boolean(vehicleRegFileName);
+    valuesHost.innerHTML = VEHICLE_REG_FIELDS.map(([key, label, code]) => `<div class="forms-field"><label>${esc(label)} <small>(${esc(code)})</small></label><input type="text" data-vehicle-reg-runtime="${esc(key)}" value="${esc(vehicleRegValues[key] || "")}" placeholder="${hasFile ? "Δεν αναγνωρίστηκε — γράψε/διόρθωσε" : "Θα συμπληρωθεί από την άδεια"}" /></div>`).join("");
+  }
+
+  function clearVehicleRegistration(render = true) {
+    vehicleRegFileName = "";
+    vehicleRegText = "";
+    vehicleRegValues = {};
+    if (render) renderVehicleRegistrationSection();
+  }
+
+  function normalizeVehicleRegText(value) {
+    return String(value || "")
+      .replace(/[\u00A0\t]+/g, " ")
+      .replace(/[‐‑‒–—]/g, "-")
+      .replace(/\r/g, "\n")
+      .replace(/[ ]{2,}/g, " ")
+      .trim();
+  }
+
+  function vehicleRegCodePattern(code) {
+    if (code === "4") return String.raw`(?:\(\s*4\s*\)|(?:^|\s)4(?=\s|[:=\-]))`;
+    const parts = code.split(".");
+    if (parts.length === 2) {
+      const a = parts[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const b = parts[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return String.raw`(?:\(\s*${a}\s*[\.·,]?\s*${b}\s*\)|\b${a}\s*[\.·,]?\s*${b}\b)`;
+    }
+    const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return String.raw`(?:\(\s*${escaped}\s*\)|\b${escaped}\b)`;
+  }
+
+  const VEHICLE_REG_DELIMITER_CODES = [
+    "C.1.1","C.1.2","C.1.3","D.1","D.2","D.3","F.1","F.2","F.3","O.1","O.2","P.1","P.2","P.3","P.4","P.5","S.1","S.2","U.1","U.2","U.3","V.6","V.7","V.9",
+    "A","B","E","G","H","I","J","K","L","M","Q","R","T","W",
+    "1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28"
+  ];
+
+  function vehicleRegDelimiterPattern(excludeCode = "") {
+    return VEHICLE_REG_DELIMITER_CODES
+      .filter(code => code !== excludeCode)
+      .sort((a,b) => b.length - a.length)
+      .map(vehicleRegCodePattern)
+      .join("|");
+  }
+
+  function cleanVehicleRegCandidate(value) {
+    return String(value || "")
+      .replace(/^\s*[:=\-]+\s*/, "")
+      .replace(/\s+/g, " ")
+      .replace(/[|]+$/g, "")
+      .trim()
+      .slice(0, 100);
+  }
+
+  function dateFromVehicleRegCode(text, code) {
+    const codePattern = vehicleRegCodePattern(code);
+    const re = new RegExp(`${codePattern}[\\s:=\\-]{0,12}(\\d{1,2}[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{2,4})`, "im");
+    const match = normalizeVehicleRegText(text).match(re);
+    if (!match) return "";
+    const raw = match[1].replace(/[.\-]/g, "/");
+    const bits = raw.split("/");
+    if (bits.length !== 3) return raw;
+    const [d,m,y0] = bits;
+    const y = y0.length === 2 ? (Number(y0) > 50 ? `19${y0}` : `20${y0}`) : y0;
+    return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`;
+  }
+
+  function valueFromVehicleRegCode(text, code, maxLen = 60) {
+    const normalized = normalizeVehicleRegText(text);
+    const codePattern = vehicleRegCodePattern(code);
+    const delimiters = vehicleRegDelimiterPattern(code);
+    const re = new RegExp(`${codePattern}\\s*[:=\\-]?\\s*([\\s\\S]{1,${maxLen}}?)(?=\\s*(?:${delimiters})|\\n|$)`, "im");
+    const match = normalized.match(re);
+    return cleanVehicleRegCandidate(match?.[1] || "");
+  }
+
+  function looksLikeRegistrationDefinition(value) {
+    const n = normalizeText(value);
+    return ["μαρκα", "τυπος", "αριθμος αναγνωρισης", "καυσιμου", "χρωμα του οχηματος", "ημερομηνια εκδοσης"].some(label => n.includes(label));
+  }
+
+  function sanitizeVehicleRegValue(code, value) {
+    let out = cleanVehicleRegCandidate(value);
+    if (!out || looksLikeRegistrationDefinition(out)) return "";
+    if (code === "E") {
+      const compact = out.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (compact.length >= 11 && compact.length <= 20) return compact;
+    }
+    if (code === "P.5") return out.replace(/^[-—–]+$/, "").trim();
+    return out;
+  }
+
+  function parseVehicleRegistrationText(text) {
+    const raw = normalizeVehicleRegText(text);
+    const values = {
+      make: sanitizeVehicleRegValue("D.1", valueFromVehicleRegCode(raw, "D.1", 45)),
+      type: sanitizeVehicleRegValue("D.2", valueFromVehicleRegCode(raw, "D.2", 60)),
+      firstRegistration: dateFromVehicleRegCode(raw, "B"),
+      firstRegistrationGreece: dateFromVehicleRegCode(raw, "4"),
+      vin: sanitizeVehicleRegValue("E", valueFromVehicleRegCode(raw, "E", 45)),
+      engineNumber: sanitizeVehicleRegValue("P.5", valueFromVehicleRegCode(raw, "P.5", 45)),
+      fuel: sanitizeVehicleRegValue("P.3", valueFromVehicleRegCode(raw, "P.3", 35)),
+      color: sanitizeVehicleRegValue("R", valueFromVehicleRegCode(raw, "R", 35))
+    };
+    if (!values.vin) {
+      const vinCandidates = raw.toUpperCase().match(/\b[A-HJ-NPR-Z0-9]{17}\b/g) || [];
+      const vin = vinCandidates.find(item => /[A-Z]/.test(item) && /\d/.test(item));
+      if (vin) values.vin = vin;
+    }
+    return values;
+  }
+
+  async function extractVehicleRegistrationPdf(file) {
+    const buffer = await file.arrayBuffer();
+    const pdfjs = await ensurePdfJs();
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer.slice(0)) }).promise;
+    const pages = [];
+    for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 2); pageNo += 1) {
+      const page = await pdf.getPage(pageNo);
+      const content = await page.getTextContent();
+      let line = "";
+      const lines = [];
+      for (const item of content.items || []) {
+        const str = String(item.str || "").trim();
+        if (str) line += (line ? " " : "") + str;
+        if (item.hasEOL) { if (line.trim()) lines.push(line.trim()); line = ""; }
+      }
+      if (line.trim()) lines.push(line.trim());
+      pages.push(lines.join("\n"));
+    }
+    return pages.join("\n");
+  }
+
+  async function handleVehicleRegistrationFile(file) {
+    setStatus("Ανάγνωση άδειας κυκλοφορίας…");
+    vehicleRegFileName = file.name || "Άδεια Κυκλοφορίας.pdf";
+    try {
+      let text = await extractVehicleRegistrationPdf(file);
+      if (!String(text || "").trim()) {
+        setStatus("Το PDF είναι σαρωμένο. Ξεκινά OCR…");
+        text = await ocrVehicleRegistrationPdf(file);
+      }
+      vehicleRegText = text || "";
+      vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
+      renderVehicleRegistrationSection();
+      const found = Object.values(vehicleRegValues).filter(Boolean).length;
+      setStatus(`Η άδεια κυκλοφορίας διαβάστηκε. Αναγνωρίστηκαν ${found} από 8 στοιχεία. Έλεγξέ τα πριν την αυτόματη συμπλήρωση.`, found ? "success" : "warning");
+    } catch (error) {
+      console.error(error);
+      vehicleRegText = "";
+      vehicleRegValues = {};
+      renderVehicleRegistrationSection();
+      setStatus(`Δεν ολοκληρώθηκε η αυτόματη ανάγνωση (${error?.message || "άγνωστο σφάλμα"}). Μπορείς να συμπληρώσεις/διορθώσεις τα 8 πεδία χειροκίνητα.`, "warning");
+    }
+  }
+
+  async function handleVehicleRegistrationImages(files, source = "Φωτογραφία") {
+    const list = Array.from(files || []).filter(Boolean);
+    if (!list.length) return;
+    vehicleRegFileName = list.length === 1 ? (list[0].name || source) : `${source} (${list.length})`;
+    vehicleRegText = "";
+    vehicleRegValues = {};
+    renderVehicleRegistrationSection();
+    try {
+      setStatus(`OCR άδειας κυκλοφορίας από ${source.toLocaleLowerCase("el-GR")}…`);
+      vehicleRegText = await ocrVehicleRegistrationImages(list);
+      vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
+      renderVehicleRegistrationSection();
+      const found = Object.values(vehicleRegValues).filter(Boolean).length;
+      setStatus(`Η άδεια από ${source.toLocaleLowerCase("el-GR")} διαβάστηκε. Αναγνωρίστηκαν ${found} από 8 στοιχεία. Έλεγξέ τα πριν την αυτόματη συμπλήρωση.`, found ? "success" : "warning");
+    } catch (error) {
+      console.error(error);
+      vehicleRegText = "";
+      vehicleRegValues = {};
+      renderVehicleRegistrationSection();
+      setStatus(`Δεν ολοκληρώθηκε το OCR (${error?.message || "άγνωστο σφάλμα"}). Τα 8 πεδία είναι διαθέσιμα για χειροκίνητη συμπλήρωση.`, "warning");
+    }
+  }
+
+  function renderSupplementSection() {
+    const note = $("formsSupplementNote");
+    const valuesHost = $("formsSupplementValues");
+    const fileHost = $("formsSupplementFile");
+    const clearBtn = $("formsSupplementClearBtn");
+    const template = templates.find(item => item.id === selectedTemplateId);
+    const fields = Array.isArray(template?.supplementFields) ? template.supplementFields : [];
+    if (fileHost) fileHost.textContent = supplementalFileName ? `📎 ${supplementalFileName}` : "";
+    if (clearBtn) clearBtn.style.display = supplementalFileName ? "inline-flex" : "none";
+    if (!valuesHost || !note) return;
+    if (!template) { note.textContent = "Επίλεξε πρώτα έντυπο."; valuesHost.innerHTML = ""; return; }
+    if (!fields.length) {
+      note.textContent = "Το συγκεκριμένο πρότυπο δεν έχει ορισμένα πεδία από συμπληρωματικό έγγραφο. Αν χρειάζονται, πρόσθεσέ τα από «Πεδία».";
+      valuesHost.innerHTML = "";
+      return;
+    }
+    note.textContent = "Ανέβασε το δεύτερο PDF. Η εφαρμογή θα προσπαθήσει να βρει τις τιμές και μπορείς να τις διορθώσεις πριν τη συμπλήρωση.";
+    valuesHost.innerHTML = fields.map(field => `<div class="forms-field"><label>${esc(field.label || "Πεδίο")}</label><input type="text" data-supp-runtime="${esc(field.id)}" value="${esc(supplementalValues[field.id] || "")}" placeholder="${esc(field.matchLabel || field.label || "Τιμή")}" /></div>`).join("");
+  }
+
+  function clearSupplementDocument(render = true) {
+    supplementalFileName = "";
+    supplementalText = "";
+    supplementalFormValues = {};
+    supplementalValues = {};
+    if (render) renderSupplementSection();
+  }
+
+  function readPdfFieldCurrentValue(field) {
+    try {
+      if (typeof field.getText === "function") return field.getText() || "";
+      if (typeof field.getSelected === "function") return (field.getSelected() || []).join(", ");
+      if (typeof field.isChecked === "function") return field.isChecked() ? "Ναι" : "Όχι";
+    } catch (_) {}
+    return "";
+  }
+
+  async function extractSupplementPdf(file) {
+    const buffer = await file.arrayBuffer();
+    const formValues = {};
+    try {
+      const { PDFDocument } = await ensurePdfLib();
+      const doc = await PDFDocument.load(buffer.slice(0), { ignoreEncryption: true });
+      doc.getForm().getFields().forEach(field => {
+        const value = readPdfFieldCurrentValue(field);
+        if (value !== "") formValues[normalizeText(field.getName())] = String(value);
+      });
+    } catch (_) {}
+    let text = "";
+    try {
+      const pdfjs = await ensurePdfJs();
+      const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer.slice(0)) }).promise;
+      const pages = [];
+      for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent();
+        let line = "";
+        const lines = [];
+        for (const item of content.items || []) {
+          const str = String(item.str || "").trim();
+          if (str) line += (line ? " " : "") + str;
+          if (item.hasEOL) { if (line.trim()) lines.push(line.trim()); line = ""; }
+        }
+        if (line.trim()) lines.push(line.trim());
+        pages.push(lines.join("\n"));
+      }
+      text = pages.join("\n");
+    } catch (error) { console.warn("Δεν εξήχθη κείμενο από συμπληρωματικό PDF", error); }
+    return { text, formValues };
+  }
+
+  function extractValueAfterLabel(text, field, formValues) {
+    const target = normalizeText(field.matchLabel || field.label || "");
+    if (!target) return "";
+    const formMatch = Object.entries(formValues || {}).find(([name]) => name === target || name.includes(target) || target.includes(name));
+    if (formMatch?.[1]) return String(formMatch[1]).trim();
+    const lines = String(text || "").split(/\n+/).map(line => line.trim()).filter(Boolean);
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const normalized = normalizeText(line);
+      if (!normalized.includes(target)) continue;
+      const separator = line.match(/[:：=]\s*(.+)$/);
+      if (separator?.[1]?.trim()) return separator[1].trim().slice(0, 180);
+      const dash = line.match(/[-–—]\s*(.+)$/);
+      if (dash?.[1]?.trim() && normalizeText(dash[1]) !== target) return dash[1].trim().slice(0, 180);
+      if (normalized === target && lines[i + 1]) return lines[i + 1].trim().slice(0, 180);
+      const words = line.split(/\s+/);
+      const labelWords = String(field.matchLabel || field.label || "").trim().split(/\s+/).filter(Boolean).length;
+      if (words.length > labelWords) {
+        const tail = words.slice(labelWords).join(" ").replace(/^[:：=\-–—]+\s*/, "").trim();
+        if (tail) return tail.slice(0, 180);
+      }
+    }
+    return "";
+  }
+
+  async function handleSupplementFile(file) {
+    const template = templates.find(item => item.id === selectedTemplateId);
+    if (!template) { setStatus("Επίλεξε πρώτα έντυπο.", "warning"); return; }
+    const fields = Array.isArray(template.supplementFields) ? template.supplementFields : [];
+    if (!fields.length) { setStatus("Στο πρότυπο δεν έχουν οριστεί ακόμη πεδία από συμπληρωματικό έγγραφο. Άνοιξε «Πεδία» και πρόσθεσέ τα.", "warning"); return; }
+    setStatus("Ανάγνωση συμπληρωματικού εγγράφου…");
+    try {
+      const extracted = await extractSupplementPdf(file);
+      supplementalFileName = file.name || "Συμπληρωματικό PDF";
+      supplementalText = extracted.text || "";
+      supplementalFormValues = extracted.formValues || {};
+      supplementalValues = {};
+      fields.forEach(field => { supplementalValues[field.id] = extractValueAfterLabel(supplementalText, field, supplementalFormValues); });
+      renderSupplementSection();
+      const found = Object.values(supplementalValues).filter(Boolean).length;
+      setStatus(`Το συμπληρωματικό PDF φορτώθηκε. Βρέθηκαν αυτόματα ${found} από ${fields.length} ζητούμενες τιμές. Μπορείς να διορθώσεις τα πεδία πριν τη συμπλήρωση.`, found ? "success" : "warning");
+    } catch (error) {
+      console.error(error);
+      setStatus(`Δεν διαβάστηκε το συμπληρωματικό PDF: ${error?.message || "άγνωστο σφάλμα"}`, "error");
+    }
+  }
+
   function optionMarkup(selectedValue = "") {
     let html = "";
     let currentGroup = null;
@@ -1290,13 +1877,48 @@
       html += `<option value="${esc(value)}" ${value === selectedValue ? "selected" : ""}>${esc(label)}</option>`;
     }
     if (currentGroup) html += "</optgroup>";
+    const supplements = activeSupplementFields();
+    if (supplements.length) {
+      html += `<optgroup label="Συμπληρωματικό έγγραφο">`;
+      supplements.forEach(field => {
+        const value = `supplement.${field.id}`;
+        html += `<option value="${esc(value)}" ${value === selectedValue ? "selected" : ""}>${esc(field.label || "Πεδίο")}</option>`;
+      });
+      html += `</optgroup>`;
+    }
     return html;
+  }
+
+  function renderSupplementDefsPanel() {
+    const host = $("formsSupplementDefsList");
+    if (!host) return;
+    host.innerHTML = supplementDraft.length ? supplementDraft.map(field => `<div class="forms-supplement-def-row" data-supp-def="${esc(field.id)}"><input data-supp-label="${esc(field.id)}" value="${esc(field.label || "")}" placeholder="Όνομα πεδίου" /><input data-supp-match="${esc(field.id)}" value="${esc(field.matchLabel || field.label || "")}" placeholder="Ετικέτα που θα ψάχνουμε στο PDF" /><button class="forms-danger" type="button" data-remove-supp-def="${esc(field.id)}">×</button></div>`).join("") : `<div class="forms-supplement-def-empty">Δεν έχουν οριστεί πεδία από δεύτερο έγγραφο.</div>`;
+  }
+
+  function refreshMappingSourceOptions() {
+    document.querySelectorAll('#formsMapModal select[data-field-name], #formsMapModal select[data-visual-source-id], #formsVisualSource').forEach(select => {
+      const value = select.value;
+      select.innerHTML = optionMarkup(value);
+      if ([...select.options].some(option => option.value === value)) select.value = value;
+    });
+    renderVisualMarkers();
+  }
+
+  function addSupplementFieldDefinition() {
+    const label = String(window.prompt("Όνομα πεδίου που θέλεις να πάρεις από το συμπληρωματικό έγγραφο:", "") || "").trim();
+    if (!label) return;
+    const matchLabel = String(window.prompt("Ποια λέξη/φράση να ψάχνουμε μέσα στο έγγραφο;", label) || label).trim();
+    supplementDraft.push({ id: uid(), label, matchLabel: matchLabel || label });
+    renderSupplementDefsPanel();
+    refreshMappingSourceOptions();
   }
 
   function openMapping(templateId = selectedTemplateId) {
     const template = templates.find(item => item.id === templateId);
     if (!template) { setStatus("Επίλεξε πρώτα ένα έντυπο.", "warning"); return; }
     currentMapTemplate = template;
+    supplementDraft = Array.isArray(template.supplementFields) ? template.supplementFields.map(item => ({ ...item })) : [];
+    renderSupplementDefsPanel();
     $("formsMapSubtitle").textContent = template.name || template.originalName || "Έντυπο";
     const fields = template.fields || [];
     const mapWindow = $("formsMapModal")?.querySelector(".forms-map-window");
@@ -1309,7 +1931,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.11.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.14.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -1327,11 +1949,11 @@
     $("formsMapSaveBtn").disabled = false;
     $("formsMapList").innerHTML = `
       <div class="forms-visual-toolbar">
-        <div class="forms-field forms-visual-source"><label for="formsVisualSource">Πεδίο CRM που θα τοποθετήσεις</label><select id="formsVisualSource">${visualOptionMarkup("")}</select></div>
+        <div class="forms-field forms-visual-source"><label for="formsVisualSource">Πηγή δεδομένων που θα τοποθετήσεις</label><select id="formsVisualSource">${visualOptionMarkup("")}</select></div>
         <div class="forms-field forms-visual-size"><label for="formsVisualFontSize">Μέγεθος νέου πεδίου</label><select id="formsVisualFontSize"><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10" selected>10</option><option value="11">11</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option></select></div>
         <div class="forms-visual-pages"><button class="forms-secondary" id="formsVisualPrev" type="button">‹</button><span id="formsVisualPageLabel">Σελίδα</span><button class="forms-secondary" id="formsVisualNext" type="button">›</button></div>
       </div>
-      <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε πεδίο CRM και πάτησε στο σημείο του εντύπου. Μετά μπορείς να <strong>σύρεις την τιμή</strong> για ακριβή θέση, να αλλάξεις το μέγεθός της ή να τη μετακινήσεις 1 βήμα με τα βελάκια.</div>
+      <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε πηγή δεδομένων και πάτησε στο σημείο του εντύπου. Μετά μπορείς να <strong>σύρεις την τιμή</strong> για ακριβή θέση, να αλλάξεις το μέγεθός της ή να τη μετακινήσεις 1 βήμα με τα βελάκια.</div>
       <div class="forms-visual-canvas-shell"><div class="forms-visual-canvas-wrap" id="formsVisualCanvasWrap"><canvas id="formsVisualCanvas"></canvas><div class="forms-visual-markers" id="formsVisualMarkers"></div></div></div>
       <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
 
@@ -1437,7 +2059,7 @@
     const sourceKey = $("formsVisualSource")?.value || "";
     if (!sourceKey) {
       const help = $("formsVisualHelp");
-      if (help) { help.textContent = "Πρώτα διάλεξε ποιο πεδίο του CRM θέλεις να τοποθετήσεις."; help.classList.add("warning"); }
+      if (help) { help.textContent = "Πρώτα διάλεξε ποια πηγή δεδομένων θέλεις να τοποθετήσεις."; help.classList.add("warning"); }
       return;
     }
     const canvas = $("formsVisualCanvas");
@@ -1536,7 +2158,7 @@
     const host = $("formsVisualList");
     if (!host) return;
     if (!visualDraft.length) {
-      host.innerHTML = `<div class="forms-empty">Δεν έχεις τοποθετήσει ακόμη πεδίο. Διάλεξε πεδίο CRM και πάτησε πάνω στο PDF.</div>`;
+      host.innerHTML = `<div class="forms-empty">Δεν έχεις τοποθετήσει ακόμη πεδίο. Διάλεξε πηγή δεδομένων και πάτησε πάνω στο PDF.</div>`;
       return;
     }
     host.innerHTML = visualDraft.map((item,index) => `<div class="forms-visual-list-row"><div class="forms-visual-index">${index + 1}</div><div class="forms-visual-list-main"><small>Σελίδα ${Number(item.pageIndex || 0) + 1}</small><select data-visual-source-id="${esc(item.id)}">${visualOptionMarkup(item.sourceKey || "")}</select><div class="forms-visual-adjust"><label>Μέγεθος <select data-visual-font-id="${esc(item.id)}">${fontOptions(Number(item.fontSize || 10))}</select></label><div class="forms-visual-nudges" aria-label="Μικρομετακίνηση"><button type="button" data-nudge-id="${esc(item.id)}" data-dx="-1" data-dy="0" title="Αριστερά">←</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="1" data-dy="0" title="Δεξιά">→</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="0" data-dy="-1" title="Πάνω">↑</button><button type="button" data-nudge-id="${esc(item.id)}" data-dx="0" data-dy="1" title="Κάτω">↓</button></div></div></div><button class="forms-danger forms-visual-remove" type="button" data-remove-visual="${esc(item.id)}">×</button></div>`).join("");
@@ -1546,6 +2168,7 @@
     currentMapTemplate = null;
     visualPdfDoc = null;
     visualDraft = [];
+    supplementDraft = [];
     visualDragState = null;
     $("formsMapModal")?.classList.add("hidden");
   }
@@ -1559,14 +2182,14 @@
         $("formsMapList").querySelectorAll("select[data-field-name]").forEach(select => {
           mapping[select.dataset.fieldName] = select.value;
         });
-        updated = { ...currentMapTemplate, mapping, updatedAt: new Date().toISOString() };
+        updated = { ...currentMapTemplate, mapping, supplementFields: supplementDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString() };
       } else {
         if (!visualDraft.length) {
           const help = $("formsVisualHelp");
           if (help) { help.textContent = "Τοποθέτησε τουλάχιστον ένα πεδίο πάνω στο PDF πριν την αποθήκευση."; help.classList.add("warning"); }
           return;
         }
-        updated = { ...currentMapTemplate, visualFields: visualDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString(), version: 2 };
+        updated = { ...currentMapTemplate, visualFields: visualDraft.map(item => ({ ...item })), supplementFields: supplementDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString(), version: 2 };
       }
       await dbPut(updated);
       await persistMappingProfile(updated);
@@ -1746,7 +2369,7 @@
       $("formsPreviewFrame").src = generatedObjectURL;
       $("formsPreview").classList.add("show");
       $("formsGeneratedActions").style.display = "flex";
-      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} πεδία (${nonEmptyCount} με διαθέσιμη τιμή από το CRM).`, "success");
+      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} πεδία (${nonEmptyCount} με διαθέσιμη τιμή από τις πηγές δεδομένων).`, "success");
     } catch (error) {
       console.error(error);
       setStatus(`Δεν ολοκληρώθηκε η συμπλήρωση: ${error?.message || "άγνωστο σφάλμα"}`, "error");
@@ -1835,6 +2458,9 @@
     renderPolicyOptions();
     renderPersonOptions();
     await refreshTemplates();
+    renderSelectedTemplateSummary();
+    renderVehicleRegistrationSection();
+    renderSupplementSection();
     setStatus(selectedTemplateId && selectedCustomerId ? "Έτοιμο για αυτόματη συμπλήρωση." : "Επίλεξε έντυπο και πελάτη.");
   }
 
@@ -1866,6 +2492,51 @@
     $("formsTemplateDetailsCancel")?.addEventListener("click", () => finishTemplateDetails(false));
     $("formsTemplateDetailsSave")?.addEventListener("click", () => finishTemplateDetails(true));
     $("formsTemplateName")?.addEventListener("keydown", event => { if (event.key === "Enter") finishTemplateDetails(true); });
+    $("formsChooseTemplateBtn")?.addEventListener("click", openTemplatePicker);
+    $("formsQuickAddTemplateBtn")?.addEventListener("click", () => $("formsPdfInput")?.click());
+    $("formsPickerCloseBtn")?.addEventListener("click", closeTemplatePicker);
+    $("formsPickerBackBtn")?.addEventListener("click", () => { pickerCategory = ""; pickerSearchQuery = ""; if ($("formsPickerSearch")) $("formsPickerSearch").value = ""; renderTemplatePicker(); });
+    $("formsPickerSearch")?.addEventListener("input", event => { pickerSearchQuery = event.target.value || ""; if (pickerSearchQuery.trim()) pickerCategory = ""; renderTemplatePicker(); });
+    $("formsPickerAddBtn")?.addEventListener("click", () => { closeTemplatePicker(); $("formsPdfInput")?.click(); });
+    $("formsPickerContent")?.addEventListener("click", event => {
+      const category = event.target.closest("[data-picker-category]");
+      if (category) { pickerCategory = category.dataset.pickerCategory || ""; pickerSearchQuery = ""; if ($("formsPickerSearch")) $("formsPickerSearch").value = ""; renderTemplatePicker(); return; }
+      const doc = event.target.closest("[data-picker-template]");
+      if (doc) { useTemplate(doc.dataset.pickerTemplate); closeTemplatePicker(); }
+    });
+    $("formsAddSupplementFieldBtn")?.addEventListener("click", addSupplementFieldDefinition);
+    $("formsSupplementDefsList")?.addEventListener("input", event => {
+      const labelInput = event.target.closest("[data-supp-label]");
+      const matchInput = event.target.closest("[data-supp-match]");
+      const id = labelInput?.dataset.suppLabel || matchInput?.dataset.suppMatch;
+      const field = supplementDraft.find(item => String(item.id) === String(id));
+      if (!field) return;
+      if (labelInput) field.label = labelInput.value;
+      if (matchInput) field.matchLabel = matchInput.value;
+    });
+    $("formsSupplementDefsList")?.addEventListener("change", () => refreshMappingSourceOptions());
+    $("formsSupplementDefsList")?.addEventListener("click", event => {
+      const remove = event.target.closest("[data-remove-supp-def]");
+      if (!remove) return;
+      const id = remove.dataset.removeSuppDef;
+      supplementDraft = supplementDraft.filter(item => String(item.id) !== String(id));
+      visualDraft = visualDraft.filter(item => item.sourceKey !== `supplement.${id}`);
+      renderSupplementDefsPanel();
+      refreshMappingSourceOptions();
+      renderVisualFieldList();
+    });
+    $("formsVehicleRegUploadBtn")?.addEventListener("click", () => $("formsVehicleRegInput")?.click());
+    $("formsVehicleRegPhotoBtn")?.addEventListener("click", () => $("formsVehicleRegPhotoInput")?.click());
+    $("formsVehicleRegCameraBtn")?.addEventListener("click", () => $("formsVehicleRegCameraInput")?.click());
+    $("formsVehicleRegClearBtn")?.addEventListener("click", () => clearVehicleRegistration(true));
+    $("formsVehicleRegInput")?.addEventListener("change", async event => { const file = event.target.files?.[0]; if (file) await handleVehicleRegistrationFile(file); event.target.value = ""; });
+    $("formsVehicleRegPhotoInput")?.addEventListener("change", async event => { const files = event.target.files; if (files?.length) await handleVehicleRegistrationImages(files, "Φωτογραφίες"); event.target.value = ""; });
+    $("formsVehicleRegCameraInput")?.addEventListener("change", async event => { const file = event.target.files?.[0]; if (file) await handleVehicleRegistrationImages([file], "Κάμερα"); event.target.value = ""; });
+    $("formsVehicleRegValues")?.addEventListener("input", event => { const input = event.target.closest("[data-vehicle-reg-runtime]"); if (input) vehicleRegValues[input.dataset.vehicleRegRuntime] = input.value; });
+    $("formsSupplementUploadBtn")?.addEventListener("click", () => $("formsSupplementInput")?.click());
+    $("formsSupplementClearBtn")?.addEventListener("click", () => clearSupplementDocument(true));
+    $("formsSupplementInput")?.addEventListener("change", async event => { const file = event.target.files?.[0]; if (file) await handleSupplementFile(file); event.target.value = ""; });
+    $("formsSupplementValues")?.addEventListener("input", event => { const input = event.target.closest("[data-supp-runtime]"); if (input) supplementalValues[input.dataset.suppRuntime] = input.value; });
     $("formsCustomerSearch")?.addEventListener("input", event => renderCustomerResults(event.target.value));
     $("formsCustomerResults")?.addEventListener("click", event => {
       const option = event.target.closest("[data-customer-id]");
