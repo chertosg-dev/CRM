@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.3";
+  const VERSION = "1.1.4";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -185,6 +185,67 @@
       const start = value.byteOffset || 0;
       const end = start + value.byteLength;
       return value.buffer.slice(start, end);
+    }
+    return null;
+  }
+
+  async function fingerprintPdfBytes(value) {
+    const buffer = exactArrayBuffer(value);
+    if (!buffer) return "";
+    const bytes = new Uint8Array(buffer);
+    try {
+      if (crypto?.subtle?.digest) {
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        return `sha256:${Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("")}`;
+      }
+    } catch (error) {
+      console.warn("SHA-256 fingerprint unavailable; using local fallback", error);
+    }
+
+    // Deterministic fallback for older/offline WebKit contexts.
+    let h1 = 2166136261 >>> 0;
+    let h2 = 2246822519 >>> 0;
+    for (let i = 0; i < bytes.length; i += 1) {
+      const valueByte = bytes[i];
+      h1 ^= valueByte;
+      h1 = Math.imul(h1, 16777619) >>> 0;
+      h2 ^= (valueByte + (i & 255));
+      h2 = Math.imul(h2, 3266489917) >>> 0;
+    }
+    return `local:${bytes.length}:${h1.toString(16).padStart(8, "0")}${h2.toString(16).padStart(8, "0")}`;
+  }
+
+  function templateMappedCount(template) {
+    const acroMapped = Object.values(template?.mapping || {}).filter(Boolean).length;
+    const visualMapped = Array.isArray(template?.visualFields) ? template.visualFields.filter(item => item?.sourceKey).length : 0;
+    return acroMapped + visualMapped;
+  }
+
+  async function findDuplicateTemplate(pdfBytes, fingerprint = "") {
+    const wanted = fingerprint || await fingerprintPdfBytes(pdfBytes);
+    if (!wanted) return null;
+
+    for (let index = 0; index < templates.length; index += 1) {
+      let template = templates[index];
+      let existingFingerprint = template?.fingerprint || "";
+
+      if (!existingFingerprint) {
+        try {
+          const existingBytes = await templatePdfArrayBuffer(template);
+          existingFingerprint = await fingerprintPdfBytes(existingBytes);
+          if (existingFingerprint) {
+            const migrated = { ...template, fingerprint: existingFingerprint, updatedAt: template.updatedAt || new Date().toISOString() };
+            await dbPut(migrated);
+            templates[index] = migrated;
+            template = migrated;
+          }
+        } catch (error) {
+          console.warn("Δεν ήταν δυνατός ο έλεγχος διπλότυπου για παλιό έντυπο", template?.id, error);
+          continue;
+        }
+      }
+
+      if (existingFingerprint === wanted) return template;
     }
     return null;
   }
@@ -465,9 +526,27 @@
 
   async function addTemplateFile(file) {
     if (!file || !/pdf/i.test(file.type || file.name)) return;
-    setStatus("Ανάλυση του PDF…");
+    setStatus("Έλεγχος βιβλιοθήκης και ανάλυση του PDF…");
     try {
       const pdfBytes = await file.arrayBuffer();
+      const fingerprint = await fingerprintPdfBytes(pdfBytes);
+      const duplicate = await findDuplicateTemplate(pdfBytes, fingerprint);
+
+      if (duplicate) {
+        const mappedCount = templateMappedCount(duplicate);
+        const label = duplicate.name || duplicate.originalName || "Έντυπο";
+        const message = `Το έντυπο «${label}» υπάρχει ήδη στη βιβλιοθήκη${mappedCount ? ` και έχει ${mappedCount} αποθηκευμένες αντιστοιχίσεις` : ""}.\n\nΠάτησε OK για να χρησιμοποιήσεις το υπάρχον πρότυπο χωρίς να ξανακάνεις αντιστοίχιση.`;
+        const useExisting = window.confirm(message);
+        if (useExisting) {
+          selectedTemplateId = duplicate.id;
+          renderTemplates();
+          setStatus(`Χρησιμοποιείται το ήδη αποθηκευμένο έντυπο «${label}»${mappedCount ? ` με ${mappedCount} αντιστοιχίσεις` : ""}. Επίλεξε πελάτη/συμβόλαιο και πάτησε «Αυτόματη συμπλήρωση».`, "success");
+        } else {
+          setStatus("Δεν προστέθηκε δεύτερο αντίγραφο. Το υπάρχον πρότυπο και οι αντιστοιχίσεις του παραμένουν στη βιβλιοθήκη.", "warning");
+        }
+        return;
+      }
+
       const fields = await inspectPdf(pdfBytes);
       const mapping = {};
       fields.forEach(field => { mapping[field.name] = guessSource(field.name); });
@@ -477,6 +556,7 @@
         name,
         originalName: file.name,
         pdfBytes: pdfBytes.slice(0),
+        fingerprint,
         storageVersion: 2,
         fields,
         mapping,
@@ -507,6 +587,7 @@
     setStatus("Ανανέωση του αποθηκευμένου PDF…");
     try {
       const pdfBytes = await file.arrayBuffer();
+      const fingerprint = await fingerprintPdfBytes(pdfBytes);
       const fields = await inspectPdf(pdfBytes);
       const previousMapping = existing.mapping || {};
       const mapping = {};
@@ -514,6 +595,7 @@
       const updated = {
         ...existing,
         pdfBytes: pdfBytes.slice(0),
+        fingerprint,
         storageVersion: 2,
         originalName: file.name || existing.originalName,
         fields,
@@ -740,7 +822,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.3.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.4.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });

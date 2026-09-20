@@ -1,11 +1,11 @@
 TSERTOS Insurance CRM
-Version: 9.11.3
-Build: FORMS_PDF_BYTES_STORAGE_FIX
+Version: 9.11.4
+Build: FORMS_TEMPLATE_DEDUP_PERSISTENT_MAPPING
 Date: 2026-09-19
 
 Changes:
-- Visual PDF fields can be dragged directly on the PDF for exact placement.
-- Each placed field has its own font-size selector (6–18 pt).
-- One-step arrow nudges allow precise up/down/left/right positioning.
-- The visual marker previews the actual CRM value when available, instead of a large label.
-- Text PNG is tightly cropped so the saved PDF position better matches the visual placement.
+- Each PDF template keeps its field mapping, visual positions and font sizes permanently in the Forms Library.
+- Re-uploading the exact same PDF is detected by a content fingerprint.
+- Duplicate uploads reuse the existing template instead of asking for field mapping again.
+- Existing templates are fingerprinted lazily, without deleting saved mappings.
+- PDF storage remains on raw bytes for iPhone/Safari reliability.
