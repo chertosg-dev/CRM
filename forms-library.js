@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.16";
+  const VERSION = "1.1.17";
   const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 2;
@@ -1021,6 +1021,10 @@
                 <input id="formsVehicleRegCameraInput" type="file" accept="image/*" capture="environment" hidden />
               </div>
               <div class="forms-supplement-file" id="formsVehicleRegFile"></div>
+              <div class="forms-vehicle-mapping-status" id="formsVehicleRegMappingStatus"></div>
+              <div class="forms-actions-row forms-vehicle-map-action">
+                <button class="forms-secondary" id="formsVehicleRegMapBtn" type="button">⚙️ Τοποθέτηση πεδίων άδειας στο έντυπο</button>
+              </div>
               <div class="forms-supplement-values" id="formsVehicleRegValues"></div>
             </section>
             <section class="forms-section" id="formsSupplementSection">
@@ -1610,13 +1614,23 @@
     const autoPolicy = selectedAutoPolicy();
     const person = selectedPerson(insured, regularPolicy);
     const coverage = regularPolicy?.coverage || {};
-    return { insured, person, regularPolicy, autoPolicy, coverage };
+    return {
+      insured, person, regularPolicy, autoPolicy, coverage,
+      vehicleRegValues: { ...vehicleRegValues },
+      supplementalValues: { ...supplementalValues }
+    };
   }
 
   function sourceValue(key, context) {
     if (!key) return "";
-    if (String(key).startsWith("supplement.")) return supplementalValues[String(key).slice("supplement.".length)] ?? "";
-    if (String(key).startsWith("vehicleReg.")) return vehicleRegValues[String(key).slice("vehicleReg.".length)] ?? "";
+    if (String(key).startsWith("supplement.")) {
+      const id = String(key).slice("supplement.".length);
+      return (context?.supplementalValues || supplementalValues)[id] ?? "";
+    }
+    if (String(key).startsWith("vehicleReg.")) {
+      const id = String(key).slice("vehicleReg.".length);
+      return (context?.vehicleRegValues || vehicleRegValues)[id] ?? "";
+    }
     const person = context.person || {};
     const insured = context.insured || {};
     const policy = context.regularPolicy || {};
@@ -1682,6 +1696,54 @@
     ["color", "Χρώμα", "R"]
   ];
 
+  function vehicleRegMappings(template) {
+    const keys = [];
+    Object.values(template?.mapping || {}).forEach(sourceKey => {
+      if (String(sourceKey || "").startsWith("vehicleReg.")) keys.push(String(sourceKey));
+    });
+    (Array.isArray(template?.visualFields) ? template.visualFields : []).forEach(item => {
+      if (String(item?.sourceKey || "").startsWith("vehicleReg.")) keys.push(String(item.sourceKey));
+    });
+    return [...new Set(keys)];
+  }
+
+  function vehicleRegAvailableKeys(values = vehicleRegValues) {
+    return VEHICLE_REG_FIELDS
+      .map(([key]) => key)
+      .filter(key => String(values?.[key] ?? "").trim() !== "")
+      .map(key => `vehicleReg.${key}`);
+  }
+
+  function refreshVehicleRegMappingStatus() {
+    const host = $("formsVehicleRegMappingStatus");
+    if (!host) return;
+    const template = templates.find(item => item.id === selectedTemplateId);
+    if (!template) {
+      host.innerHTML = `<span>Επίλεξε πρώτα έντυπο για να δεις την αντιστοίχιση της άδειας.</span>`;
+      return;
+    }
+    const mapped = vehicleRegMappings(template);
+    const available = vehicleRegAvailableKeys();
+    const mappedWithValue = mapped.filter(key => available.includes(key));
+    const cls = mapped.length ? "ok" : "warning";
+    host.innerHTML = `<span class="${cls}"><strong>Πεδία άδειας στο πρότυπο: ${mapped.length}/8</strong>${available.length ? ` · με τιμή τώρα: ${mappedWithValue.length}/${available.length}` : ""}</span>`;
+  }
+
+  function openVehicleRegMapping() {
+    const template = templates.find(item => item.id === selectedTemplateId);
+    if (!template) { setStatus("Επίλεξε πρώτα έντυπο από τη βιβλιοθήκη.", "warning"); return; }
+    openMapping(template.id);
+    setTimeout(() => {
+      const select = $("formsVisualSource");
+      if (!select) return;
+      const mapped = new Set(vehicleRegMappings(template));
+      const first = sourceDefinitions.find(([key]) => String(key).startsWith("vehicleReg.") && !mapped.has(key))?.[0] || "vehicleReg.make";
+      if ([...select.options].some(option => option.value === first)) select.value = first;
+      const help = $("formsVisualHelp");
+      if (help) help.innerHTML = `Τοποθέτησε μία φορά τα πεδία <strong>Άδεια Κυκλοφορίας</strong> στα αντίστοιχα σημεία του PDF και πάτησε «Αποθήκευση». Μετά θα συμπληρώνονται αυτόματα σε κάθε νέα άδεια.`;
+    }, 250);
+  }
+
   function renderVehicleRegistrationSection() {
     const fileHost = $("formsVehicleRegFile");
     const valuesHost = $("formsVehicleRegValues");
@@ -1691,6 +1753,7 @@
     if (!valuesHost) return;
     const hasFile = Boolean(vehicleRegFileName);
     valuesHost.innerHTML = VEHICLE_REG_FIELDS.map(([key, label, code]) => `<div class="forms-field"><label>${esc(label)} <small>(${esc(code)})</small></label><input type="text" data-vehicle-reg-runtime="${esc(key)}" value="${esc(vehicleRegValues[key] || "")}" placeholder="${hasFile ? "Δεν αναγνωρίστηκε — γράψε/διόρθωσε" : "Θα συμπληρωθεί από την άδεια"}" /></div>`).join("");
+    refreshVehicleRegMappingStatus();
   }
 
   function clearVehicleRegistration(render = true) {
@@ -2155,7 +2218,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.16.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.17.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -2459,10 +2522,15 @@
   async function drawVisualFields(doc, visualFields, context) {
     let filled = 0;
     let nonEmpty = 0;
+    let vehicleMapped = 0;
+    let vehicleFilled = 0;
     for (const item of visualFields || []) {
+      const isVehicle = String(item?.sourceKey || "").startsWith("vehicleReg.");
+      if (isVehicle) vehicleMapped += 1;
       const value = sourceValue(item.sourceKey, context);
       if (value === "" || value === null || value === undefined) continue;
       nonEmpty += 1;
+      if (isVehicle) vehicleFilled += 1;
       const pageIndex = Math.max(0, Math.min(doc.getPageCount() - 1, Number(item.pageIndex || 0)));
       const page = doc.getPage(pageIndex);
 
@@ -2517,7 +2585,7 @@
       page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
       filled += 1;
     }
-    return { filled, nonEmpty };
+    return { filled, nonEmpty, vehicleMapped, vehicleFilled };
   }
 
   function setPdfFieldValue(field, type, value) {
@@ -2559,6 +2627,15 @@
     if (!template) { setStatus("Επίλεξε πρώτα έντυπο από τη βιβλιοθήκη.", "warning"); return; }
     if (!customer) { setStatus("Επίλεξε πρώτα πελάτη από το CRM.", "warning"); return; }
     syncRuntimeSourceInputs();
+
+    const vehicleAvailable = vehicleRegAvailableKeys();
+    const vehicleMapped = vehicleRegMappings(template);
+    if (vehicleAvailable.length && !vehicleMapped.length) {
+      refreshVehicleRegMappingStatus();
+      setStatus(`Η άδεια έχει ${vehicleAvailable.length} διαθέσιμα στοιχεία, αλλά το συγκεκριμένο πρότυπο δεν έχει κανένα πεδίο «Άδεια Κυκλοφορίας» τοποθετημένο. Πάτησε «Τοποθέτηση πεδίων άδειας στο έντυπο» και κάν' το μία φορά.`, "warning");
+      return;
+    }
+
     const mapped = Object.entries(template.mapping || {}).filter(([,value]) => value);
     const visualFields = Array.isArray(template.visualFields) ? template.visualFields.filter(item => item.sourceKey) : [];
     if (!mapped.length && !visualFields.length) { setStatus("Ρύθμισε πρώτα την αντιστοίχιση πεδίων του εντύπου.", "warning"); openMapping(template.id); return; }
@@ -2572,6 +2649,8 @@
       const context = buildContext();
       let filledCount = 0;
       let nonEmptyCount = 0;
+      let vehicleMappedCount = 0;
+      let vehicleFilledCount = 0;
 
       if ((template.fields || []).length && mapped.length) {
         const form = doc.getForm();
@@ -2580,8 +2659,13 @@
         for (const [fieldName, sourceKey] of mapped) {
           const field = byName.get(fieldName);
           if (!field) continue;
+          const isVehicle = String(sourceKey || "").startsWith("vehicleReg.");
+          if (isVehicle) vehicleMappedCount += 1;
           const value = sourceValue(sourceKey, context);
-          if (value !== "" && value !== null && value !== undefined) nonEmptyCount += 1;
+          if (value !== "" && value !== null && value !== undefined) {
+            nonEmptyCount += 1;
+            if (isVehicle) vehicleFilledCount += 1;
+          }
           try {
             if (setPdfFieldValue(field, fieldType(field), value)) filledCount += 1;
           } catch (error) {
@@ -2594,6 +2678,8 @@
         const result = await drawVisualFields(doc, visualFields, context);
         filledCount += result.filled;
         nonEmptyCount += result.nonEmpty;
+        vehicleMappedCount += result.vehicleMapped || 0;
+        vehicleFilledCount += result.vehicleFilled || 0;
       }
 
       let outBytes;
@@ -2609,7 +2695,8 @@
       $("formsPreviewFrame").src = generatedObjectURL;
       $("formsPreview").classList.add("show");
       $("formsGeneratedActions").style.display = "flex";
-      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} πεδία (${nonEmptyCount} με διαθέσιμη τιμή από τις πηγές δεδομένων).`, "success");
+      const vehicleNote = vehicleMappedCount ? ` · Άδεια κυκλοφορίας: ${vehicleFilledCount}/${vehicleMappedCount} πεδία με τιμή` : "";
+      setStatus(`Το νέο PDF δημιουργήθηκε. Συμπληρώθηκαν ${filledCount} πεδία (${nonEmptyCount} με διαθέσιμη τιμή από τις πηγές δεδομένων)${vehicleNote}.`, "success");
     } catch (error) {
       console.error(error);
       setStatus(`Δεν ολοκληρώθηκε η συμπλήρωση: ${error?.message || "άγνωστο σφάλμα"}`, "error");
@@ -2769,6 +2856,7 @@
     $("formsVehicleRegPhotoBtn")?.addEventListener("click", () => $("formsVehicleRegPhotoInput")?.click());
     $("formsVehicleRegCameraBtn")?.addEventListener("click", () => $("formsVehicleRegCameraInput")?.click());
     $("formsVehicleRegClearBtn")?.addEventListener("click", () => clearVehicleRegistration(true));
+    $("formsVehicleRegMapBtn")?.addEventListener("click", openVehicleRegMapping);
     $("formsVehicleRegInput")?.addEventListener("change", async event => { const file = event.target.files?.[0]; if (file) await handleVehicleRegistrationFile(file); event.target.value = ""; });
     $("formsVehicleRegPhotoInput")?.addEventListener("change", async event => { const files = event.target.files; if (files?.length) await handleVehicleRegistrationImages(files, "Φωτογραφίες"); event.target.value = ""; });
     $("formsVehicleRegCameraInput")?.addEventListener("change", async event => { const file = event.target.files?.[0]; if (file) await handleVehicleRegistrationImages([file], "Κάμερα"); event.target.value = ""; });
