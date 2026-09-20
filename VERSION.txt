@@ -1,10 +1,2 @@
-TSERTOS Insurance CRM
-Version: 9.11.5
-Build: FORMS_VISUAL_CROPBOX_ALIGNMENT_FIX
-Date: 2026-09-20
-
-Changes:
-- Visual field mapping and generated PDF now use the same visible CropBox coordinates.
-- Fixes text appearing higher/lower in the final PDF than in the mapping preview.
-- Existing template mappings, positions and per-field font sizes are preserved.
-- Persistent template fingerprinting and raw-byte PDF storage remain enabled.
+TSERTOS CRM PWA
+Version: 9.11.6

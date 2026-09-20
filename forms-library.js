@@ -822,7 +822,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.5.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.6.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -1150,7 +1150,8 @@
         }
       } catch (_) {}
 
-      const pngData = await textPngData(value, Number(item.fontSize || 10));
+      const fieldFontSize = Number(item.fontSize || 10);
+      const pngData = await textPngData(value, fieldFontSize);
       const image = await doc.embedPng(pngData.bytes);
       let drawWidth = pngData.width;
       let drawHeight = pngData.height;
@@ -1166,9 +1167,17 @@
       }
 
       const yTopFromVisible = yRatio * visibleBox.height;
+
+      // The browser preview positions the text by its CSS line box, while the PNG
+      // embedded in the final PDF is tightly cropped to the glyph ink. Without a
+      // small compensation the final text appears a little higher than what the
+      // user placed in the visual mapper. Move the final glyph down proportionally
+      // to its font size so the visible baseline matches the preview much more
+      // closely across small and large fields.
+      const baselineCompensation = Math.max(0.8, fieldFontSize * 0.16);
       const y = Math.max(
         visibleBox.y,
-        (visibleBox.y + visibleBox.height) - yTopFromVisible - drawHeight
+        (visibleBox.y + visibleBox.height) - yTopFromVisible - drawHeight - baselineCompensation
       );
       page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
       filled += 1;
