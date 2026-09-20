@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.14";
+  const VERSION = "1.1.16";
   const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 2;
@@ -756,9 +756,59 @@
     } catch (_) {}
 
     return [
+      { label: "κανονική", blob: await canvasToBlob(base) },
       { label: "ενισχυμένη", blob: await canvasToBlob(enhanced) },
       { label: "ασπρόμαυρη", blob: await canvasToBlob(binary) }
     ];
+  }
+
+  async function prepareVehicleRegistrationTiles(file) {
+    const img = await loadImageFile(file);
+    const rawW = Number(img.naturalWidth || img.width || 1);
+    const rawH = Number(img.naturalHeight || img.height || 1);
+    const targetLongSide = 3600;
+    const scale = Math.max(1, Math.min(2.5, targetLongSide / Math.max(1, Math.max(rawW, rawH))));
+    const width = Math.max(1, Math.round(rawW * scale));
+    const height = Math.max(1, Math.round(rawH * scale));
+    const source = document.createElement("canvas");
+    source.width = width; source.height = height;
+    const sctx = source.getContext("2d", { willReadFrequently: true });
+    sctx.fillStyle = "#fff"; sctx.fillRect(0, 0, width, height);
+    sctx.drawImage(img, 0, 0, width, height);
+
+    // Four overlapping tiles make the tiny printed codes much larger for OCR.
+    const specs = [
+      [0, 0, 0.58, 0.58, "πάνω αριστερά"],
+      [0.42, 0, 0.58, 0.58, "πάνω δεξιά"],
+      [0, 0.42, 0.58, 0.58, "κάτω αριστερά"],
+      [0.42, 0.42, 0.58, 0.58, "κάτω δεξιά"]
+    ];
+    const out = [];
+    for (const [xr, yr, wr, hr, label] of specs) {
+      const sx = Math.round(width * xr), sy = Math.round(height * yr);
+      const sw = Math.max(1, Math.round(width * wr)), sh = Math.max(1, Math.round(height * hr));
+      const tile = document.createElement("canvas");
+      const zoom = 1.6;
+      tile.width = Math.max(1, Math.round(sw * zoom));
+      tile.height = Math.max(1, Math.round(sh * zoom));
+      const tctx = tile.getContext("2d", { willReadFrequently: true });
+      tctx.fillStyle = "#fff"; tctx.fillRect(0, 0, tile.width, tile.height);
+      tctx.imageSmoothingEnabled = true;
+      tctx.imageSmoothingQuality = "high";
+      tctx.drawImage(source, sx, sy, sw, sh, 0, 0, tile.width, tile.height);
+      try {
+        const image = tctx.getImageData(0, 0, tile.width, tile.height);
+        const data = image.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          const v = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 128));
+          data[i] = data[i + 1] = data[i + 2] = v;
+        }
+        tctx.putImageData(image, 0, 0);
+      } catch (_) {}
+      out.push({ label, blob: await canvasToBlob(tile) });
+    }
+    return out;
   }
 
   async function ocrVehicleRegistrationBlob(blob, label = "εικόνα") {
@@ -769,6 +819,9 @@
           setStatus(`OCR ${label}: ${Math.round(message.progress * 100)}%…`);
         }
       }
+    }, {
+      tessedit_pageseg_mode: "6",
+      preserve_interword_spaces: "1"
     });
     return String(result?.data?.text || "");
   }
@@ -786,6 +839,18 @@
         imageText += (imageText ? "\n" : "") + text;
         const interim = parseVehicleRegistrationText(imageText);
         if (Object.values(interim).filter(Boolean).length >= 6) break;
+      }
+
+      // If the whole-card passes are weak, OCR overlapping enlarged tiles.
+      // This is slower, but much more reliable for the very small print on Greek registration cards.
+      if (Object.values(parseVehicleRegistrationText(imageText)).filter(Boolean).length < 4) {
+        const tiles = await prepareVehicleRegistrationTiles(list[i]);
+        for (let j = 0; j < tiles.length; j += 1) {
+          const tile = tiles[j];
+          const text = await ocrVehicleRegistrationBlob(tile.blob, `λεπτομέρεια ${i + 1}/${list.length} · ${tile.label}`);
+          imageText += (imageText ? "\n" : "") + text;
+          if (Object.values(parseVehicleRegistrationText(imageText)).filter(Boolean).length >= 6) break;
+        }
       }
       parts.push(imageText);
     }
@@ -1890,7 +1955,8 @@
       vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
       renderVehicleRegistrationSection();
       const found = Object.values(vehicleRegValues).filter(Boolean).length;
-      setStatus(`Η άδεια από ${source.toLocaleLowerCase("el-GR")} διαβάστηκε. Αναγνωρίστηκαν ${found} από 8 στοιχεία. Έλεγξέ τα πριν την αυτόματη συμπλήρωση.`, found ? "success" : "warning");
+      const chars = String(vehicleRegText || "").replace(/\s+/g, "").length;
+      setStatus(`Η άδεια από ${source.toLocaleLowerCase("el-GR")} διαβάστηκε. Αναγνωρίστηκαν ${found} από 8 στοιχεία${found ? "" : ` (OCR: ${chars} χαρακτήρες)`}. Έλεγξέ τα πριν την αυτόματη συμπλήρωση.`, found ? "success" : "warning");
     } catch (error) {
       console.error(error);
       vehicleRegText = "";
@@ -2089,7 +2155,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.15.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.16.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -2472,11 +2538,27 @@
     return false;
   }
 
+  function syncRuntimeSourceInputs() {
+    // Safari/iOS can update text inputs (autofill, programmatic OCR rendering,
+    // dictation) without firing the exact input event path we rely on. Read the
+    // visible fields again immediately before generating the PDF so the final
+    // document always uses what the user actually sees on screen.
+    document.querySelectorAll("[data-vehicle-reg-runtime]").forEach(input => {
+      const key = input.dataset.vehicleRegRuntime;
+      if (key) vehicleRegValues[key] = input.value ?? "";
+    });
+    document.querySelectorAll("[data-supp-runtime]").forEach(input => {
+      const key = input.dataset.suppRuntime;
+      if (key) supplementalValues[key] = input.value ?? "";
+    });
+  }
+
   async function fillSelectedTemplate() {
     const template = templates.find(item => item.id === selectedTemplateId);
     const customer = currentCustomer();
     if (!template) { setStatus("Επίλεξε πρώτα έντυπο από τη βιβλιοθήκη.", "warning"); return; }
     if (!customer) { setStatus("Επίλεξε πρώτα πελάτη από το CRM.", "warning"); return; }
+    syncRuntimeSourceInputs();
     const mapped = Object.entries(template.mapping || {}).filter(([,value]) => value);
     const visualFields = Array.isArray(template.visualFields) ? template.visualFields.filter(item => item.sourceKey) : [];
     if (!mapped.length && !visualFields.length) { setStatus("Ρύθμισε πρώτα την αντιστοίχιση πεδίων του εντύπου.", "warning"); openMapping(template.id); return; }
