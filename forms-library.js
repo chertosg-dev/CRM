@@ -811,6 +811,169 @@
     return out;
   }
 
+
+  // Greek registration certificates use a very stable three-column layout. For camera
+  // photos, reading the whole page as one text stream is error-prone. The routines below
+  // first find the green certificate and then OCR only the left VEHICLE DATA panel. Values
+  // are extracted by fixed normalized regions, so text from the holder/authority columns
+  // can never become a VIN, make, fuel or colour.
+  function detectGreekVehicleRegistrationBounds(canvas) {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const width = canvas.width, height = canvas.height;
+    let image;
+    try { image = ctx.getImageData(0, 0, width, height); } catch (_) { return null; }
+    const data = image.data;
+    const step = Math.max(2, Math.round(Math.max(width, height) / 900));
+    let minX = width, minY = height, maxX = -1, maxY = -1, hits = 0, samples = 0;
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        samples += 1;
+        const i = (y * width + x) * 4;
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        // Pale green paper: green channel is measurably above red/blue, but allow shadows.
+        const greenish = g >= 78 && (g - r) >= 5 && (g - b) >= 4 && g >= r * 1.025 && g >= b * 1.02;
+        if (!greenish) continue;
+        hits += 1;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+    if (hits < Math.max(120, samples * 0.035) || maxX <= minX || maxY <= minY) return null;
+    let x = Math.max(0, minX - step * 3), y = Math.max(0, minY - step * 3);
+    let w = Math.min(width - x, (maxX - minX) + step * 6);
+    let h = Math.min(height - y, (maxY - minY) + step * 6);
+    const ratio = w / Math.max(1, h);
+    // A Greek registration certificate is landscape. Reject tiny/implausible green objects.
+    if (ratio < 1.25 || ratio > 2.35 || w < width * 0.35 || h < height * 0.25) return null;
+    return { x, y, w, h };
+  }
+
+  async function prepareGreekVehicleRegistrationPanel(input) {
+    const img = await loadImageFile(input);
+    const rawW = Number(img.naturalWidth || img.width || 1);
+    const rawH = Number(img.naturalHeight || img.height || 1);
+    const scale = Math.max(0.9, Math.min(2.2, 2600 / Math.max(1, Math.max(rawW, rawH))));
+    const width = Math.max(1, Math.round(rawW * scale));
+    const height = Math.max(1, Math.round(rawH * scale));
+    const source = document.createElement("canvas");
+    source.width = width; source.height = height;
+    const sctx = source.getContext("2d", { willReadFrequently: true });
+    sctx.fillStyle = "#fff"; sctx.fillRect(0, 0, width, height);
+    sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = "high";
+    sctx.drawImage(img, 0, 0, width, height);
+
+    const detectedBounds = detectGreekVehicleRegistrationBounds(source);
+    const bounds = detectedBounds || { x: 0, y: 0, w: width, h: height };
+    // The left panel occupies approximately one third of the green certificate.
+    const sx = Math.max(0, Math.round(bounds.x + bounds.w * 0.002));
+    const sy = Math.max(0, Math.round(bounds.y + bounds.h * 0.006));
+    const sw = Math.max(1, Math.round(bounds.w * 0.34));
+    const sh = Math.max(1, Math.round(bounds.h * 0.985));
+    const targetW = 1600;
+    const targetH = Math.max(1800, Math.round(targetW * sh / sw));
+    const panel = document.createElement("canvas");
+    panel.width = targetW; panel.height = targetH;
+    const pctx = panel.getContext("2d", { willReadFrequently: true });
+    pctx.fillStyle = "#fff"; pctx.fillRect(0, 0, targetW, targetH);
+    pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = "high";
+    pctx.drawImage(source, sx, sy, sw, sh, 0, 0, targetW, targetH);
+    try {
+      const image = pctx.getImageData(0, 0, targetW, targetH);
+      const data = image.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        // Flatten the green paper and strengthen the dark printed characters.
+        const v = Math.max(0, Math.min(255, (gray - 150) * 1.85 + 178));
+        data[i] = data[i + 1] = data[i + 2] = v;
+      }
+      pctx.putImageData(image, 0, 0);
+    } catch (_) {}
+    return { blob: await canvasToBlob(panel), width: targetW, height: targetH, detected: Boolean(detectedBounds) };
+  }
+
+  function vehicleRegWordsFromBlocks(blocks) {
+    const words = [];
+    for (const block of Array.isArray(blocks) ? blocks : []) {
+      for (const paragraph of Array.isArray(block?.paragraphs) ? block.paragraphs : []) {
+        for (const line of Array.isArray(paragraph?.lines) ? paragraph.lines : []) {
+          for (const word of Array.isArray(line?.words) ? line.words : []) {
+            const text = String(word?.text || "").trim();
+            const bbox = word?.bbox || null;
+            const confidence = Number(word?.confidence ?? word?.conf ?? 0);
+            if (!text || !bbox || (Number.isFinite(confidence) && confidence < 15)) continue;
+            words.push({ text, bbox, confidence });
+          }
+        }
+      }
+    }
+    return words;
+  }
+
+  function vehicleRegTextFromRegion(words, width, height, roi) {
+    const x0 = roi.x0 * width, x1 = roi.x1 * width, y0 = roi.y0 * height, y1 = roi.y1 * height;
+    const picked = words.filter(word => {
+      const b = word.bbox || {};
+      const cx = (Number(b.x0 || 0) + Number(b.x1 || 0)) / 2;
+      const cy = (Number(b.y0 || 0) + Number(b.y1 || 0)) / 2;
+      return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
+    });
+    if (!picked.length) return "";
+    picked.sort((a,b) => {
+      const ay = (Number(a.bbox.y0 || 0) + Number(a.bbox.y1 || 0)) / 2;
+      const by = (Number(b.bbox.y0 || 0) + Number(b.bbox.y1 || 0)) / 2;
+      if (Math.abs(ay - by) > height * 0.012) return ay - by;
+      return Number(a.bbox.x0 || 0) - Number(b.bbox.x0 || 0);
+    });
+    const lines = [];
+    for (const word of picked) {
+      const cy = (Number(word.bbox.y0 || 0) + Number(word.bbox.y1 || 0)) / 2;
+      let line = lines.find(item => Math.abs(item.y - cy) <= height * 0.012);
+      if (!line) { line = { y: cy, words: [] }; lines.push(line); }
+      line.words.push(word);
+    }
+    lines.sort((a,b) => a.y - b.y);
+    return lines.map(line => line.words.sort((a,b) => Number(a.bbox.x0 || 0) - Number(b.bbox.x0 || 0)).map(w => w.text).join(" ")).join(" ").trim();
+  }
+
+  function parseGreekVehicleRegistrationPanel(blocks, width, height) {
+    const words = vehicleRegWordsFromBlocks(blocks);
+    if (!words.length) return {};
+    // Normalized positions measured on the official Greek green registration certificate.
+    // X coordinates are relative to the left VEHICLE DATA panel; Y to its full height.
+    const regions = {
+      firstRegistration:       { code: "B",   x0: 0.09, x1: 0.36, y0: 0.150, y1: 0.198 },
+      firstRegistrationGreece: { code: "4",   x0: 0.39, x1: 0.68, y0: 0.150, y1: 0.198 },
+      make:                    { code: "D.1", x0: 0.09, x1: 0.78, y0: 0.187, y1: 0.228 },
+      type:                    { code: "D.2", x0: 0.09, x1: 0.78, y0: 0.245, y1: 0.326 },
+      vin:                     { code: "E",   x0: 0.09, x1: 0.78, y0: 0.323, y1: 0.368 },
+      fuel:                    { code: "P.3", x0: 0.09, x1: 0.78, y0: 0.446, y1: 0.490 },
+      engineNumber:            { code: "P.5", x0: 0.09, x1: 0.78, y0: 0.482, y1: 0.530 },
+      color:                   { code: "R",   x0: 0.31, x1: 0.78, y0: 0.536, y1: 0.586 }
+    };
+    const out = {};
+    for (const [key, region] of Object.entries(regions)) {
+      let raw = vehicleRegTextFromRegion(words, width, height, region);
+      // Remove any code token that leaked into the crop.
+      try { raw = raw.replace(new RegExp(vehicleRegCodePattern(region.code), "ig"), " "); } catch (_) {}
+      raw = cleanVehicleRegCandidate(raw);
+      let value = "";
+      if (region.code === "B" || region.code === "4") value = dateFromSpatialVehicleValue(raw);
+      else value = sanitizeVehicleRegValue(region.code, raw);
+      if (value) out[key] = value;
+    }
+    return out;
+  }
+
+  async function ocrGreekVehicleRegistrationTargeted(input, label = "άδεια") {
+    const panel = await prepareGreekVehicleRegistrationPanel(input);
+    const detail = await ocrVehicleRegistrationBlob(panel.blob, `${label} · πεδία οχήματος`, "6");
+    return {
+      text: detail.text || "",
+      values: parseGreekVehicleRegistrationPanel(detail.blocks, panel.width, panel.height),
+      detected: panel.detected
+    };
+  }
+
   function vehicleRegOcrLinesFromBlocks(blocks) {
     const lines = [];
     for (const block of Array.isArray(blocks) ? blocks : []) {
@@ -931,7 +1094,7 @@
     return out;
   }
 
-  async function ocrVehicleRegistrationBlob(blob, label = "εικόνα") {
+  async function ocrVehicleRegistrationBlob(blob, label = "εικόνα", pageSegMode = "11") {
     const Tesseract = await ensureTesseract();
     const result = await Tesseract.recognize(blob, "ell+eng", {
       logger(message) {
@@ -939,7 +1102,7 @@
           setStatus(`OCR ${label}: ${Math.round(message.progress * 100)}%…`);
         }
       },
-      tessedit_pageseg_mode: "11",
+      tessedit_pageseg_mode: String(pageSegMode || "11"),
       preserve_interword_spaces: "1"
     });
     return {
@@ -953,17 +1116,28 @@
     const parts = [];
     let spatialValues = {};
     for (let i = 0; i < list.length; i += 1) {
-      setStatus(`Προετοιμασία φωτογραφίας ${i + 1}/${list.length}…`);
-      const variants = await prepareVehicleRegistrationVariants(list[i]);
+      setStatus(`Στοχευμένη ανάγνωση άδειας ${i + 1}/${list.length}…`);
       let imageText = "";
-      for (let j = 0; j < variants.length; j += 1) {
-        const variant = variants[j];
-        const detail = await ocrVehicleRegistrationBlob(variant.blob, `φωτογραφία ${i + 1}/${list.length} · ${variant.label}`);
-        const text = detail.text;
-        imageText += (imageText ? "\n" : "") + text;
-        spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
-        const mergedNow = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText));
-        if (Object.values(mergedNow).filter(Boolean).length >= 6) break;
+      try {
+        const targeted = await ocrGreekVehicleRegistrationTargeted(list[i], `φωτογραφία ${i + 1}/${list.length}`);
+        imageText += targeted?.text || "";
+        spatialValues = mergeVehicleRegValues(spatialValues, targeted?.values || {});
+      } catch (error) {
+        console.warn("Targeted vehicle registration OCR failed", error);
+      }
+
+      // Only fall back to whole-image OCR for fields still missing. Targeted values always win.
+      if (Object.values(spatialValues).filter(Boolean).length < 6) {
+        setStatus(`Συμπληρωματικό OCR φωτογραφίας ${i + 1}/${list.length}…`);
+        const variants = await prepareVehicleRegistrationVariants(list[i]);
+        for (let j = 0; j < variants.length; j += 1) {
+          const variant = variants[j];
+          const detail = await ocrVehicleRegistrationBlob(variant.blob, `φωτογραφία ${i + 1}/${list.length} · ${variant.label}`);
+          imageText += (imageText ? "\n" : "") + detail.text;
+          spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
+          const mergedNow = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText));
+          if (Object.values(mergedNow).filter(Boolean).length >= 6) break;
+        }
       }
 
       if (Object.values(mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText))).filter(Boolean).length < 4) {
@@ -1000,9 +1174,18 @@
       canvas.height = Math.ceil(viewport.height);
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
       const blob = await canvasToBlob(canvas);
-      const detail = await ocrVehicleRegistrationBlob(blob, `σελίδα ${pageNo}`);
-      parts.push(detail.text);
-      spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
+      try {
+        const targeted = await ocrGreekVehicleRegistrationTargeted(blob, `σελίδα ${pageNo}`);
+        parts.push(targeted?.text || "");
+        spatialValues = mergeVehicleRegValues(spatialValues, targeted?.values || {});
+      } catch (error) {
+        console.warn("Targeted PDF registration OCR failed", error);
+      }
+      if (Object.values(spatialValues).filter(Boolean).length < 6) {
+        const detail = await ocrVehicleRegistrationBlob(blob, `σελίδα ${pageNo}`);
+        parts.push(detail.text || "");
+        spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
+      }
     }
     const text = parts.join("\n");
     return { text, values: mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(text)) };
@@ -2089,6 +2272,7 @@
   function normalizeVehicleFuel(value) {
     const n = normalizeText(value);
     const pairs = [
+      ["αμολυβδ", "ΑΜΟΛΥΒΔΗ - ΚΑΤΑΛΥΤΙΚΟ"], ["καταλυτικ", "ΑΜΟΛΥΒΔΗ - ΚΑΤΑΛΥΤΙΚΟ"],
       ["βενζινη", "ΒΕΝΖΙΝΗ"], ["petrol", "ΒΕΝΖΙΝΗ"], ["gasoline", "ΒΕΝΖΙΝΗ"],
       ["πετρελαιο", "ΠΕΤΡΕΛΑΙΟ"], ["diesel", "ΠΕΤΡΕΛΑΙΟ"],
       ["υβριδ", "ΥΒΡΙΔΙΚΟ"], ["hybrid", "ΥΒΡΙΔΙΚΟ"],
@@ -2419,7 +2603,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.19.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.20.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
