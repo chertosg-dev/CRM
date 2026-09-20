@@ -1,22 +1,26 @@
-const CACHE_NAME = "tsertos-crm-pwa-v9.11.7";
+const CACHE_NAME = "tsertos-crm-pwa-v9.11.9";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./jszip.min.js?v=9.11.7",
-  "./receipt-xlsx.js?v=9.11.7",
-  "./local-supabase.js?v=9.11.7",
-  "./auto-policies-seed.js?v=9.11.7",
-  "./forms-library.css?v=9.11.7",
-  "./forms-library.js?v=9.11.7",
-  "./manifest.webmanifest?v=9.11.7",
+  "./jszip.min.js?v=9.11.9",
+  "./receipt-xlsx.js?v=9.11.9",
+  "./local-supabase.js?v=9.11.9",
+  "./auto-policies-seed.js?v=9.11.9",
+  "./forms-library.css?v=9.11.9",
+  "./forms-library.js?v=9.11.9",
+  "./manifest.webmanifest?v=9.11.9",
   "./icon-192.png",
   "./icon-512.png",
-  "./apple-touch-icon.png?v=9.11.7"
+  "./apple-touch-icon.png?v=9.11.9"
 ];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();
+});
+
+self.addEventListener("message", event => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {
@@ -52,7 +56,7 @@ self.addEventListener("fetch", event => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then(response => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, copy));

@@ -260,6 +260,67 @@
     return acroMapped + visualMapped;
   }
 
+  function normalizedTemplateFileName(value) {
+    return String(value || "")
+      .normalize("NFC")
+      .trim()
+      .toLocaleLowerCase("el-GR")
+      .replace(/\.pdf$/i, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function findLegacyMappedTemplateForFile(file) {
+    const wanted = normalizedTemplateFileName(file?.name);
+    if (!wanted) return null;
+    const candidates = templates
+      .filter(template => templateMappedCount(template) > 0)
+      .filter(template => {
+        const original = normalizedTemplateFileName(template?.originalName);
+        const display = normalizedTemplateFileName(template?.name);
+        return original === wanted || display === wanted;
+      })
+      .sort((a, b) => {
+        const selectedA = a.id === selectedTemplateId ? 1 : 0;
+        const selectedB = b.id === selectedTemplateId ? 1 : 0;
+        if (selectedA !== selectedB) return selectedB - selectedA;
+        const mappedDiff = templateMappedCount(b) - templateMappedCount(a);
+        if (mappedDiff) return mappedDiff;
+        return String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""));
+      });
+    return candidates[0] || null;
+  }
+
+  async function relinkLegacyMappedTemplate(template, file, pdfBytes, fingerprint, byteFingerprint) {
+    const fields = await inspectPdf(pdfBytes);
+    const previousMapping = template?.mapping || {};
+    const mapping = {};
+    if (fields.length) {
+      fields.forEach(field => {
+        mapping[field.name] = previousMapping[field.name] || guessSource(field.name);
+      });
+    }
+    const updated = {
+      ...template,
+      originalName: file.name || template.originalName,
+      pdfBytes: pdfBytes.slice(0),
+      fingerprint,
+      byteFingerprint,
+      storageVersion: 2,
+      fields,
+      mapping: fields.length ? mapping : previousMapping,
+      visualFields: Array.isArray(template?.visualFields) ? template.visualFields.map(item => ({ ...item })) : [],
+      updatedAt: new Date().toISOString(),
+      version: Math.max(Number(template?.version) || 1, 3)
+    };
+    delete updated.pdfBlob;
+    await dbPut(updated);
+    const index = templates.findIndex(item => item.id === updated.id);
+    if (index >= 0) templates[index] = updated;
+    rememberSelectedTemplate(updated.id);
+    await refreshTemplates();
+    return updated;
+  }
+
   async function findDuplicateTemplate(pdfBytes, fingerprint = "") {
     const wanted = fingerprint || await fingerprintPdfBytes(pdfBytes);
     const wantedLocal = localFingerprintPdfBytes(pdfBytes);
@@ -585,8 +646,46 @@
       if (duplicate) {
         const mappedCount = templateMappedCount(duplicate);
         const label = duplicate.name || duplicate.originalName || "Έντυπο";
-        useTemplate(duplicate.id, `Το ίδιο PDF υπάρχει ήδη στη βιβλιοθήκη${mappedCount ? ` με ${mappedCount} αποθηκευμένες αντιστοιχίσεις` : ""}. Χρησιμοποιείται το έτοιμο πρότυπο «${label}» — δεν χρειάζεται νέα αντιστοίχιση.`);
+
+        if (mappedCount) {
+          useTemplate(duplicate.id, `Το ίδιο PDF υπάρχει ήδη στη βιβλιοθήκη με ${mappedCount} αποθηκευμένες αντιστοιχίσεις. Χρησιμοποιείται το έτοιμο πρότυπο «${label}» — δεν χρειάζεται νέα αντιστοίχιση.`);
+          return;
+        }
+
+        // Αν έχει ήδη δημιουργηθεί άδειο διπλότυπο από προηγούμενη αποτυχημένη
+        // προσπάθεια, προτιμάμε τυχόν παλιότερο πρότυπο με έτοιμες αντιστοιχίσεις.
+        const mappedLegacy = findLegacyMappedTemplateForFile(file);
+        if (mappedLegacy && mappedLegacy.id !== duplicate.id) {
+          const legacyCount = templateMappedCount(mappedLegacy);
+          const legacyLabel = mappedLegacy.name || mappedLegacy.originalName || "Έντυπο";
+          const reuse = window.confirm(`Βρέθηκε άδειο αντίγραφο του PDF, αλλά υπάρχει και έτοιμο πρότυπο «${legacyLabel}» με ${legacyCount} αντιστοιχίσεις.\n\nΠατήστε OK για να χρησιμοποιηθεί το έτοιμο πρότυπο και να διαγραφεί το άδειο αντίγραφο.`);
+          if (reuse) {
+            const linked = await relinkLegacyMappedTemplate(mappedLegacy, file, pdfBytes, fingerprint, byteFingerprint);
+            await dbDelete(duplicate.id);
+            await refreshTemplates();
+            useTemplate(linked.id, `Χρησιμοποιείται το έτοιμο πρότυπο «${legacyLabel}» με ${legacyCount} αντιστοιχίσεις. Το άδειο διπλότυπο αφαιρέθηκε.`);
+            return;
+          }
+        }
+
+        useTemplate(duplicate.id, `Το PDF υπάρχει ήδη στη βιβλιοθήκη, αλλά αυτή η εγγραφή δεν έχει αντιστοιχίσεις. Πάτησε «Πεδία» μόνο αν είναι νέο πρότυπο.`);
         return;
+      }
+
+      // Πρότυπα που δημιουργήθηκαν σε παλιότερες εκδόσεις μπορεί να έχουν
+      // έτοιμες αντιστοιχίσεις αλλά να μην έχουν το σημερινό fingerprint.
+      // Πριν δημιουργήσουμε δεύτερη άδεια εγγραφή, δίνουμε τη δυνατότητα
+      // σύνδεσης του PDF με το ήδη ρυθμισμένο πρότυπο.
+      const legacyMapped = findLegacyMappedTemplateForFile(file);
+      if (legacyMapped) {
+        const mappedCount = templateMappedCount(legacyMapped);
+        const label = legacyMapped.name || legacyMapped.originalName || "Έντυπο";
+        const reuse = window.confirm(`Βρέθηκε ήδη αποθηκευμένο πρότυπο «${label}» με ${mappedCount} αντιστοιχίσεις.\n\nΠατήστε OK για να χρησιμοποιηθούν οι υπάρχουσες αντιστοιχίσεις με αυτό το PDF.\nΠατήστε Άκυρο μόνο αν πρόκειται πραγματικά για διαφορετικό έντυπο με το ίδιο όνομα.`);
+        if (reuse) {
+          const linked = await relinkLegacyMappedTemplate(legacyMapped, file, pdfBytes, fingerprint, byteFingerprint);
+          useTemplate(linked.id, `Το PDF συνδέθηκε με το ήδη έτοιμο πρότυπο «${label}». Διατηρήθηκαν ${mappedCount} αντιστοιχίσεις — δεν χρειάζεται να ανοίξεις ξανά τα «Πεδία».`);
+          return;
+        }
       }
 
       const fields = await inspectPdf(pdfBytes);
@@ -867,7 +966,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.7.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.8.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
