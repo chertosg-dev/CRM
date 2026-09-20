@@ -682,29 +682,83 @@
     });
   }
 
-  async function prepareVehicleRegistrationImage(file) {
+  function vehicleRegOtsuThreshold(data) {
+    const histogram = new Array(256).fill(0);
+    let total = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = Math.max(0, Math.min(255, Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])));
+      histogram[gray] += 1; total += 1;
+    }
+    let sum = 0;
+    for (let i = 0; i < 256; i += 1) sum += i * histogram[i];
+    let sumB = 0, wB = 0, best = 128, bestVar = -1;
+    for (let t = 0; t < 256; t += 1) {
+      wB += histogram[t];
+      if (!wB) continue;
+      const wF = total - wB;
+      if (!wF) break;
+      sumB += t * histogram[t];
+      const mB = sumB / wB;
+      const mF = (sum - sumB) / wF;
+      const between = wB * wF * (mB - mF) * (mB - mF);
+      if (between > bestVar) { bestVar = between; best = t; }
+    }
+    return best;
+  }
+
+  async function prepareVehicleRegistrationVariants(file) {
     const img = await loadImageFile(file);
-    const maxSide = 2400;
     const rawW = Number(img.naturalWidth || img.width || 1);
     const rawH = Number(img.naturalHeight || img.height || 1);
-    const scale = Math.min(1, maxSide / Math.max(rawW, rawH));
+    const longSide = Math.max(rawW, rawH);
+    const targetLongSide = 3200;
+    const scale = Math.max(0.72, Math.min(2.15, targetLongSide / Math.max(1, longSide)));
     const width = Math.max(1, Math.round(rawW * scale));
     const height = Math.max(1, Math.round(rawH * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(img, 0, 0, width, height);
+
+    const base = document.createElement("canvas");
+    base.width = width; base.height = height;
+    const baseCtx = base.getContext("2d", { willReadFrequently: true });
+    baseCtx.fillStyle = "#fff"; baseCtx.fillRect(0, 0, width, height);
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = "high";
+    baseCtx.drawImage(img, 0, 0, width, height);
+
+    const enhanced = document.createElement("canvas");
+    enhanced.width = width; enhanced.height = height;
+    const ectx = enhanced.getContext("2d", { willReadFrequently: true });
+    ectx.drawImage(base, 0, 0);
     try {
-      const image = ctx.getImageData(0, 0, width, height);
+      const image = ectx.getImageData(0, 0, width, height);
       const data = image.data;
       for (let i = 0; i < data.length; i += 4) {
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.35 + 128));
+        const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.65 + 128));
         data[i] = data[i + 1] = data[i + 2] = contrasted;
       }
-      ctx.putImageData(image, 0, 0);
+      ectx.putImageData(image, 0, 0);
     } catch (_) {}
-    return canvasToBlob(canvas);
+
+    const binary = document.createElement("canvas");
+    binary.width = width; binary.height = height;
+    const bctx = binary.getContext("2d", { willReadFrequently: true });
+    bctx.drawImage(enhanced, 0, 0);
+    try {
+      const image = bctx.getImageData(0, 0, width, height);
+      const data = image.data;
+      const threshold = vehicleRegOtsuThreshold(data);
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+        const v = gray >= threshold ? 255 : 0;
+        data[i] = data[i + 1] = data[i + 2] = v;
+      }
+      bctx.putImageData(image, 0, 0);
+    } catch (_) {}
+
+    return [
+      { label: "ενισχυμένη", blob: await canvasToBlob(enhanced) },
+      { label: "ασπρόμαυρη", blob: await canvasToBlob(binary) }
+    ];
   }
 
   async function ocrVehicleRegistrationBlob(blob, label = "εικόνα") {
@@ -724,8 +778,16 @@
     const parts = [];
     for (let i = 0; i < list.length; i += 1) {
       setStatus(`Προετοιμασία φωτογραφίας ${i + 1}/${list.length}…`);
-      const blob = await prepareVehicleRegistrationImage(list[i]);
-      parts.push(await ocrVehicleRegistrationBlob(blob, `φωτογραφία ${i + 1}/${list.length}`));
+      const variants = await prepareVehicleRegistrationVariants(list[i]);
+      let imageText = "";
+      for (let j = 0; j < variants.length; j += 1) {
+        const variant = variants[j];
+        const text = await ocrVehicleRegistrationBlob(variant.blob, `φωτογραφία ${i + 1}/${list.length} · ${variant.label}`);
+        imageText += (imageText ? "\n" : "") + text;
+        const interim = parseVehicleRegistrationText(imageText);
+        if (Object.values(interim).filter(Boolean).length >= 6) break;
+      }
+      parts.push(imageText);
     }
     return parts.join("\n");
   }
@@ -739,8 +801,8 @@
       setStatus(`Προετοιμασία σελίδας ${pageNo}/${Math.min(pdf.numPages, 2)} για OCR…`);
       const page = await pdf.getPage(pageNo);
       const base = page.getViewport({ scale: 1 });
-      const scale = Math.min(2.5, 2400 / Math.max(base.width, base.height));
-      const viewport = page.getViewport({ scale: Math.max(1.7, scale) });
+      const scale = Math.min(3.4, 3200 / Math.max(base.width, base.height));
+      const viewport = page.getViewport({ scale: Math.max(2.0, scale) });
       const canvas = document.createElement("canvas");
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
@@ -1583,15 +1645,17 @@
   }
 
   function vehicleRegCodePattern(code) {
+    const digit = d => ({"1":"[1IΙl]","2":"[2Z]","3":"[3]","4":"[4A]","5":"[5S]"}[d] || d);
+    const letter = ch => ({"D":"[DΟ0]","P":"[PΡ]","E":"[EΕ]","B":"[BΒ8]","R":"[RΡ]"}[ch] || ch);
     if (code === "4") return String.raw`(?:\(\s*4\s*\)|(?:^|\s)4(?=\s|[:=\-]))`;
     const parts = code.split(".");
     if (parts.length === 2) {
-      const a = parts[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const b = parts[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      return String.raw`(?:\(\s*${a}\s*[\.·,]?\s*${b}\s*\)|\b${a}\s*[\.·,]?\s*${b}\b)`;
+      const a = letter(parts[0]);
+      const b = digit(parts[1]);
+      return String.raw`(?:\(\s*${a}\s*[\.·,:]?\s*${b}\s*\)|\b${a}\s*[\.·,:]?\s*${b}\b)`;
     }
-    const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return String.raw`(?:\(\s*${escaped}\s*\)|\b${escaped}\b)`;
+    const token = letter(code);
+    return String.raw`(?:\(\s*${token}\s*\)|\b${token}\b)`;
   }
 
   const VEHICLE_REG_DELIMITER_CODES = [
@@ -1614,38 +1678,96 @@
       .replace(/\s+/g, " ")
       .replace(/[|]+$/g, "")
       .trim()
-      .slice(0, 100);
+      .slice(0, 120);
+  }
+
+  function vehicleRegLines(text) {
+    return normalizeVehicleRegText(text).split(/\n+/).map(line => cleanVehicleRegCandidate(line)).filter(Boolean);
+  }
+
+  function vehicleRegLineStartsWithKnownCode(line, excludeCode = "") {
+    const trimmed = String(line || "").trim();
+    return VEHICLE_REG_DELIMITER_CODES.some(code => {
+      if (code === excludeCode) return false;
+      try { return new RegExp(`^\\s*${vehicleRegCodePattern(code)}`, "i").test(trimmed); } catch (_) { return false; }
+    });
+  }
+
+  function stripVehicleRegLabel(code, value) {
+    let out = cleanVehicleRegCandidate(value);
+    const patterns = {
+      "D.1": [/^(?:ΜΑΡΚΑ|MARKA|MAKE|MARQUE)\s*[:\-]?\s*/i],
+      "D.2": [/^(?:ΤΥΠΟΣ|TYPE|TYPOS)\s*[:\-]?\s*/i],
+      "B": [/^(?:ΗΜΕΡΟΜΗΝΙΑ|DATE|ΠΡΩΤΗ\s+ΑΔΕΙΑ)[^0-9]{0,35}/i],
+      "4": [/^(?:ΗΜΕΡΟΜΗΝΙΑ|DATE|ΠΡΩΤΗ\s+ΑΔΕΙΑ)[^0-9]{0,35}/i],
+      "E": [/^(?:ΑΡΙΘΜΟΣ\s+ΠΛΑΙΣΙΟΥ|ΠΛΑΙΣΙΟ|VIN|CHASSIS|IDENTIFICATION)\s*[:\-]?\s*/i],
+      "P.5": [/^(?:ΑΡΙΘΜΟΣ\s+ΚΙΝΗΤΗΡΑ|ΚΙΝΗΤΗΡΑΣ|ENGINE)\s*[:\-]?\s*/i],
+      "P.3": [/^(?:ΚΑΥΣΙΜΟ|FUEL)\s*[:\-]?\s*/i],
+      "R": [/^(?:ΧΡΩΜΑ|COLOU?R)\s*[:\-]?\s*/i]
+    };
+    for (const re of patterns[code] || []) out = out.replace(re, "");
+    return cleanVehicleRegCandidate(out);
+  }
+
+  function candidatesAfterVehicleRegCode(text, code, maxLines = 3) {
+    const lines = vehicleRegLines(text);
+    const codeRe = new RegExp(vehicleRegCodePattern(code), "i");
+    const candidates = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const match = codeRe.exec(line);
+      if (!match) continue;
+      const tail = stripVehicleRegLabel(code, line.slice((match.index || 0) + match[0].length));
+      if (tail) candidates.push(tail);
+      for (let j = i + 1; j < Math.min(lines.length, i + 1 + maxLines); j += 1) {
+        if (vehicleRegLineStartsWithKnownCode(lines[j], code)) break;
+        const next = stripVehicleRegLabel(code, lines[j]);
+        if (next) candidates.push(next);
+      }
+    }
+    return candidates;
   }
 
   function dateFromVehicleRegCode(text, code) {
+    const candidates = candidatesAfterVehicleRegCode(text, code, 4);
+    const flattened = normalizeVehicleRegText(text).replace(/\n+/g, " ");
     const codePattern = vehicleRegCodePattern(code);
-    const re = new RegExp(`${codePattern}[\\s:=\\-]{0,12}(\\d{1,2}[\\/\\.\\-]\\d{1,2}[\\/\\.\\-]\\d{2,4})`, "im");
-    const match = normalizeVehicleRegText(text).match(re);
-    if (!match) return "";
-    const raw = match[1].replace(/[.\-]/g, "/");
-    const bits = raw.split("/");
-    if (bits.length !== 3) return raw;
-    const [d,m,y0] = bits;
-    const y = y0.length === 2 ? (Number(y0) > 50 ? `19${y0}` : `20${y0}`) : y0;
-    return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`;
+    const around = flattened.match(new RegExp(`${codePattern}[\\s:=\\-]{0,30}([0-3]?\\d[\\/\\.\\-][01]?\\d[\\/\\.\\-](?:19|20)?\\d{2})`, "i"));
+    if (around?.[1]) candidates.unshift(around[1]);
+    for (const candidate of candidates) {
+      const match = String(candidate).match(/([0-3]?\d[\/\.\-][01]?\d[\/\.\-](?:19|20)?\d{2})/);
+      if (!match) continue;
+      const raw = match[1].replace(/[.\-]/g, "/");
+      const bits = raw.split("/");
+      if (bits.length !== 3) return raw;
+      const [d,m,y0] = bits;
+      const y = y0.length === 2 ? (Number(y0) > 50 ? `19${y0}` : `20${y0}`) : y0;
+      return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`;
+    }
+    return "";
   }
 
   function valueFromVehicleRegCode(text, code, maxLen = 60) {
-    const normalized = normalizeVehicleRegText(text);
+    const candidates = candidatesAfterVehicleRegCode(text, code, 3);
+    for (const candidate of candidates) {
+      const cleaned = cleanVehicleRegCandidate(candidate).slice(0, maxLen);
+      if (cleaned) return cleaned;
+    }
+    const normalized = normalizeVehicleRegText(text).replace(/\n+/g, " ");
     const codePattern = vehicleRegCodePattern(code);
     const delimiters = vehicleRegDelimiterPattern(code);
-    const re = new RegExp(`${codePattern}\\s*[:=\\-]?\\s*([\\s\\S]{1,${maxLen}}?)(?=\\s*(?:${delimiters})|\\n|$)`, "im");
+    const re = new RegExp(`${codePattern}\\s*[:=\\-]?\\s*([\\s\\S]{1,${maxLen}}?)(?=\\s*(?:${delimiters})|$)`, "im");
     const match = normalized.match(re);
     return cleanVehicleRegCandidate(match?.[1] || "");
   }
 
   function looksLikeRegistrationDefinition(value) {
     const n = normalizeText(value);
-    return ["μαρκα", "τυπος", "αριθμος αναγνωρισης", "καυσιμου", "χρωμα του οχηματος", "ημερομηνια εκδοσης"].some(label => n.includes(label));
+    return ["μαρκα", "τυπος", "αριθμος αναγνωρισης", "αριθμος πλαισιου", "καυσιμου", "καυσιμο", "χρωμα του οχηματος", "χρωμα", "ημερομηνια εκδοσης", "engine number", "vehicle identification"].some(label => n.includes(label));
   }
 
   function sanitizeVehicleRegValue(code, value) {
-    let out = cleanVehicleRegCandidate(value);
+    let out = stripVehicleRegLabel(code, cleanVehicleRegCandidate(value));
     if (!out || looksLikeRegistrationDefinition(out)) return "";
     if (code === "E") {
       const compact = out.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -1653,6 +1775,44 @@
     }
     if (code === "P.5") return out.replace(/^[-—–]+$/, "").trim();
     return out;
+  }
+
+  function fallbackVinFromVehicleRegText(raw) {
+    const upper = String(raw || "").toUpperCase();
+    const direct = upper.match(/\b[A-HJ-NPR-Z0-9]{17}\b/g) || [];
+    const hit = direct.find(item => /[A-Z]/.test(item) && /\d/.test(item));
+    if (hit) return hit;
+    for (const line of upper.split(/\n+/)) {
+      const compact = line.replace(/[^A-HJ-NPR-Z0-9]/g, "");
+      const m = compact.match(/[A-HJ-NPR-Z0-9]{17}/g) || [];
+      const found = m.find(item => /[A-Z]/.test(item) && /\d/.test(item));
+      if (found) return found;
+    }
+    return "";
+  }
+
+  function fallbackFuelFromVehicleRegText(raw) {
+    const n = normalizeText(raw);
+    const pairs = [
+      ["βενζινη", "ΒΕΝΖΙΝΗ"], ["petrol", "ΒΕΝΖΙΝΗ"], ["gasoline", "ΒΕΝΖΙΝΗ"],
+      ["πετρελαιο", "ΠΕΤΡΕΛΑΙΟ"], ["diesel", "ΠΕΤΡΕΛΑΙΟ"],
+      ["υβριδ", "ΥΒΡΙΔΙΚΟ"], ["hybrid", "ΥΒΡΙΔΙΚΟ"],
+      ["ηλεκτρ", "ΗΛΕΚΤΡΙΚΟ"], ["electric", "ΗΛΕΚΤΡΙΚΟ"],
+      ["lpg", "LPG"], ["cng", "CNG"]
+    ];
+    return pairs.find(([token]) => n.includes(token))?.[1] || "";
+  }
+
+  function fallbackColorFromVehicleRegText(raw) {
+    const n = normalizeText(raw);
+    const pairs = [
+      ["λευκ", "ΛΕΥΚΟ"], ["white", "ΛΕΥΚΟ"], ["μαυρ", "ΜΑΥΡΟ"], ["black", "ΜΑΥΡΟ"],
+      ["γκρι", "ΓΚΡΙ"], ["grey", "ΓΚΡΙ"], ["gray", "ΓΚΡΙ"], ["ασημ", "ΑΣΗΜΙ"], ["silver", "ΑΣΗΜΙ"],
+      ["μπλε", "ΜΠΛΕ"], ["blue", "ΜΠΛΕ"], ["κοκκιν", "ΚΟΚΚΙΝΟ"], ["red", "ΚΟΚΚΙΝΟ"],
+      ["πρασιν", "ΠΡΑΣΙΝΟ"], ["green", "ΠΡΑΣΙΝΟ"], ["κιτριν", "ΚΙΤΡΙΝΟ"], ["yellow", "ΚΙΤΡΙΝΟ"],
+      ["πορτοκαλ", "ΠΟΡΤΟΚΑΛΙ"], ["orange", "ΠΟΡΤΟΚΑΛΙ"], ["καφε", "ΚΑΦΕ"], ["brown", "ΚΑΦΕ"], ["μπεζ", "ΜΠΕΖ"], ["beige", "ΜΠΕΖ"]
+    ];
+    return pairs.find(([token]) => n.includes(token))?.[1] || "";
   }
 
   function parseVehicleRegistrationText(text) {
@@ -1667,11 +1827,9 @@
       fuel: sanitizeVehicleRegValue("P.3", valueFromVehicleRegCode(raw, "P.3", 35)),
       color: sanitizeVehicleRegValue("R", valueFromVehicleRegCode(raw, "R", 35))
     };
-    if (!values.vin) {
-      const vinCandidates = raw.toUpperCase().match(/\b[A-HJ-NPR-Z0-9]{17}\b/g) || [];
-      const vin = vinCandidates.find(item => /[A-Z]/.test(item) && /\d/.test(item));
-      if (vin) values.vin = vin;
-    }
+    if (!values.vin) values.vin = fallbackVinFromVehicleRegText(raw);
+    if (!values.fuel) values.fuel = fallbackFuelFromVehicleRegText(raw);
+    if (!values.color) values.color = fallbackColorFromVehicleRegText(raw);
     return values;
   }
 
@@ -1931,7 +2089,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.14.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.15.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
