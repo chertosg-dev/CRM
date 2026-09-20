@@ -811,6 +811,126 @@
     return out;
   }
 
+  function vehicleRegOcrLinesFromBlocks(blocks) {
+    const lines = [];
+    for (const block of Array.isArray(blocks) ? blocks : []) {
+      for (const paragraph of Array.isArray(block?.paragraphs) ? block.paragraphs : []) {
+        for (const line of Array.isArray(paragraph?.lines) ? paragraph.lines : []) {
+          const words = (Array.isArray(line?.words) ? line.words : [])
+            .map(word => ({
+              text: String(word?.text || "").trim(),
+              confidence: Number(word?.confidence ?? word?.conf ?? 0),
+              bbox: word?.bbox || null
+            }))
+            .filter(word => word.text && (!Number.isFinite(word.confidence) || word.confidence >= 18));
+          if (!words.length) continue;
+          words.sort((a,b) => Number(a?.bbox?.x0 || 0) - Number(b?.bbox?.x0 || 0));
+          lines.push({
+            text: words.map(word => word.text).join(" "),
+            words,
+            bbox: line?.bbox || null
+          });
+        }
+      }
+    }
+    lines.sort((a,b) => {
+      const ay = Number(a?.bbox?.y0 ?? a?.words?.[0]?.bbox?.y0 ?? 0);
+      const by = Number(b?.bbox?.y0 ?? b?.words?.[0]?.bbox?.y0 ?? 0);
+      if (Math.abs(ay - by) > 8) return ay - by;
+      return Number(a?.bbox?.x0 ?? a?.words?.[0]?.bbox?.x0 ?? 0) - Number(b?.bbox?.x0 ?? b?.words?.[0]?.bbox?.x0 ?? 0);
+    });
+    return lines;
+  }
+
+  function vehicleRegExactCodeRegex(code) {
+    try { return new RegExp(String.raw`^\s*${vehicleRegCodePattern(code)}\s*$`, "i"); }
+    catch (_) { return null; }
+  }
+
+  function vehicleRegFindCodeInWords(words, code) {
+    const re = vehicleRegExactCodeRegex(code);
+    if (!re) return null;
+    const maxStart = Math.min(words.length, 4);
+    for (let start = 0; start < maxStart; start += 1) {
+      for (let len = 1; len <= 3 && start + len <= words.length; len += 1) {
+        const chunk = words.slice(start, start + len).map(word => word.text).join(" ")
+          .replace(/[\[\]{}]/g, "")
+          .trim();
+        if (re.test(chunk)) return { start, end: start + len };
+      }
+    }
+    return null;
+  }
+
+  function vehicleRegCandidateFromSpatialLines(lines, lineIndex, codeHit) {
+    const line = lines[lineIndex];
+    if (!line) return "";
+    let sameEnd = line.words.length;
+    for (let k = codeHit.end; k < line.words.length; k += 1) {
+      const rest = line.words.slice(k);
+      if (VEHICLE_REG_DELIMITER_CODES.some(other => vehicleRegFindCodeInWords(rest, other)?.start === 0)) { sameEnd = k; break; }
+    }
+    const sameLine = line.words.slice(codeHit.end, sameEnd).map(word => word.text).join(" ").trim();
+    if (sameLine) return sameLine;
+
+    const lineBox = line.bbox || line.words[0]?.bbox || {};
+    const baseY1 = Number(lineBox.y1 || line.words[0]?.bbox?.y1 || 0);
+    const baseH = Math.max(12, Number(lineBox.y1 || 0) - Number(lineBox.y0 || 0));
+    const codeX = Number(line.words[codeHit.start]?.bbox?.x0 || lineBox.x0 || 0);
+    for (let i = lineIndex + 1; i < Math.min(lines.length, lineIndex + 4); i += 1) {
+      const next = lines[i];
+      const nextBox = next.bbox || next.words[0]?.bbox || {};
+      const gap = Number(nextBox.y0 || 0) - baseY1;
+      if (gap > baseH * 2.3) break;
+      if (VEHICLE_REG_DELIMITER_CODES.some(other => vehicleRegFindCodeInWords(next.words, other))) break;
+      const useful = next.words.filter(word => Number(word?.bbox?.x1 || 0) >= codeX - 12).map(word => word.text).join(" ").trim();
+      if (useful) return useful;
+    }
+    return "";
+  }
+
+  function dateFromSpatialVehicleValue(value) {
+    const match = String(value || "").match(/([0-3]?\d[\/\.\-][01]?\d[\/\.\-](?:19|20)?\d{2})/);
+    if (!match) return "";
+    const bits = match[1].replace(/[.\-]/g, "/").split("/");
+    if (bits.length !== 3) return "";
+    const [d,m,y0] = bits;
+    const y = y0.length === 2 ? (Number(y0) > 50 ? `19${y0}` : `20${y0}`) : y0;
+    return validVehicleRegDate(`${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`);
+  }
+
+  function parseVehicleRegistrationBlocks(blocks) {
+    const lines = vehicleRegOcrLinesFromBlocks(blocks);
+    const result = {};
+    const defs = [
+      ["make", "D.1"], ["type", "D.2"], ["firstRegistration", "B"], ["firstRegistrationGreece", "4"],
+      ["vin", "E"], ["engineNumber", "P.5"], ["fuel", "P.3"], ["color", "R"]
+    ];
+    for (const [key, code] of defs) {
+      for (let i = 0; i < lines.length; i += 1) {
+        const hit = vehicleRegFindCodeInWords(lines[i].words, code);
+        if (!hit) continue;
+        const raw = vehicleRegCandidateFromSpatialLines(lines, i, hit);
+        let value = "";
+        if (code === "B" || code === "4") value = dateFromSpatialVehicleValue(raw);
+        else value = sanitizeVehicleRegValue(code, raw);
+        if (value) { result[key] = value; break; }
+      }
+    }
+    return result;
+  }
+
+  function mergeVehicleRegValues(...sources) {
+    const out = {};
+    for (const [key] of VEHICLE_REG_FIELDS) {
+      for (const source of sources) {
+        const value = String(source?.[key] ?? "").trim();
+        if (value) { out[key] = value; break; }
+      }
+    }
+    return out;
+  }
+
   async function ocrVehicleRegistrationBlob(blob, label = "εικόνα") {
     const Tesseract = await ensureTesseract();
     const result = await Tesseract.recognize(blob, "ell+eng", {
@@ -822,38 +942,45 @@
       tessedit_pageseg_mode: "11",
       preserve_interword_spaces: "1"
     });
-    return String(result?.data?.text || "");
+    return {
+      text: String(result?.data?.text || ""),
+      blocks: Array.isArray(result?.data?.blocks) ? result.data.blocks : []
+    };
   }
 
   async function ocrVehicleRegistrationImages(files) {
     const list = Array.from(files || []).filter(Boolean);
     const parts = [];
+    let spatialValues = {};
     for (let i = 0; i < list.length; i += 1) {
       setStatus(`Προετοιμασία φωτογραφίας ${i + 1}/${list.length}…`);
       const variants = await prepareVehicleRegistrationVariants(list[i]);
       let imageText = "";
       for (let j = 0; j < variants.length; j += 1) {
         const variant = variants[j];
-        const text = await ocrVehicleRegistrationBlob(variant.blob, `φωτογραφία ${i + 1}/${list.length} · ${variant.label}`);
+        const detail = await ocrVehicleRegistrationBlob(variant.blob, `φωτογραφία ${i + 1}/${list.length} · ${variant.label}`);
+        const text = detail.text;
         imageText += (imageText ? "\n" : "") + text;
-        const interim = parseVehicleRegistrationText(imageText);
-        if (Object.values(interim).filter(Boolean).length >= 6) break;
+        spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
+        const mergedNow = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText));
+        if (Object.values(mergedNow).filter(Boolean).length >= 6) break;
       }
 
-      // If the whole-card passes are weak, OCR overlapping enlarged tiles.
-      // This is slower, but much more reliable for the very small print on Greek registration cards.
-      if (Object.values(parseVehicleRegistrationText(imageText)).filter(Boolean).length < 4) {
+      if (Object.values(mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText))).filter(Boolean).length < 4) {
         const tiles = await prepareVehicleRegistrationTiles(list[i]);
         for (let j = 0; j < tiles.length; j += 1) {
           const tile = tiles[j];
-          const text = await ocrVehicleRegistrationBlob(tile.blob, `λεπτομέρεια ${i + 1}/${list.length} · ${tile.label}`);
-          imageText += (imageText ? "\n" : "") + text;
-          if (Object.values(parseVehicleRegistrationText(imageText)).filter(Boolean).length >= 6) break;
+          const detail = await ocrVehicleRegistrationBlob(tile.blob, `λεπτομέρεια ${i + 1}/${list.length} · ${tile.label}`);
+          imageText += (imageText ? "\n" : "") + detail.text;
+          spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
+          const mergedNow = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(imageText));
+          if (Object.values(mergedNow).filter(Boolean).length >= 6) break;
         }
       }
       parts.push(imageText);
     }
-    return parts.join("\n");
+    const text = parts.join("\n");
+    return { text, values: mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(text)) };
   }
 
   async function ocrVehicleRegistrationPdf(file) {
@@ -861,6 +988,7 @@
     const pdfjs = await ensurePdfJs();
     const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer.slice(0)) }).promise;
     const parts = [];
+    let spatialValues = {};
     for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 2); pageNo += 1) {
       setStatus(`Προετοιμασία σελίδας ${pageNo}/${Math.min(pdf.numPages, 2)} για OCR…`);
       const page = await pdf.getPage(pageNo);
@@ -872,9 +1000,12 @@
       canvas.height = Math.ceil(viewport.height);
       await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
       const blob = await canvasToBlob(canvas);
-      parts.push(await ocrVehicleRegistrationBlob(blob, `σελίδα ${pageNo}`));
+      const detail = await ocrVehicleRegistrationBlob(blob, `σελίδα ${pageNo}`);
+      parts.push(detail.text);
+      spatialValues = mergeVehicleRegValues(spatialValues, parseVehicleRegistrationBlocks(detail.blocks));
     }
-    return parts.join("\n");
+    const text = parts.join("\n");
+    return { text, values: mergeVehicleRegValues(spatialValues, parseVehicleRegistrationText(text)) };
   }
 
   function activeSupplementFields() {
@@ -1725,7 +1856,7 @@
     const available = vehicleRegAvailableKeys();
     const mappedWithValue = mapped.filter(key => available.includes(key));
     const cls = mapped.length ? "ok" : "warning";
-    host.innerHTML = `<span class="${cls}"><strong>Πεδία άδειας στο πρότυπο: ${mapped.length}/8</strong>${available.length ? ` · με τιμή τώρα: ${mappedWithValue.length}/${available.length}` : ""}</span>`;
+    host.innerHTML = `<span class="${cls}"><strong>Πεδία άδειας στο πρότυπο: ${mapped.length}/8</strong>${available.length ? ` · με τιμή τώρα: ${mappedWithValue.length}/8` : ""}</span>`;
   }
 
   function openVehicleRegMapping() {
@@ -1776,7 +1907,7 @@
     const letter = ch => ({"D":"[DΟ0]","P":"[PΡ]","E":"[EΕ]","B":"[BΒ8]","R":"[RΡ]"}[ch] || ch);
     if (code === "4") return "4";
     const parts = code.split(".");
-    if (parts.length === 2) return `${letter(parts[0])}\s*[\.·,:]?\s*${digit(parts[1])}`;
+    if (parts.length === 2) return String.raw`${letter(parts[0])}\s*[\.·,:]?\s*${digit(parts[1])}`;
     return letter(code);
   }
 
@@ -1912,7 +2043,8 @@
 
     if (code === "E") {
       const compact = out.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "");
-      return compact.length === 17 && /[A-Z]/.test(compact) && /\d/.test(compact) ? compact : "";
+      const digits = (compact.match(/\d/g) || []).length;
+      return compact.length === 17 && /[A-Z]/.test(compact) && digits >= 3 ? compact : "";
     }
 
     if (code === "P.5") {
@@ -1943,12 +2075,12 @@
   function fallbackVinFromVehicleRegText(raw) {
     const upper = String(raw || "").toUpperCase();
     const direct = upper.match(/\b[A-HJ-NPR-Z0-9]{17}\b/g) || [];
-    const hit = direct.find(item => /[A-Z]/.test(item) && /\d/.test(item));
+    const hit = direct.find(item => /[A-Z]/.test(item) && (item.match(/\d/g) || []).length >= 3);
     if (hit) return hit;
     for (const line of upper.split(/\n+/)) {
       const compact = line.replace(/[^A-HJ-NPR-Z0-9]/g, "");
       const m = compact.match(/[A-HJ-NPR-Z0-9]{17}/g) || [];
-      const found = m.find(item => /[A-Z]/.test(item) && /\d/.test(item));
+      const found = m.find(item => /[A-Z]/.test(item) && (item.match(/\d/g) || []).length >= 3);
       if (found) return found;
     }
     return "";
@@ -2048,14 +2180,19 @@
   async function handleVehicleRegistrationFile(file) {
     setStatus("Ανάγνωση άδειας κυκλοφορίας…");
     vehicleRegFileName = file.name || "Άδεια Κυκλοφορίας.pdf";
+    vehicleRegText = "";
+    vehicleRegValues = {};
     try {
       let text = await extractVehicleRegistrationPdf(file);
       if (!String(text || "").trim()) {
         setStatus("Το PDF είναι σαρωμένο. Ξεκινά OCR…");
-        text = await ocrVehicleRegistrationPdf(file);
+        const ocr = await ocrVehicleRegistrationPdf(file);
+        text = ocr?.text || "";
+        vehicleRegText = text;
+        vehicleRegValues = mergeVehicleRegValues(ocr?.values || {}, parseVehicleRegistrationText(vehicleRegText));
       }
-      vehicleRegText = text || "";
-      vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
+      if (!vehicleRegText) vehicleRegText = text || "";
+      if (!Object.keys(vehicleRegValues || {}).length) vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
       renderVehicleRegistrationSection();
       const found = Object.values(vehicleRegValues).filter(Boolean).length;
       setStatus(`Η άδεια κυκλοφορίας διαβάστηκε. Αναγνωρίστηκαν ${found} από 8 στοιχεία. Έλεγξέ τα πριν την αυτόματη συμπλήρωση.`, found ? "success" : "warning");
@@ -2077,8 +2214,9 @@
     renderVehicleRegistrationSection();
     try {
       setStatus(`OCR άδειας κυκλοφορίας από ${source.toLocaleLowerCase("el-GR")}…`);
-      vehicleRegText = await ocrVehicleRegistrationImages(list);
-      vehicleRegValues = parseVehicleRegistrationText(vehicleRegText);
+      const ocr = await ocrVehicleRegistrationImages(list);
+      vehicleRegText = ocr?.text || "";
+      vehicleRegValues = mergeVehicleRegValues(ocr?.values || {}, parseVehicleRegistrationText(vehicleRegText));
       renderVehicleRegistrationSection();
       const found = Object.values(vehicleRegValues).filter(Boolean).length;
       const chars = String(vehicleRegText || "").replace(/\s+/g, "").length;
@@ -2281,7 +2419,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.18.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.19.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
