@@ -1,7 +1,8 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.4";
+  const VERSION = "1.1.7";
+  const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 1;
   const STORE = "templates";
@@ -189,20 +190,10 @@
     return null;
   }
 
-  async function fingerprintPdfBytes(value) {
+  function localFingerprintPdfBytes(value) {
     const buffer = exactArrayBuffer(value);
     if (!buffer) return "";
     const bytes = new Uint8Array(buffer);
-    try {
-      if (crypto?.subtle?.digest) {
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        return `sha256:${Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("")}`;
-      }
-    } catch (error) {
-      console.warn("SHA-256 fingerprint unavailable; using local fallback", error);
-    }
-
-    // Deterministic fallback for older/offline WebKit contexts.
     let h1 = 2166136261 >>> 0;
     let h2 = 2246822519 >>> 0;
     for (let i = 0; i < bytes.length; i += 1) {
@@ -215,6 +206,54 @@
     return `local:${bytes.length}:${h1.toString(16).padStart(8, "0")}${h2.toString(16).padStart(8, "0")}`;
   }
 
+  async function fingerprintPdfBytes(value) {
+    const buffer = exactArrayBuffer(value);
+    if (!buffer) return "";
+    const bytes = new Uint8Array(buffer);
+    try {
+      if (crypto?.subtle?.digest) {
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        return `sha256:${Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("")}`;
+      }
+    } catch (error) {
+      console.warn("SHA-256 fingerprint unavailable; using local fallback", error);
+    }
+    return localFingerprintPdfBytes(buffer);
+  }
+
+  function rememberSelectedTemplate(id) {
+    selectedTemplateId = id || null;
+    try {
+      if (selectedTemplateId) localStorage.setItem(LAST_TEMPLATE_KEY, selectedTemplateId);
+      else localStorage.removeItem(LAST_TEMPLATE_KEY);
+    } catch (_) {}
+  }
+
+  function restoreSelectedTemplate() {
+    if (selectedTemplateId && templates.some(item => item.id === selectedTemplateId)) return;
+    let stored = "";
+    try { stored = localStorage.getItem(LAST_TEMPLATE_KEY) || ""; } catch (_) {}
+    if (stored && templates.some(item => item.id === stored)) {
+      selectedTemplateId = stored;
+      return;
+    }
+    selectedTemplateId = templates.length === 1 ? templates[0].id : null;
+    if (selectedTemplateId) {
+      try { localStorage.setItem(LAST_TEMPLATE_KEY, selectedTemplateId); } catch (_) {}
+    }
+  }
+
+  function useTemplate(id, message = "") {
+    const template = templates.find(item => item.id === id);
+    if (!template) return;
+    rememberSelectedTemplate(id);
+    renderTemplates();
+    const mappedCount = templateMappedCount(template);
+    if (message) setStatus(message, mappedCount ? "success" : "warning");
+    else if (mappedCount) setStatus(`Το πρότυπο «${template.name || template.originalName || "Έντυπο"}» είναι έτοιμο με ${mappedCount} αποθηκευμένες αντιστοιχίσεις. Επίλεξε πελάτη και πάτησε «Αυτόματη συμπλήρωση».`, "success");
+    else setStatus("Το πρότυπο δεν έχει ακόμη αντιστοίχιση πεδίων.", "warning");
+  }
+
   function templateMappedCount(template) {
     const acroMapped = Object.values(template?.mapping || {}).filter(Boolean).length;
     const visualMapped = Array.isArray(template?.visualFields) ? template.visualFields.filter(item => item?.sourceKey).length : 0;
@@ -223,29 +262,37 @@
 
   async function findDuplicateTemplate(pdfBytes, fingerprint = "") {
     const wanted = fingerprint || await fingerprintPdfBytes(pdfBytes);
-    if (!wanted) return null;
+    const wantedLocal = localFingerprintPdfBytes(pdfBytes);
+    if (!wanted && !wantedLocal) return null;
 
     for (let index = 0; index < templates.length; index += 1) {
       let template = templates[index];
       let existingFingerprint = template?.fingerprint || "";
+      let existingLocal = template?.byteFingerprint || (existingFingerprint.startsWith("local:") ? existingFingerprint : "");
 
-      if (!existingFingerprint) {
+      // Always keep a deterministic byte fingerprint as a second identity.
+      // This makes exact duplicate recognition stable even when WebKit switches
+      // between SHA-256 and the offline fallback in different launches.
+      if (!existingLocal || !existingFingerprint) {
         try {
           const existingBytes = await templatePdfArrayBuffer(template);
-          existingFingerprint = await fingerprintPdfBytes(existingBytes);
-          if (existingFingerprint) {
-            const migrated = { ...template, fingerprint: existingFingerprint, updatedAt: template.updatedAt || new Date().toISOString() };
-            await dbPut(migrated);
-            templates[index] = migrated;
-            template = migrated;
-          }
+          existingLocal = existingLocal || localFingerprintPdfBytes(existingBytes);
+          existingFingerprint = existingFingerprint || await fingerprintPdfBytes(existingBytes);
+          const migrated = {
+            ...template,
+            fingerprint: existingFingerprint,
+            byteFingerprint: existingLocal,
+            updatedAt: template.updatedAt || new Date().toISOString()
+          };
+          await dbPut(migrated);
+          templates[index] = migrated;
+          template = migrated;
         } catch (error) {
           console.warn("Δεν ήταν δυνατός ο έλεγχος διπλότυπου για παλιό έντυπο", template?.id, error);
-          continue;
         }
       }
 
-      if (existingFingerprint === wanted) return template;
+      if ((wanted && existingFingerprint === wanted) || (wantedLocal && existingLocal === wantedLocal)) return template;
     }
     return null;
   }
@@ -419,7 +466,8 @@
         <div class="forms-body">
           <aside class="forms-sidebar">
             <div class="forms-sidebar-head">
-              <div class="forms-sidebar-head-row"><h3>Αποθηκευμένα έντυπα</h3><button class="forms-add-btn" id="formsAddTemplateBtn" type="button">＋ PDF</button></div>
+              <div class="forms-sidebar-head-row"><h3>Αποθηκευμένα έντυπα</h3><button class="forms-add-btn" id="formsAddTemplateBtn" type="button">＋ Νέο PDF</button></div>
+              <p class="forms-library-hint">Για επόμενο πελάτη πάτησε <b>Χρήση</b> στο ήδη αποθηκευμένο πρότυπο. Δεν χρειάζεται να το ανεβάσεις ξανά.</p>
               <input id="formsPdfInput" type="file" accept="application/pdf,.pdf" hidden />
               <input id="formsReplacePdfInput" type="file" accept="application/pdf,.pdf" hidden />
             </div>
@@ -447,7 +495,7 @@
               <p class="forms-section-note">Επίλεξε έντυπο από τη βιβλιοθήκη. Η αντιστοίχιση πεδίων γίνεται μία φορά για κάθε έντυπο και αποθηκεύεται.</p>
               <div class="forms-actions-row">
                 <button class="forms-primary" id="formsFillBtn" type="button">✨ Αυτόματη συμπλήρωση</button>
-                <button class="forms-secondary" id="formsOpenMapBtn" type="button">⚙️ Αντιστοίχιση πεδίων</button>
+                <button class="forms-secondary" id="formsOpenMapBtn" type="button">⚙️ Αλλαγή αντιστοίχισης</button>
               </div>
               <div class="forms-status" id="formsStatus">Επίλεξε ένα PDF και έναν πελάτη.</div>
               <div class="forms-preview" id="formsPreview"><iframe id="formsPreviewFrame" title="Προεπισκόπηση PDF"></iframe></div>
@@ -495,6 +543,7 @@
   async function refreshTemplates() {
     try {
       templates = await dbGetAll();
+      restoreSelectedTemplate();
       renderTemplates();
     } catch (error) {
       console.error(error);
@@ -518,8 +567,8 @@
       const fieldLabel = fieldCount ? `${fieldCount} πεδία PDF` : `${visualCount} οπτικά πεδία`;
       return `<article class="forms-template-card ${template.id === selectedTemplateId ? "selected" : ""}" data-template-id="${esc(template.id)}">
         <div class="forms-template-name">${esc(template.name || template.originalName || "Έντυπο")}</div>
-        <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${mapped} αντιστοιχισμένα</span></div>
-        <div class="forms-template-actions"><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-map-btn" type="button" data-replace-template="${esc(template.id)}" title="Επίλεξε ξανά το ίδιο PDF χωρίς να χαθούν οι αντιστοιχίσεις">↻ PDF</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
+        <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${ready ? `Έτοιμο · ${mapped} πεδία` : "Χωρίς αντιστοίχιση"}</span></div>
+        <div class="forms-template-actions"><button class="forms-use-template-btn" type="button" data-use-template="${esc(template.id)}">✓ Χρήση</button><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-map-btn" type="button" data-replace-template="${esc(template.id)}" title="Επίλεξε ξανά το ίδιο PDF χωρίς να χαθούν οι αντιστοιχίσεις">↻ PDF</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
       </article>`;
     }).join("");
   }
@@ -530,20 +579,13 @@
     try {
       const pdfBytes = await file.arrayBuffer();
       const fingerprint = await fingerprintPdfBytes(pdfBytes);
+      const byteFingerprint = localFingerprintPdfBytes(pdfBytes);
       const duplicate = await findDuplicateTemplate(pdfBytes, fingerprint);
 
       if (duplicate) {
         const mappedCount = templateMappedCount(duplicate);
         const label = duplicate.name || duplicate.originalName || "Έντυπο";
-        const message = `Το έντυπο «${label}» υπάρχει ήδη στη βιβλιοθήκη${mappedCount ? ` και έχει ${mappedCount} αποθηκευμένες αντιστοιχίσεις` : ""}.\n\nΠάτησε OK για να χρησιμοποιήσεις το υπάρχον πρότυπο χωρίς να ξανακάνεις αντιστοίχιση.`;
-        const useExisting = window.confirm(message);
-        if (useExisting) {
-          selectedTemplateId = duplicate.id;
-          renderTemplates();
-          setStatus(`Χρησιμοποιείται το ήδη αποθηκευμένο έντυπο «${label}»${mappedCount ? ` με ${mappedCount} αντιστοιχίσεις` : ""}. Επίλεξε πελάτη/συμβόλαιο και πάτησε «Αυτόματη συμπλήρωση».`, "success");
-        } else {
-          setStatus("Δεν προστέθηκε δεύτερο αντίγραφο. Το υπάρχον πρότυπο και οι αντιστοιχίσεις του παραμένουν στη βιβλιοθήκη.", "warning");
-        }
+        useTemplate(duplicate.id, `Το ίδιο PDF υπάρχει ήδη στη βιβλιοθήκη${mappedCount ? ` με ${mappedCount} αποθηκευμένες αντιστοιχίσεις` : ""}. Χρησιμοποιείται το έτοιμο πρότυπο «${label}» — δεν χρειάζεται νέα αντιστοίχιση.`);
         return;
       }
 
@@ -557,6 +599,7 @@
         originalName: file.name,
         pdfBytes: pdfBytes.slice(0),
         fingerprint,
+        byteFingerprint,
         storageVersion: 2,
         fields,
         mapping,
@@ -566,7 +609,7 @@
         version: 1
       };
       await dbPut(template);
-      selectedTemplateId = template.id;
+      rememberSelectedTemplate(template.id);
       await refreshTemplates();
       if (!fields.length) {
         setStatus("Το PDF προστέθηκε. Δεν έχει έτοιμα πεδία φόρμας, οπότε θα ορίσουμε οπτικά τις θέσεις συμπλήρωσης.", "warning");
@@ -588,6 +631,7 @@
     try {
       const pdfBytes = await file.arrayBuffer();
       const fingerprint = await fingerprintPdfBytes(pdfBytes);
+      const byteFingerprint = localFingerprintPdfBytes(pdfBytes);
       const fields = await inspectPdf(pdfBytes);
       const previousMapping = existing.mapping || {};
       const mapping = {};
@@ -596,6 +640,7 @@
         ...existing,
         pdfBytes: pdfBytes.slice(0),
         fingerprint,
+        byteFingerprint,
         storageVersion: 2,
         originalName: file.name || existing.originalName,
         fields,
@@ -822,7 +867,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.6.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.7.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -1083,7 +1128,7 @@
       }
       await dbPut(updated);
       await refreshTemplates();
-      selectedTemplateId = updated.id;
+      rememberSelectedTemplate(updated.id);
       renderTemplates();
       closeMapping();
       setStatus("Η αντιστοίχιση πεδίων αποθηκεύτηκε.", "success");
@@ -1327,7 +1372,7 @@
     if (!window.confirm(`Να διαγραφεί το έντυπο «${template.name || template.originalName}» από τη βιβλιοθήκη;`)) return;
     try {
       await dbDelete(id);
-      if (selectedTemplateId === id) selectedTemplateId = null;
+      if (selectedTemplateId === id) rememberSelectedTemplate(null);
       await refreshTemplates();
       setStatus("Το έντυπο διαγράφηκε από τη βιβλιοθήκη.", "success");
     } catch (error) {
@@ -1373,6 +1418,8 @@
       if (option) selectCustomer(option.dataset.customerId);
     });
     $("formsTemplateList")?.addEventListener("click", event => {
+      const useButton = event.target.closest("[data-use-template]");
+      if (useButton) { event.stopPropagation(); useTemplate(useButton.dataset.useTemplate); return; }
       const replaceButton = event.target.closest("[data-replace-template]");
       if (replaceButton) {
         event.stopPropagation();
@@ -1383,9 +1430,9 @@
       const deleteButton = event.target.closest("[data-delete-template]");
       if (deleteButton) { event.stopPropagation(); deleteTemplate(deleteButton.dataset.deleteTemplate); return; }
       const mapButton = event.target.closest("[data-map-template]");
-      if (mapButton) { event.stopPropagation(); selectedTemplateId = mapButton.dataset.mapTemplate; renderTemplates(); openMapping(selectedTemplateId); return; }
+      if (mapButton) { event.stopPropagation(); rememberSelectedTemplate(mapButton.dataset.mapTemplate); renderTemplates(); openMapping(selectedTemplateId); return; }
       const card = event.target.closest("[data-template-id]");
-      if (card) { selectedTemplateId = card.dataset.templateId; renderTemplates(); setStatus(selectedCustomerId ? "Έτοιμο για αυτόματη συμπλήρωση." : "Επίλεξε πελάτη από το CRM."); }
+      if (card) useTemplate(card.dataset.templateId);
     });
     $("formsPolicySelect")?.addEventListener("change", event => {
       selectedPolicySource = event.target.value;
