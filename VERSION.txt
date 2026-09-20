@@ -1,2 +1,3 @@
-TSERTOS CRM PWA
-Version: 9.11.9
+TSERTOS Insurance CRM PWA
+Version: 9.11.11
+Features: organized forms library, categories/search/favorites/recent, current date mapping field, persistent PDF mapping profiles

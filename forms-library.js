@@ -1,11 +1,12 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.7";
+  const VERSION = "1.1.11";
   const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE = "templates";
+  const PROFILE_STORE = "mappingProfiles";
   const PDF_LIB_PRIMARY = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const PDF_LIB_FALLBACK = "https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js";
   const PDF_JS_PRIMARY = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
@@ -52,8 +53,24 @@
     ["auto.endDate", "Λήξη αυτοκινήτου", "Αυτοκίνητο"],
     ["auto.packageName", "Πακέτο αυτοκινήτου", "Αυτοκίνητο"],
     ["auto.insuredValue", "Ασφαλιζόμενη αξία", "Αυτοκίνητο"],
-    ["date.today", "Σημερινή ημερομηνία", "Ημερομηνίες"]
+    ["date.today", "Τρέχουσα ημερομηνία (ΗΗ/ΜΜ/ΕΕΕΕ)", "Ημερομηνίες"]
   ];
+
+  const TEMPLATE_CATEGORIES = [
+    "Ζωή / Υγεία",
+    "Αυτοκίνητο",
+    "Κατοικία / Περιουσία",
+    "Ζημιές / Αποζημιώσεις",
+    "Αιτήσεις / Δηλώσεις",
+    "Εξουσιοδοτήσεις / Συγκαταθέσεις",
+    "Λοιπά"
+  ];
+
+  let templateSearchQuery = "";
+  let templateCategoryFilter = "";
+  let templateViewMode = "all";
+  let templateDetailsResolver = null;
+  let templateDetailsEditingId = null;
 
   let templates = [];
   let selectedTemplateId = null;
@@ -99,6 +116,19 @@
     return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString("el-GR");
   }
 
+  function formatTodayGR() {
+    const now = new Date();
+    const pad = value => String(value).padStart(2, "0");
+    return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+  }
+
+  function categoryOptionsMarkup(selected = "Λοιπά", includeAll = false) {
+    const options = [];
+    if (includeAll) options.push(`<option value="">Όλες οι κατηγορίες</option>`);
+    TEMPLATE_CATEGORIES.forEach(category => options.push(`<option value="${esc(category)}" ${category === selected ? "selected" : ""}>${esc(category)}</option>`));
+    return options.join("");
+  }
+
   function displayName(person) {
     if (!person) return "";
     return [person.firstName, person.lastName].filter(Boolean).join(" ").trim() || person.company || "Χωρίς όνομα";
@@ -139,6 +169,10 @@
           const store = db.createObjectStore(STORE, { keyPath: "id" });
           store.createIndex("createdAt", "createdAt");
         }
+        if (!db.objectStoreNames.contains(PROFILE_STORE)) {
+          const profileStore = db.createObjectStore(PROFILE_STORE, { keyPath: "key" });
+          profileStore.createIndex("updatedAt", "updatedAt");
+        }
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error || new Error("Δεν άνοιξε η βιβλιοθήκη εντύπων."));
@@ -174,6 +208,29 @@
       const tx = db.transaction(STORE, "readwrite");
       tx.objectStore(STORE).delete(id);
       tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+      tx.onabort = tx.onerror;
+    });
+  }
+
+  async function dbGetAllProfiles() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PROFILE_STORE, "readonly");
+      const req = tx.objectStore(PROFILE_STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => db.close();
+      tx.onabort = () => db.close();
+    });
+  }
+
+  async function dbPutProfile(profile) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PROFILE_STORE, "readwrite");
+      tx.objectStore(PROFILE_STORE).put(profile);
+      tx.oncomplete = () => { db.close(); resolve(profile); };
       tx.onerror = () => { db.close(); reject(tx.error); };
       tx.onabort = tx.onerror;
     });
@@ -247,6 +304,9 @@
     const template = templates.find(item => item.id === id);
     if (!template) return;
     rememberSelectedTemplate(id);
+    const lastUsedAt = new Date().toISOString();
+    template.lastUsedAt = lastUsedAt;
+    dbPut({ ...template, lastUsedAt }).catch(error => console.warn("Δεν αποθηκεύτηκε το πρόσφατο έντυπο", error));
     renderTemplates();
     const mappedCount = templateMappedCount(template);
     if (message) setStatus(message, mappedCount ? "success" : "warning");
@@ -267,6 +327,119 @@
       .toLocaleLowerCase("el-GR")
       .replace(/\.pdf$/i, "")
       .replace(/\s+/g, " ");
+  }
+
+  function profileMappedCount(profile) {
+    const acroMapped = Object.values(profile?.mapping || {}).filter(Boolean).length;
+    const visualMapped = Array.isArray(profile?.visualFields) ? profile.visualFields.filter(item => item?.sourceKey).length : 0;
+    return acroMapped + visualMapped;
+  }
+
+  async function persistMappingProfile(template) {
+    if (!template || templateMappedCount(template) < 1) return null;
+    let fingerprint = template.fingerprint || "";
+    let byteFingerprint = template.byteFingerprint || "";
+    if (!fingerprint || !byteFingerprint) {
+      try {
+        const bytes = await templatePdfArrayBuffer(template);
+        fingerprint = fingerprint || await fingerprintPdfBytes(bytes);
+        byteFingerprint = byteFingerprint || localFingerprintPdfBytes(bytes);
+      } catch (error) {
+        console.warn("Δεν δημιουργήθηκε fingerprint για την αποθηκευμένη αντιστοίχιση", error);
+      }
+    }
+    const normalizedName = normalizedTemplateFileName(template.originalName || template.name);
+    const key = fingerprint || byteFingerprint || (normalizedName ? `name:${normalizedName}` : `mapping:${template.id}`);
+    const profile = {
+      key,
+      fingerprint,
+      byteFingerprint,
+      normalizedName,
+      displayName: template.name || template.originalName || "Έντυπο",
+      originalName: template.originalName || "",
+      category: template.category || "Λοιπά",
+      mapping: { ...(template.mapping || {}) },
+      visualFields: Array.isArray(template.visualFields) ? template.visualFields.map(item => ({ ...item })) : [],
+      sourceTemplateId: template.id,
+      createdAt: template.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await dbPutProfile(profile);
+    return profile;
+  }
+
+  async function migrateExistingMappingsToProfiles() {
+    for (const template of templates) {
+      if (templateMappedCount(template) < 1) continue;
+      try { await persistMappingProfile(template); } catch (error) { console.warn("Δεν μεταφέρθηκε παλιά αντιστοίχιση", template?.id, error); }
+    }
+  }
+
+  async function findSavedMappingProfile(fingerprint, byteFingerprint, fileName = "") {
+    const profiles = await dbGetAllProfiles();
+    const normalizedName = normalizedTemplateFileName(fileName);
+    const exact = profiles
+      .filter(profile => profileMappedCount(profile) > 0)
+      .find(profile =>
+        (fingerprint && profile.fingerprint === fingerprint) ||
+        (byteFingerprint && profile.byteFingerprint === byteFingerprint)
+      );
+    if (exact) return exact;
+    if (!normalizedName) return null;
+    const sameName = profiles
+      .filter(profile => profileMappedCount(profile) > 0 && profile.normalizedName === normalizedName)
+      .sort((a,b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    return sameName.length === 1 ? sameName[0] : null;
+  }
+
+  async function applyProfileToTemplate(template, profile) {
+    if (!template || !profile) return null;
+    const updated = {
+      ...template,
+      mapping: { ...(profile.mapping || {}) },
+      visualFields: Array.isArray(profile.visualFields) ? profile.visualFields.map(item => ({ ...item })) : [],
+      mappingProfileKey: profile.key,
+      category: template.category || profile.category || "Λοιπά",
+      updatedAt: new Date().toISOString(),
+      version: Math.max(Number(template.version) || 1, 4)
+    };
+    await dbPut(updated);
+    await persistMappingProfile(updated);
+    const index = templates.findIndex(item => item.id === updated.id);
+    if (index >= 0) templates[index] = updated;
+    return updated;
+  }
+
+  async function manualRelinkTemplate(id) {
+    const template = templates.find(item => item.id === id);
+    if (!template) return;
+    const profiles = (await dbGetAllProfiles())
+      .filter(profile => profileMappedCount(profile) > 0)
+      .sort((a,b) => {
+        const sameA = profileNameMatch(profileName(a), template) ? 1 : 0;
+        const sameB = profileNameMatch(profileName(b), template) ? 1 : 0;
+        if (sameA !== sameB) return sameB - sameA;
+        return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+      });
+    if (!profiles.length) {
+      setStatus("Δεν υπάρχουν ακόμη αποθηκευμένες αντιστοιχίσεις για σύνδεση.", "warning");
+      return;
+    }
+    const choices = profiles.slice(0, 20);
+    const lines = choices.map((profile, index) => `${index + 1}. ${profile.displayName || profile.originalName || "Έντυπο"} · ${profileMappedCount(profile)} πεδία`);
+    const answer = window.prompt(`Επίλεξε έτοιμη αντιστοίχιση για το «${template.name || template.originalName || "Έντυπο"}»:\n\n${lines.join("\n")}\n\nΓράψε τον αριθμό της επιλογής:`);
+    if (answer == null) return;
+    const selected = choices[Number(answer) - 1];
+    if (!selected) { setStatus("Δεν επιλέχθηκε έγκυρη αντιστοίχιση.", "warning"); return; }
+    const updated = await applyProfileToTemplate(template, selected);
+    await refreshTemplates();
+    useTemplate(updated.id, `Συνδέθηκε η έτοιμη αντιστοίχιση «${selected.displayName || selected.originalName || "Έντυπο"}». Δεν χρειάζεται να ξαναστήσεις τα πεδία.`);
+  }
+
+  function profileName(profile) { return normalizedTemplateFileName(profile?.originalName || profile?.displayName); }
+  function profileNameMatch(name, template) {
+    if (!name) return false;
+    return name === normalizedTemplateFileName(template?.originalName) || name === normalizedTemplateFileName(template?.name);
   }
 
   function findLegacyMappedTemplateForFile(file) {
@@ -529,6 +702,15 @@
             <div class="forms-sidebar-head">
               <div class="forms-sidebar-head-row"><h3>Αποθηκευμένα έντυπα</h3><button class="forms-add-btn" id="formsAddTemplateBtn" type="button">＋ Νέο PDF</button></div>
               <p class="forms-library-hint">Για επόμενο πελάτη πάτησε <b>Χρήση</b> στο ήδη αποθηκευμένο πρότυπο. Δεν χρειάζεται να το ανεβάσεις ξανά.</p>
+              <div class="forms-library-tools">
+                <input id="formsTemplateSearch" type="search" autocomplete="off" placeholder="🔍 Αναζήτηση εντύπου" />
+                <select id="formsCategoryFilter" aria-label="Κατηγορία">${categoryOptionsMarkup("", true)}</select>
+                <div class="forms-view-tabs" role="group" aria-label="Προβολή βιβλιοθήκης">
+                  <button type="button" class="active" data-template-view="all">Όλα</button>
+                  <button type="button" data-template-view="favorites">⭐ Αγαπημένα</button>
+                  <button type="button" data-template-view="recent">🕘 Πρόσφατα</button>
+                </div>
+              </div>
               <input id="formsPdfInput" type="file" accept="application/pdf,.pdf" hidden />
               <input id="formsReplacePdfInput" type="file" accept="application/pdf,.pdf" hidden />
             </div>
@@ -592,6 +774,20 @@
         <div class="forms-name-actions"><button class="forms-secondary" id="formsNameCancelBtn" type="button">Άκυρο</button><button class="forms-primary" id="formsNameConfirmBtn" type="button">Αποθήκευση / Κοινοποίηση</button></div>
       </div>`;
     document.body.appendChild(nameModal);
+
+    const detailsModal = document.createElement("div");
+    detailsModal.id = "formsTemplateDetailsModal";
+    detailsModal.className = "forms-name-modal hidden";
+    detailsModal.innerHTML = `
+      <div class="forms-name-sheet">
+        <h3 id="formsTemplateDetailsTitle">Στοιχεία προτύπου</h3>
+        <p>Δώσε ένα καθαρό όνομα και διάλεξε κατηγορία. Μπορείς να τα αλλάξεις αργότερα.</p>
+        <div class="forms-field full"><label for="formsTemplateName">Όνομα προτύπου</label><input id="formsTemplateName" type="text" autocomplete="off" /></div>
+        <div class="forms-field full" style="margin-top:10px"><label for="formsTemplateCategory">Κατηγορία</label><select id="formsTemplateCategory">${categoryOptionsMarkup("Λοιπά")}</select></div>
+        <div class="forms-name-error" id="formsTemplateDetailsError"></div>
+        <div class="forms-name-actions"><button class="forms-secondary" id="formsTemplateDetailsCancel" type="button">Άκυρο</button><button class="forms-primary" id="formsTemplateDetailsSave" type="button">Αποθήκευση</button></div>
+      </div>`;
+    document.body.appendChild(detailsModal);
   }
 
   function setStatus(message, type = "") {
@@ -604,6 +800,7 @@
   async function refreshTemplates() {
     try {
       templates = await dbGetAll();
+      await migrateExistingMappingsToProfiles();
       restoreSelectedTemplate();
       renderTemplates();
     } catch (error) {
@@ -612,26 +809,128 @@
     }
   }
 
+  function visibleTemplatesForLibrary() {
+    const query = normalizeText(templateSearchQuery);
+    let items = templates.filter(template => {
+      const category = template.category || "Λοιπά";
+      if (templateCategoryFilter && category !== templateCategoryFilter) return false;
+      if (templateViewMode === "favorites" && !template.favorite) return false;
+      if (templateViewMode === "recent" && !template.lastUsedAt) return false;
+      if (!query) return true;
+      const haystack = normalizeText([template.name, template.originalName, category].filter(Boolean).join(" "));
+      return haystack.includes(query);
+    });
+    if (templateViewMode === "recent") {
+      items = items.sort((a,b) => String(b.lastUsedAt || "").localeCompare(String(a.lastUsedAt || ""))).slice(0, 12);
+    } else if (templateViewMode === "favorites") {
+      items = items.sort((a,b) => String(a.name || a.originalName || "").localeCompare(String(b.name || b.originalName || ""), "el"));
+    } else {
+      items = items.sort((a,b) => {
+        const categoryCompare = String(a.category || "Λοιπά").localeCompare(String(b.category || "Λοιπά"), "el");
+        if (categoryCompare) return categoryCompare;
+        return String(a.name || a.originalName || "").localeCompare(String(b.name || b.originalName || ""), "el");
+      });
+    }
+    return items;
+  }
+
+  function templateCardMarkup(template) {
+    const fieldCount = Array.isArray(template.fields) ? template.fields.length : 0;
+    const acroMapped = Object.values(template.mapping || {}).filter(Boolean).length;
+    const visualCount = Array.isArray(template.visualFields) ? template.visualFields.length : 0;
+    const mapped = acroMapped + visualCount;
+    const ready = mapped > 0;
+    const fieldLabel = fieldCount ? `${fieldCount} πεδία PDF` : `${visualCount} οπτικά πεδία`;
+    const category = template.category || "Λοιπά";
+    return `<article class="forms-template-card ${template.id === selectedTemplateId ? "selected" : ""}" data-template-id="${esc(template.id)}">
+      <div class="forms-template-top"><div class="forms-template-name">${esc(template.name || template.originalName || "Έντυπο")}</div><button class="forms-favorite-btn ${template.favorite ? "on" : ""}" type="button" data-favorite-template="${esc(template.id)}" aria-label="Αγαπημένο">${template.favorite ? "★" : "☆"}</button></div>
+      <div class="forms-template-category">${esc(category)}</div>
+      <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${ready ? `Έτοιμο · ${mapped} πεδία` : "Χωρίς αντιστοίχιση"}</span></div>
+      <div class="forms-template-actions"><button class="forms-use-template-btn" type="button" data-use-template="${esc(template.id)}">✓ Χρήση</button>${ready ? "" : `<button class="forms-map-btn" type="button" data-link-template="${esc(template.id)}">🔗 Έτοιμο πρότυπο</button>`}<button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-map-btn" type="button" data-edit-template="${esc(template.id)}">✎ Στοιχεία</button><button class="forms-map-btn" type="button" data-replace-template="${esc(template.id)}" title="Επίλεξε ξανά το ίδιο PDF χωρίς να χαθούν οι αντιστοιχίσεις">↻ PDF</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
+    </article>`;
+  }
+
   function renderTemplates() {
     const host = $("formsTemplateList");
     if (!host) return;
+    const items = visibleTemplatesForLibrary();
+    document.querySelectorAll("[data-template-view]").forEach(button => button.classList.toggle("active", button.dataset.templateView === templateViewMode));
     if (!templates.length) {
-      host.innerHTML = `<div class="forms-empty">Δεν έχεις ανεβάσει ακόμη έντυπο.<br>Πάτησε <b>＋ PDF</b> για να δημιουργήσεις τη βιβλιοθήκη σου.</div>`;
+      host.innerHTML = `<div class="forms-empty">Δεν έχεις ανεβάσει ακόμη έντυπο.<br>Πάτησε <b>＋ Νέο PDF</b> για να δημιουργήσεις τη βιβλιοθήκη σου.</div>`;
       return;
     }
-    host.innerHTML = templates.map(template => {
-      const fieldCount = Array.isArray(template.fields) ? template.fields.length : 0;
-      const acroMapped = Object.values(template.mapping || {}).filter(Boolean).length;
-      const visualCount = Array.isArray(template.visualFields) ? template.visualFields.length : 0;
-      const mapped = acroMapped + visualCount;
-      const ready = mapped > 0;
-      const fieldLabel = fieldCount ? `${fieldCount} πεδία PDF` : `${visualCount} οπτικά πεδία`;
-      return `<article class="forms-template-card ${template.id === selectedTemplateId ? "selected" : ""}" data-template-id="${esc(template.id)}">
-        <div class="forms-template-name">${esc(template.name || template.originalName || "Έντυπο")}</div>
-        <div class="forms-template-meta"><span class="forms-chip">${fieldLabel}</span><span class="forms-chip ${ready ? "ready" : "warning"}">${ready ? `Έτοιμο · ${mapped} πεδία` : "Χωρίς αντιστοίχιση"}</span></div>
-        <div class="forms-template-actions"><button class="forms-use-template-btn" type="button" data-use-template="${esc(template.id)}">✓ Χρήση</button><button class="forms-map-btn" type="button" data-map-template="${esc(template.id)}">⚙️ Πεδία</button><button class="forms-map-btn" type="button" data-replace-template="${esc(template.id)}" title="Επίλεξε ξανά το ίδιο PDF χωρίς να χαθούν οι αντιστοιχίσεις">↻ PDF</button><button class="forms-delete-btn" type="button" data-delete-template="${esc(template.id)}">Διαγραφή</button></div>
-      </article>`;
-    }).join("");
+    if (!items.length) {
+      host.innerHTML = `<div class="forms-empty">Δεν βρέθηκε έντυπο με αυτά τα φίλτρα.</div>`;
+      return;
+    }
+    if (templateViewMode === "all" && !templateCategoryFilter && !templateSearchQuery.trim()) {
+      const groups = new Map();
+      items.forEach(template => {
+        const category = template.category || "Λοιπά";
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(template);
+      });
+      host.innerHTML = [...groups.entries()].map(([category, group]) => `<section class="forms-category-group"><div class="forms-category-heading"><strong>${esc(category)}</strong><span>${group.length}</span></div>${group.map(templateCardMarkup).join("")}</section>`).join("");
+      return;
+    }
+    host.innerHTML = items.map(templateCardMarkup).join("");
+  }
+
+  function requestTemplateDetails(defaultName = "", defaultCategory = "Λοιπά", title = "Στοιχεία προτύπου") {
+    const modal = $("formsTemplateDetailsModal");
+    if (!modal) return Promise.resolve({ name: defaultName || "Έντυπο", category: defaultCategory || "Λοιπά" });
+    $("formsTemplateDetailsTitle").textContent = title;
+    $("formsTemplateName").value = defaultName || "";
+    $("formsTemplateCategory").value = TEMPLATE_CATEGORIES.includes(defaultCategory) ? defaultCategory : "Λοιπά";
+    $("formsTemplateDetailsError").textContent = "";
+    modal.classList.remove("hidden");
+    setTimeout(() => $("formsTemplateName")?.focus(), 50);
+    return new Promise(resolve => { templateDetailsResolver = resolve; });
+  }
+
+  function finishTemplateDetails(save) {
+    const modal = $("formsTemplateDetailsModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    if (save) {
+      const name = String($("formsTemplateName")?.value || "").trim();
+      const category = $("formsTemplateCategory")?.value || "Λοιπά";
+      if (!name) { $("formsTemplateDetailsError").textContent = "Γράψε ένα όνομα για το πρότυπο."; return; }
+      const resolver = templateDetailsResolver;
+      templateDetailsResolver = null;
+      modal.classList.add("hidden");
+      resolver?.({ name, category });
+    } else {
+      const resolver = templateDetailsResolver;
+      templateDetailsResolver = null;
+      modal.classList.add("hidden");
+      resolver?.(null);
+    }
+  }
+
+  async function editTemplateDetails(id) {
+    const template = templates.find(item => item.id === id);
+    if (!template) return;
+    templateDetailsEditingId = id;
+    const details = await requestTemplateDetails(template.name || template.originalName || "Έντυπο", template.category || "Λοιπά", "Επεξεργασία προτύπου");
+    templateDetailsEditingId = null;
+    if (!details) return;
+    const updated = { ...template, name: details.name, category: details.category, updatedAt: new Date().toISOString() };
+    await dbPut(updated);
+    if (templateMappedCount(updated)) await persistMappingProfile(updated);
+    const index = templates.findIndex(item => item.id === id);
+    if (index >= 0) templates[index] = updated;
+    renderTemplates();
+    setStatus("Τα στοιχεία του προτύπου αποθηκεύτηκαν.", "success");
+  }
+
+  async function toggleTemplateFavorite(id) {
+    const template = templates.find(item => item.id === id);
+    if (!template) return;
+    const updated = { ...template, favorite: !template.favorite, updatedAt: new Date().toISOString() };
+    await dbPut(updated);
+    const index = templates.findIndex(item => item.id === id);
+    if (index >= 0) templates[index] = updated;
+    renderTemplates();
   }
 
   async function addTemplateFile(file) {
@@ -641,6 +940,7 @@
       const pdfBytes = await file.arrayBuffer();
       const fingerprint = await fingerprintPdfBytes(pdfBytes);
       const byteFingerprint = localFingerprintPdfBytes(pdfBytes);
+      const savedProfile = await findSavedMappingProfile(fingerprint, byteFingerprint, file.name);
       const duplicate = await findDuplicateTemplate(pdfBytes, fingerprint);
 
       if (duplicate) {
@@ -649,6 +949,13 @@
 
         if (mappedCount) {
           useTemplate(duplicate.id, `Το ίδιο PDF υπάρχει ήδη στη βιβλιοθήκη με ${mappedCount} αποθηκευμένες αντιστοιχίσεις. Χρησιμοποιείται το έτοιμο πρότυπο «${label}» — δεν χρειάζεται νέα αντιστοίχιση.`);
+          return;
+        }
+
+        if (savedProfile) {
+          const restored = await applyProfileToTemplate(duplicate, savedProfile);
+          await refreshTemplates();
+          useTemplate(restored.id, `Το PDF αναγνωρίστηκε και επανήλθαν ${profileMappedCount(savedProfile)} αποθηκευμένες αντιστοιχίσεις. Δεν χρειάζεται να ξανανοίξεις τα «Πεδία».`);
           return;
         }
 
@@ -672,6 +979,36 @@
         return;
       }
 
+      if (savedProfile) {
+        const fields = await inspectPdf(pdfBytes);
+        const name = file.name.replace(/\.pdf$/i, "") || savedProfile.displayName || "Έντυπο";
+        const restoredTemplate = {
+          id: uid(),
+          name,
+          originalName: file.name,
+          pdfBytes: pdfBytes.slice(0),
+          fingerprint,
+          byteFingerprint,
+          storageVersion: 2,
+          fields,
+          mapping: { ...(savedProfile.mapping || {}) },
+          visualFields: Array.isArray(savedProfile.visualFields) ? savedProfile.visualFields.map(item => ({ ...item })) : [],
+          mappingProfileKey: savedProfile.key,
+          category: savedProfile.category || "Λοιπά",
+          favorite: false,
+          lastUsedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          version: 4
+        };
+        await dbPut(restoredTemplate);
+        await persistMappingProfile(restoredTemplate);
+        rememberSelectedTemplate(restoredTemplate.id);
+        await refreshTemplates();
+        useTemplate(restoredTemplate.id, `Το πρότυπο είχε διαγραφεί από τη βιβλιοθήκη, αλλά η αντιστοίχισή του είχε κρατηθεί. Επανήλθαν αυτόματα ${profileMappedCount(savedProfile)} πεδία.`);
+        return;
+      }
+
       // Πρότυπα που δημιουργήθηκαν σε παλιότερες εκδόσεις μπορεί να έχουν
       // έτοιμες αντιστοιχίσεις αλλά να μην έχουν το σημερινό fingerprint.
       // Πριν δημιουργήσουμε δεύτερη άδεια εγγραφή, δίνουμε τη δυνατότητα
@@ -691,10 +1028,15 @@
       const fields = await inspectPdf(pdfBytes);
       const mapping = {};
       fields.forEach(field => { mapping[field.name] = guessSource(field.name); });
-      const name = file.name.replace(/\.pdf$/i, "") || "Νέο έντυπο";
+      const suggestedName = file.name.replace(/\.pdf$/i, "") || "Νέο έντυπο";
+      const details = await requestTemplateDetails(suggestedName, "Λοιπά", "Νέο πρότυπο PDF");
+      if (!details) { setStatus("Η προσθήκη του PDF ακυρώθηκε.", "warning"); return; }
       const template = {
         id: uid(),
-        name,
+        name: details.name,
+        category: details.category,
+        favorite: false,
+        lastUsedAt: null,
         originalName: file.name,
         pdfBytes: pdfBytes.slice(0),
         fingerprint,
@@ -748,6 +1090,7 @@
       };
       delete updated.pdfBlob;
       await dbPut(updated);
+      if (templateMappedCount(updated)) await persistMappingProfile(updated);
       const index = templates.findIndex(item => item.id === id);
       if (index >= 0) templates[index] = updated;
       if (currentMapTemplate?.id === id) currentMapTemplate = updated;
@@ -925,7 +1268,7 @@
       "auto.endDate": formatDateGR(auto.endDate),
       "auto.packageName": auto.packageName || "",
       "auto.insuredValue": auto.insuredValue ?? "",
-      "date.today": new Date().toLocaleDateString("el-GR")
+      "date.today": formatTodayGR()
     };
     return values[key] ?? "";
   }
@@ -966,7 +1309,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.8.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.11.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -1126,7 +1469,7 @@
       "person.postalCode": "18531",
       "person.phone": "6900000000",
       "insured.phone": "6900000000",
-      "date.today": "19/09/2026"
+      "date.today": formatTodayGR()
     };
     return samples[sourceKey] || sourceLabel(sourceKey) || "Κείμενο";
   }
@@ -1226,6 +1569,7 @@
         updated = { ...currentMapTemplate, visualFields: visualDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString(), version: 2 };
       }
       await dbPut(updated);
+      await persistMappingProfile(updated);
       await refreshTemplates();
       rememberSelectedTemplate(updated.id);
       renderTemplates();
@@ -1468,12 +1812,17 @@
   async function deleteTemplate(id) {
     const template = templates.find(item => item.id === id);
     if (!template) return;
-    if (!window.confirm(`Να διαγραφεί το έντυπο «${template.name || template.originalName}» από τη βιβλιοθήκη;`)) return;
+    const mappedCount = templateMappedCount(template);
+    const message = mappedCount
+      ? `Να διαγραφεί το PDF «${template.name || template.originalName}» από τη βιβλιοθήκη;\n\nΟι ${mappedCount} αντιστοιχίσεις του θα παραμείνουν αποθηκευμένες και θα επανέλθουν αν ξαναφορτώσεις το ίδιο PDF.`
+      : `Να διαγραφεί το έντυπο «${template.name || template.originalName}» από τη βιβλιοθήκη;`;
+    if (!window.confirm(message)) return;
     try {
+      if (mappedCount) await persistMappingProfile(template);
       await dbDelete(id);
       if (selectedTemplateId === id) rememberSelectedTemplate(null);
       await refreshTemplates();
-      setStatus("Το έντυπο διαγράφηκε από τη βιβλιοθήκη.", "success");
+      setStatus(mappedCount ? "Το PDF διαγράφηκε. Η αντιστοίχισή του παραμένει αποθηκευμένη για μελλοντική επαναφορά." : "Το έντυπο διαγράφηκε από τη βιβλιοθήκη.", "success");
     } catch (error) {
       console.error(error);
       setStatus("Δεν διαγράφηκε το έντυπο.", "error");
@@ -1511,12 +1860,22 @@
       event.target.value = "";
       replaceTemplateId = null;
     });
+    $("formsTemplateSearch")?.addEventListener("input", event => { templateSearchQuery = event.target.value || ""; renderTemplates(); });
+    $("formsCategoryFilter")?.addEventListener("change", event => { templateCategoryFilter = event.target.value || ""; renderTemplates(); });
+    document.querySelectorAll("[data-template-view]").forEach(button => button.addEventListener("click", () => { templateViewMode = button.dataset.templateView || "all"; renderTemplates(); }));
+    $("formsTemplateDetailsCancel")?.addEventListener("click", () => finishTemplateDetails(false));
+    $("formsTemplateDetailsSave")?.addEventListener("click", () => finishTemplateDetails(true));
+    $("formsTemplateName")?.addEventListener("keydown", event => { if (event.key === "Enter") finishTemplateDetails(true); });
     $("formsCustomerSearch")?.addEventListener("input", event => renderCustomerResults(event.target.value));
     $("formsCustomerResults")?.addEventListener("click", event => {
       const option = event.target.closest("[data-customer-id]");
       if (option) selectCustomer(option.dataset.customerId);
     });
     $("formsTemplateList")?.addEventListener("click", event => {
+      const favoriteButton = event.target.closest("[data-favorite-template]");
+      if (favoriteButton) { event.stopPropagation(); toggleTemplateFavorite(favoriteButton.dataset.favoriteTemplate).catch(console.error); return; }
+      const editButton = event.target.closest("[data-edit-template]");
+      if (editButton) { event.stopPropagation(); editTemplateDetails(editButton.dataset.editTemplate).catch(console.error); return; }
       const useButton = event.target.closest("[data-use-template]");
       if (useButton) { event.stopPropagation(); useTemplate(useButton.dataset.useTemplate); return; }
       const replaceButton = event.target.closest("[data-replace-template]");
@@ -1526,6 +1885,8 @@
         $("formsReplacePdfInput")?.click();
         return;
       }
+      const linkButton = event.target.closest("[data-link-template]");
+      if (linkButton) { event.stopPropagation(); manualRelinkTemplate(linkButton.dataset.linkTemplate).catch(error => { console.error(error); setStatus("Δεν ολοκληρώθηκε η σύνδεση με έτοιμο πρότυπο.", "error"); }); return; }
       const deleteButton = event.target.closest("[data-delete-template]");
       if (deleteButton) { event.stopPropagation(); deleteTemplate(deleteButton.dataset.deleteTemplate); return; }
       const mapButton = event.target.closest("[data-map-template]");
