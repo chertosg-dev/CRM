@@ -1,11 +1,10 @@
 TSERTOS Insurance CRM
-Version: 9.11.4
-Build: FORMS_TEMPLATE_DEDUP_PERSISTENT_MAPPING
-Date: 2026-09-19
+Version: 9.11.5
+Build: FORMS_VISUAL_CROPBOX_ALIGNMENT_FIX
+Date: 2026-09-20
 
 Changes:
-- Each PDF template keeps its field mapping, visual positions and font sizes permanently in the Forms Library.
-- Re-uploading the exact same PDF is detected by a content fingerprint.
-- Duplicate uploads reuse the existing template instead of asking for field mapping again.
-- Existing templates are fingerprinted lazily, without deleting saved mappings.
-- PDF storage remains on raw bytes for iPhone/Safari reliability.
+- Visual field mapping and generated PDF now use the same visible CropBox coordinates.
+- Fixes text appearing higher/lower in the final PDF than in the mapping preview.
+- Existing template mappings, positions and per-field font sizes are preserved.
+- Persistent template fingerprinting and raw-byte PDF storage remain enabled.

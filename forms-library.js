@@ -822,7 +822,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.4.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.5.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -1130,20 +1130,46 @@
       nonEmpty += 1;
       const pageIndex = Math.max(0, Math.min(doc.getPageCount() - 1, Number(item.pageIndex || 0)));
       const page = doc.getPage(pageIndex);
-      const { width: pageWidth, height: pageHeight } = page.getSize();
+
+      // PDF.js (the visual mapper) renders the visible CropBox, while pdf-lib's
+      // getSize() is based on the full page box.  If a form has cropped margins,
+      // using the full page here makes the final text drift vertically/horizontally
+      // from the exact position the user chose in the preview.  Anchor the output
+      // to the same visible CropBox so preview and generated PDF share coordinates.
+      const pageSize = page.getSize();
+      let visibleBox = { x: 0, y: 0, width: pageSize.width, height: pageSize.height };
+      try {
+        const crop = page.getCropBox?.();
+        if (crop && Number(crop.width) > 0 && Number(crop.height) > 0) {
+          visibleBox = {
+            x: Number(crop.x || 0),
+            y: Number(crop.y || 0),
+            width: Number(crop.width),
+            height: Number(crop.height)
+          };
+        }
+      } catch (_) {}
+
       const pngData = await textPngData(value, Number(item.fontSize || 10));
       const image = await doc.embedPng(pngData.bytes);
       let drawWidth = pngData.width;
       let drawHeight = pngData.height;
-      const x = Math.max(0, Math.min(pageWidth - 2, Number(item.xRatio || 0) * pageWidth));
-      const maxWidth = Math.max(8, pageWidth - x - 2);
+
+      const xRatio = Math.max(0, Math.min(1, Number(item.xRatio || 0)));
+      const yRatio = Math.max(0, Math.min(1, Number(item.yRatio || 0)));
+      const x = visibleBox.x + xRatio * visibleBox.width;
+      const maxWidth = Math.max(8, (visibleBox.x + visibleBox.width) - x - 2);
       if (drawWidth > maxWidth) {
         const ratio = maxWidth / drawWidth;
         drawWidth *= ratio;
         drawHeight *= ratio;
       }
-      const yTop = Math.max(0, Math.min(pageHeight, Number(item.yRatio || 0) * pageHeight));
-      const y = Math.max(0, pageHeight - yTop - drawHeight);
+
+      const yTopFromVisible = yRatio * visibleBox.height;
+      const y = Math.max(
+        visibleBox.y,
+        (visibleBox.y + visibleBox.height) - yTopFromVisible - drawHeight
+      );
       page.drawImage(image, { x, y, width: drawWidth, height: drawHeight });
       filled += 1;
     }
