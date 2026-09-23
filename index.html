@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.11.21" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.11.21" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.9.15" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.9.15" />
 
 
 <style>
@@ -2766,12 +2766,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.11.21" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.11.21
+  PWA OFFLINE · V9.9.15
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3174,10 +3173,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.11.21"></script>
-<script src="receipt-xlsx.js?v=9.11.21"></script>
-<script src="local-supabase.js?v=9.11.21"></script>
-<script src="auto-policies-seed.js?v=9.11.21"></script>
+<script src="jszip.min.js?v=9.9.15"></script>
+<script src="receipt-xlsx.js?v=9.9.15"></script>
+<script src="local-supabase.js?v=9.9.15"></script>
+<script src="auto-policies-seed.js?v=9.9.15"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -7865,14 +7864,6 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
   }
 
-
-  // Bridge for the Forms Library. Keeps the existing CRM data inside this
-  // application and exposes read-only snapshots to the PDF forms module.
-  window.TSERTOS_CRM_FORMS_API = {
-    getCustomers: () => Array.isArray(customers) ? customers : [],
-    getAutoPolicies: () => Array.isArray(autoPolicies) ? autoPolicies : []
-  };
-
   initializeApplication();
 })();
 </script>
@@ -7940,50 +7931,68 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <script>
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
-<script src="./forms-library.js?v=9.11.21"></script>
+<script id="tsertos-auto-uppercase">
+(() => {
+  const composingFields = new WeakSet();
+  const excludedTypes = new Set([
+    "email", "password", "search", "file", "date", "datetime-local",
+    "time", "month", "week", "number", "range", "checkbox", "radio",
+    "hidden", "color", "url"
+  ]);
+  const excludedIds = new Set([
+    "searchInput", "mobileSearchInput", "receiptSearchInput", "autoCustomerSearch",
+    "authEmail", "authPassword", "newPassword", "confirmNewPassword"
+  ]);
+
+  function acceptsAutomaticUppercase(field) {
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return false;
+    if (field.disabled || field.readOnly || field.dataset.preserveCase === "true") return false;
+    if (field.classList.contains("no-auto-uppercase") || excludedIds.has(field.id)) return false;
+    return field instanceof HTMLTextAreaElement || !excludedTypes.has((field.type || "text").toLowerCase());
+  }
+
+  function convertFieldToUppercase(field) {
+    if (!acceptsAutomaticUppercase(field) || composingFields.has(field)) return;
+    const currentValue = field.value;
+    const uppercaseValue = currentValue.toLocaleUpperCase("el-GR");
+    if (uppercaseValue === currentValue) return;
+
+    const selectionStart = field.selectionStart;
+    const selectionEnd = field.selectionEnd;
+    field.value = uppercaseValue;
+    if (document.activeElement === field && selectionStart !== null && selectionEnd !== null) {
+      try { field.setSelectionRange(selectionStart, selectionEnd); } catch (_) {}
+    }
+  }
+
+  document.addEventListener("compositionstart", event => {
+    if (acceptsAutomaticUppercase(event.target)) composingFields.add(event.target);
+  }, true);
+
+  document.addEventListener("compositionend", event => {
+    composingFields.delete(event.target);
+    convertFieldToUppercase(event.target);
+  }, true);
+
+  document.addEventListener("input", event => {
+    if (!event.isComposing) convertFieldToUppercase(event.target);
+  }, true);
+
+  document.addEventListener("change", event => convertFieldToUppercase(event.target), true);
+  document.addEventListener("submit", event => {
+    event.target.querySelectorAll("input, textarea").forEach(convertFieldToUppercase);
+  }, true);
+})();
+</script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.11.21";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.9.15";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
-    let tsertosReloadingForUpdate = false;
-
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (tsertosReloadingForUpdate) return;
-      tsertosReloadingForUpdate = true;
-      window.location.reload();
-    });
-
-    window.addEventListener("load", async () => {
-      try {
-        const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.11.21",
-          { updateViaCache: "none" }
-        );
-
-        if (registration.waiting) {
-          registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        }
-
-        registration.addEventListener("updatefound", () => {
-          const worker = registration.installing;
-          if (!worker) return;
-          worker.addEventListener("statechange", () => {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
-              worker.postMessage({ type: "SKIP_WAITING" });
-            }
-          });
-        });
-
-        const checkForUpdate = () => registration.update().catch(() => {});
-        checkForUpdate();
-        window.addEventListener("focus", checkForUpdate);
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") checkForUpdate();
-        });
-      } catch (error) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js?v=9.9.15").catch(error => {
         console.warn("Δεν ενεργοποιήθηκε η λειτουργία offline.", error);
-      }
+      });
     });
   }
 </script>

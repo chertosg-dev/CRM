@@ -1,3 +1,4 @@
 TSERTOS Insurance CRM PWA
-Version: 9.11.21
-Build: Greek Vehicle Registration Fixed-Region OCR
+Έκδοση: 9.9.15 OFFLINE
+Αποθήκευση: Τοπική IndexedDB στο iPhone
+Εγκατάσταση: Safari → Προσθήκη στην οθόνη Αφετηρίας
