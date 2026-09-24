@@ -1,4 +1,4 @@
-# TSERTOS Insurance CRM — PWA OFFLINE V9.9.14
+# TSERTOS Insurance CRM — PWA OFFLINE V9.12.25
 
 Η εφαρμογή εγκαθίσταται από το Safari χωρίς Xcode και χωρίς καλώδιο. Μετά την πρώτη φόρτωση λειτουργεί χωρίς internet και αποθηκεύει τις εγγραφές τοπικά στο iPhone μέσω IndexedDB.
 

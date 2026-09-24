@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.11.24" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.11.24" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.12.25" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.12.25" />
 
 
 <style>
@@ -2766,12 +2766,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.11.24" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.12.25" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.11.24
+  PWA OFFLINE · V9.12.25
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3174,10 +3174,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.11.24"></script>
-<script src="receipt-xlsx.js?v=9.11.24"></script>
-<script src="local-supabase.js?v=9.11.24"></script>
-<script src="auto-policies-seed.js?v=9.11.24"></script>
+<script src="jszip.min.js?v=9.12.25"></script>
+<script src="receipt-xlsx.js?v=9.12.25"></script>
+<script src="local-supabase.js?v=9.12.25"></script>
+<script src="auto-policies-seed.js?v=9.12.25"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -7940,9 +7940,82 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 <script>
 (function(){const r=document.documentElement;function u(){const v=window.visualViewport;if(!v)return;r.style.setProperty('--tsertos-visual-top',`${Math.max(0,Math.round(v.offsetTop))}px`);r.style.setProperty('--tsertos-visual-height',`${Math.max(320,Math.round(v.height))}px`)}u();window.visualViewport?.addEventListener('resize',u);window.visualViewport?.addEventListener('scroll',u);window.addEventListener('orientationchange',u)})();
 </script>
-<script src="./forms-library.js?v=9.11.24"></script>
+<style id="tsertos-global-uppercase-style">
+  .tsertos-auto-uppercase{text-transform:uppercase!important}
+  .tsertos-auto-uppercase::placeholder{text-transform:none!important}
+</style>
+<script id="tsertos-global-uppercase">
+(() => {
+  const composingFields = new WeakSet();
+  const excludedTypes = new Set([
+    "email", "password", "search", "file", "date", "datetime-local",
+    "time", "month", "week", "number", "range", "checkbox", "radio",
+    "hidden", "color", "url"
+  ]);
+  const excludedIds = new Set([
+    "searchInput", "mobileSearchInput", "receiptSearchInput", "autoCustomerSearch",
+    "authEmail", "authPassword", "newPassword", "confirmNewPassword"
+  ]);
+
+  function acceptsAutomaticUppercase(field) {
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return false;
+    if (field.disabled || field.readOnly || field.dataset.preserveCase === "true") return false;
+    if (field.classList.contains("no-auto-uppercase") || excludedIds.has(field.id)) return false;
+    if (field instanceof HTMLTextAreaElement) return true;
+    const type = (field.type || "text").toLowerCase();
+    const inputMode = (field.inputMode || "").toLowerCase();
+    return !excludedTypes.has(type) && inputMode !== "email" && inputMode !== "url";
+  }
+
+  function markUppercaseField(field) {
+    if (acceptsAutomaticUppercase(field)) field.classList.add("tsertos-auto-uppercase");
+  }
+
+  function convertFieldToUppercase(field) {
+    if (!acceptsAutomaticUppercase(field) || composingFields.has(field)) return;
+    markUppercaseField(field);
+    const currentValue = field.value;
+    const uppercaseValue = currentValue.toLocaleUpperCase("el-GR");
+    if (uppercaseValue === currentValue) return;
+
+    const selectionStart = field.selectionStart;
+    const selectionEnd = field.selectionEnd;
+    field.value = uppercaseValue;
+    if (document.activeElement === field && selectionStart !== null && selectionEnd !== null) {
+      try { field.setSelectionRange(selectionStart, selectionEnd); } catch (_) {}
+    }
+  }
+
+  document.addEventListener("focusin", event => {
+    markUppercaseField(event.target);
+    convertFieldToUppercase(event.target);
+  }, true);
+
+  document.addEventListener("compositionstart", event => {
+    if (!acceptsAutomaticUppercase(event.target)) return;
+    markUppercaseField(event.target);
+    composingFields.add(event.target);
+  }, true);
+
+  document.addEventListener("compositionend", event => {
+    composingFields.delete(event.target);
+    convertFieldToUppercase(event.target);
+  }, true);
+
+  document.addEventListener("input", event => {
+    markUppercaseField(event.target);
+    if (!event.isComposing) convertFieldToUppercase(event.target);
+  }, true);
+
+  document.addEventListener("change", event => convertFieldToUppercase(event.target), true);
+  document.addEventListener("submit", event => {
+    event.target.querySelectorAll("input, textarea").forEach(convertFieldToUppercase);
+  }, true);
+})();
+</script>
+<script src="./forms-library.js?v=9.12.25"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.11.24";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.12.25";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -7957,7 +8030,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.11.24",
+          "./service-worker.js?v=9.12.25",
           { updateViaCache: "none" }
         );
 
