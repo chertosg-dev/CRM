@@ -97,13 +97,15 @@
 /* V9.11.17 vehicle-registration mapping diagnostics */
 .forms-vehicle-mapping-status{margin:8px 0 6px;padding:10px 12px;border-radius:12px;background:#f4f7fb;font-size:13px;color:#41516e}.forms-vehicle-mapping-status .ok{color:#167443}.forms-vehicle-mapping-status .warning{color:#a85c00}.forms-vehicle-map-action{margin-top:4px;margin-bottom:8px}.forms-vehicle-map-action .forms-secondary{width:100%}
 
-/* V9.11.22 — Forms entry must remain reachable even after CRM header changes */
-.crm-forms-floating-fallback{
-  position:fixed!important;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9999;
-  border-radius:999px!important;padding:12px 16px!important;background:#0b57d0!important;color:#fff!important;
-  box-shadow:0 10px 28px rgba(0,0,0,.24)!important
-}
-@media(max-width:760px){
-  .top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}
-  #formsLibraryBtn{width:100%!important;min-width:0!important;margin:0!important}
-}
+/* V9.11.23 — μόνιμη πρόσβαση στη συμπλήρωση εντύπου */
+.forms-quick-fill-bar{flex:0 0 auto;display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--forms-line);background:rgba(255,255,255,.97);box-shadow:0 -8px 24px rgba(18,45,94,.10);z-index:25}
+.forms-quick-fill-bar .forms-primary{width:100%;min-height:50px;font-size:16px;font-weight:900}
+.crm-forms-floating-entry{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:2500;width:auto!important;padding:10px 14px!important;font-size:14px!important;border-radius:14px!important}
+@media(max-width:900px){.forms-quick-fill-bar{padding:8px 9px calc(8px + env(safe-area-inset-bottom))}.forms-quick-fill-bar .forms-primary{min-height:52px;font-size:17px}}
+
+/* V9.11.23 — full PDF visual mapper also for PDFs that contain AcroForm fields */
+.forms-acro-details{margin-top:12px;border:1px solid var(--forms-line);border-radius:14px;background:#fbfcff;overflow:hidden}
+.forms-acro-details summary{cursor:pointer;padding:12px 14px;font-weight:800;color:var(--forms-ink);background:#f2f6fd}
+.forms-acro-help{padding:10px 14px 4px;color:var(--forms-muted);font-size:11px;line-height:1.45}
+.forms-acro-list{padding:4px 10px 10px}
+@media(max-width:700px){.forms-map-window.visual-mode .forms-map-list{padding-bottom:18px}.forms-visual-canvas-shell{min-height:42dvh}.forms-visual-canvas-wrap{min-width:260px}}

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.1.18";
+  const VERSION = "1.1.22";
   const LAST_TEMPLATE_KEY = "tsertos.forms.lastTemplateId.v1";
   const DB_NAME = "tsertos-form-library";
   const DB_VERSION = 2;
@@ -1361,29 +1361,13 @@
     button.title = "Βιβλιοθήκη εντύπων PDF";
     button.innerHTML = "<span>📄</span> Έντυπα";
     const quickBackup = $("quickBackupBtn");
-    const topMenu = $("topMenuBtn");
-    const topActions = document.querySelector(".top-actions");
-    if (quickBackup?.parentElement) {
-      quickBackup.parentElement.insertBefore(button, quickBackup);
-    } else if (topMenu?.parentElement) {
-      topMenu.parentElement.insertBefore(button, topMenu);
-    } else if (topActions) {
-      topActions.appendChild(button);
+    const toolbar = quickBackup?.parentElement || document.querySelector(".quick-actions, .header-actions, .toolbar, header");
+    if (toolbar) {
+      if (quickBackup && quickBackup.parentElement === toolbar) toolbar.insertBefore(button, quickBackup);
+      else toolbar.appendChild(button);
     } else {
+      button.classList.add("crm-forms-floating-entry");
       document.body.appendChild(button);
-      button.classList.add("crm-forms-floating-fallback");
-    }
-
-    // Secondary entry in the hamburger menu so the Forms Library remains
-    // reachable even if future CRM header layouts change.
-    const menuPanel = $("topMenuPanel");
-    if (menuPanel && !$("formsLibraryMenuBtn")) {
-      const menuBtn = document.createElement("button");
-      menuBtn.className = "btn btn-ghost";
-      menuBtn.id = "formsLibraryMenuBtn";
-      menuBtn.type = "button";
-      menuBtn.innerHTML = "📄 Έντυπα / Συμπλήρωση PDF";
-      menuPanel.insertBefore(menuBtn, menuPanel.firstChild?.nextSibling || menuPanel.firstChild);
     }
 
     const modal = document.createElement("div");
@@ -1484,6 +1468,9 @@
               </div>
             </section>
           </main>
+        </div>
+        <div class="forms-quick-fill-bar">
+          <button class="forms-primary" id="formsQuickFillBtn" type="button">✨ Συμπλήρωση εντύπου</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -2713,28 +2700,23 @@
     $("formsMapSubtitle").textContent = template.name || template.originalName || "Έντυπο";
     const fields = template.fields || [];
     const mapWindow = $("formsMapModal")?.querySelector(".forms-map-window");
-    mapWindow?.classList.toggle("visual-mode", !fields.length);
+    // V9.11.23: always open the full visual PDF editor. Some PDFs contain AcroForm
+    // fields; previously those documents showed only a small field list and hid the PDF.
+    // We now keep AcroForm mapping as an optional section below the full-page editor.
+    mapWindow?.classList.add("visual-mode");
     $("formsMapModal").classList.remove("hidden");
-
-    if (!fields.length) {
-      $("formsMapSaveBtn").disabled = true;
-      $("formsMapList").innerHTML = `<div class="forms-empty forms-visual-loading"><strong>Άνοιγμα PDF…</strong><br><small>Φορτώνεται η σελίδα του εντύπου για οπτική αντιστοίχιση.</small></div>`;
-      requestAnimationFrame(() => {
-        openVisualMapping(template).catch(error => {
-          console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.22.</small></div>`;
-          $("formsMapSaveBtn").disabled = true;
-        });
+    $("formsMapSaveBtn").disabled = true;
+    $("formsMapList").innerHTML = `<div class="forms-empty forms-visual-loading"><strong>Άνοιγμα PDF…</strong><br><small>Φορτώνεται ολόκληρο το έντυπο για οπτική τοποθέτηση πεδίων.</small></div>`;
+    requestAnimationFrame(() => {
+      openVisualMapping(template, fields).catch(error => {
+        console.error(error);
+        $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία».</small></div>`;
+        $("formsMapSaveBtn").disabled = true;
       });
-      return;
-    }
-
-    $("formsMapSaveBtn").disabled = false;
-    const host = $("formsMapList");
-    host.innerHTML = fields.map((field,index) => `<div class="forms-map-row"><div class="forms-map-name"><strong title="${esc(field.name)}">${esc(field.name)}</strong><small>${esc(field.type)}</small></div><select data-map-index="${index}" data-field-name="${esc(field.name)}">${optionMarkup((template.mapping || {})[field.name] || "")}</select></div>`).join("");
+    });
   }
 
-  async function openVisualMapping(template) {
+  async function openVisualMapping(template, acroFields = []) {
     visualDraft = (template.visualFields || []).map(item => ({ ...item }));
     visualPageIndex = visualDraft[0]?.pageIndex || 0;
     $("formsMapSaveBtn").disabled = false;
@@ -2746,7 +2728,8 @@
       </div>
       <div class="forms-visual-help" id="formsVisualHelp">Διάλεξε πηγή δεδομένων και πάτησε στο σημείο του εντύπου. Μετά μπορείς να <strong>σύρεις την τιμή</strong> για ακριβή θέση, να αλλάξεις το μέγεθός της ή να τη μετακινήσεις 1 βήμα με τα βελάκια.</div>
       <div class="forms-visual-canvas-shell"><div class="forms-visual-canvas-wrap" id="formsVisualCanvasWrap"><canvas id="formsVisualCanvas"></canvas><div class="forms-visual-markers" id="formsVisualMarkers"></div></div></div>
-      <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>`;
+      <div class="forms-visual-list-wrap"><h4>Τοποθετημένα πεδία</h4><div class="forms-visual-list" id="formsVisualList"></div></div>
+      ${acroFields.length ? `<details class="forms-acro-details"><summary>Διαδραστικά πεδία PDF (${acroFields.length}) — προαιρετικά</summary><div class="forms-acro-help">Αν θέλεις, μπορείς να αντιστοιχίσεις και τα υπάρχοντα διαδραστικά πεδία του PDF. Για ακριβή θέση πάνω στο έντυπο χρησιμοποίησε την οπτική τοποθέτηση παραπάνω.</div><div class="forms-acro-list">${acroFields.map((field,index) => `<div class="forms-map-row"><div class="forms-map-name"><strong title="${esc(field.name)}">${esc(field.name)}</strong><small>${esc(field.type)}</small></div><select data-map-index="${index}" data-field-name="${esc(field.name)}">${optionMarkup((template.mapping || {})[field.name] || "")}</select></div>`).join("")}</div></details>` : ""}`;
 
     const pdfjs = await ensurePdfJs();
     const sourceBuffer = await templatePdfArrayBuffer(template);
@@ -2967,21 +2950,24 @@
   async function saveMapping() {
     if (!currentMapTemplate) return;
     try {
-      let updated;
-      if ((currentMapTemplate.fields || []).length) {
-        const mapping = {};
-        $("formsMapList").querySelectorAll("select[data-field-name]").forEach(select => {
-          mapping[select.dataset.fieldName] = select.value;
-        });
-        updated = { ...currentMapTemplate, mapping, supplementFields: supplementDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString() };
-      } else {
-        if (!visualDraft.length) {
-          const help = $("formsVisualHelp");
-          if (help) { help.textContent = "Τοποθέτησε τουλάχιστον ένα πεδίο πάνω στο PDF πριν την αποθήκευση."; help.classList.add("warning"); }
-          return;
-        }
-        updated = { ...currentMapTemplate, visualFields: visualDraft.map(item => ({ ...item })), supplementFields: supplementDraft.map(item => ({ ...item })), updatedAt: new Date().toISOString(), version: 2 };
+      const mapping = {};
+      $("formsMapList").querySelectorAll("select[data-field-name]").forEach(select => {
+        mapping[select.dataset.fieldName] = select.value;
+      });
+      const hasAcroMapping = Object.values(mapping).some(Boolean);
+      if (!visualDraft.length && !hasAcroMapping) {
+        const help = $("formsVisualHelp");
+        if (help) { help.textContent = "Τοποθέτησε τουλάχιστον ένα πεδίο πάνω στο PDF ή αντιστοίχισε ένα διαδραστικό πεδίο πριν την αποθήκευση."; help.classList.add("warning"); }
+        return;
       }
+      const updated = {
+        ...currentMapTemplate,
+        mapping,
+        visualFields: visualDraft.map(item => ({ ...item })),
+        supplementFields: supplementDraft.map(item => ({ ...item })),
+        updatedAt: new Date().toISOString(),
+        version: 2
+      };
       await dbPut(updated);
       await persistMappingProfile(updated);
       await refreshTemplates();
@@ -3145,7 +3131,8 @@
     if (!mapped.length && !visualFields.length) { setStatus("Ρύθμισε πρώτα την αντιστοίχιση πεδίων του εντύπου.", "warning"); openMapping(template.id); return; }
 
     setStatus("Συμπλήρωση του PDF…");
-    $("formsFillBtn").disabled = true;
+    if ($("formsFillBtn")) $("formsFillBtn").disabled = true;
+    if ($("formsQuickFillBtn")) $("formsQuickFillBtn").disabled = true;
     try {
       const { PDFDocument } = await ensurePdfLib();
       const bytes = await templatePdfArrayBuffer(template);
@@ -3205,7 +3192,8 @@
       console.error(error);
       setStatus(`Δεν ολοκληρώθηκε η συμπλήρωση: ${error?.message || "άγνωστο σφάλμα"}`, "error");
     } finally {
-      $("formsFillBtn").disabled = false;
+      if ($("formsFillBtn")) $("formsFillBtn").disabled = false;
+      if ($("formsQuickFillBtn")) $("formsQuickFillBtn").disabled = false;
     }
   }
 
@@ -3303,10 +3291,6 @@
 
   function bindEvents() {
     $("formsLibraryBtn")?.addEventListener("click", openLibrary);
-    $("formsLibraryMenuBtn")?.addEventListener("click", () => {
-      $("topMenuPanel")?.classList.remove("open");
-      openLibrary();
-    });
     $("formsCloseBtn")?.addEventListener("click", closeLibrary);
     $("formsAddTemplateBtn")?.addEventListener("click", () => $("formsPdfInput")?.click());
     $("formsPdfInput")?.addEventListener("change", async event => {
@@ -3408,6 +3392,7 @@
     });
     $("formsPersonSelect")?.addEventListener("change", event => { selectedPersonId = event.target.value; });
     $("formsFillBtn")?.addEventListener("click", fillSelectedTemplate);
+    $("formsQuickFillBtn")?.addEventListener("click", fillSelectedTemplate);
     $("formsOpenMapBtn")?.addEventListener("click", () => openMapping());
     $("formsMapCloseBtn")?.addEventListener("click", closeMapping);
     $("formsMapCancelBtn")?.addEventListener("click", closeMapping);
