@@ -1361,30 +1361,7 @@
     button.title = "Βιβλιοθήκη εντύπων PDF";
     button.innerHTML = "<span>📄</span> Έντυπα";
     const quickBackup = $("quickBackupBtn");
-    const topMenu = $("topMenuBtn");
-    const topActions = document.querySelector(".top-actions");
-    if (quickBackup?.parentElement) {
-      quickBackup.parentElement.insertBefore(button, quickBackup);
-    } else if (topMenu?.parentElement) {
-      topMenu.parentElement.insertBefore(button, topMenu);
-    } else if (topActions) {
-      topActions.appendChild(button);
-    } else {
-      document.body.appendChild(button);
-      button.classList.add("crm-forms-floating-fallback");
-    }
-
-    // Secondary entry in the hamburger menu so the Forms Library remains
-    // reachable even if future CRM header layouts change.
-    const menuPanel = $("topMenuPanel");
-    if (menuPanel && !$("formsLibraryMenuBtn")) {
-      const menuBtn = document.createElement("button");
-      menuBtn.className = "btn btn-ghost";
-      menuBtn.id = "formsLibraryMenuBtn";
-      menuBtn.type = "button";
-      menuBtn.innerHTML = "📄 Έντυπα / Συμπλήρωση PDF";
-      menuPanel.insertBefore(menuBtn, menuPanel.firstChild?.nextSibling || menuPanel.firstChild);
-    }
+    quickBackup?.parentElement?.insertBefore(button, quickBackup);
 
     const modal = document.createElement("div");
     modal.id = "formsLibraryModal";
@@ -2722,7 +2699,7 @@
       requestAnimationFrame(() => {
         openVisualMapping(template).catch(error => {
           console.error(error);
-          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.22.</small></div>`;
+          $("formsMapList").innerHTML = `<div class="forms-empty"><strong>Δεν άνοιξε το PDF.</strong><br>${esc(error?.message || "άγνωστο σφάλμα")}<br><small>Κλείσε το παράθυρο και πάτησε ξανά «Πεδία». Αν επιμένει, βεβαιώσου ότι στην κορυφή της εφαρμογής γράφει V9.11.21.</small></div>`;
           $("formsMapSaveBtn").disabled = true;
         });
       });
@@ -3303,10 +3280,6 @@
 
   function bindEvents() {
     $("formsLibraryBtn")?.addEventListener("click", openLibrary);
-    $("formsLibraryMenuBtn")?.addEventListener("click", () => {
-      $("topMenuPanel")?.classList.remove("open");
-      openLibrary();
-    });
     $("formsCloseBtn")?.addEventListener("click", closeLibrary);
     $("formsAddTemplateBtn")?.addEventListener("click", () => $("formsPdfInput")?.click());
     $("formsPdfInput")?.addEventListener("change", async event => {

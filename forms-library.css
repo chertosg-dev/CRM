@@ -96,3 +96,14 @@
 
 /* V9.11.17 vehicle-registration mapping diagnostics */
 .forms-vehicle-mapping-status{margin:8px 0 6px;padding:10px 12px;border-radius:12px;background:#f4f7fb;font-size:13px;color:#41516e}.forms-vehicle-mapping-status .ok{color:#167443}.forms-vehicle-mapping-status .warning{color:#a85c00}.forms-vehicle-map-action{margin-top:4px;margin-bottom:8px}.forms-vehicle-map-action .forms-secondary{width:100%}
+
+/* V9.11.22 — Forms entry must remain reachable even after CRM header changes */
+.crm-forms-floating-fallback{
+  position:fixed!important;right:14px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9999;
+  border-radius:999px!important;padding:12px 16px!important;background:#0b57d0!important;color:#fff!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.24)!important
+}
+@media(max-width:760px){
+  .top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}
+  #formsLibraryBtn{width:100%!important;min-width:0!important;margin:0!important}
+}
