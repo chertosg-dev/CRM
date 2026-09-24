@@ -109,3 +109,7 @@
 .forms-acro-help{padding:10px 14px 4px;color:var(--forms-muted);font-size:11px;line-height:1.45}
 .forms-acro-list{padding:4px 10px 10px}
 @media(max-width:700px){.forms-map-window.visual-mode .forms-map-list{padding-bottom:18px}.forms-visual-canvas-shell{min-height:42dvh}.forms-visual-canvas-wrap{min-width:260px}}
+
+/* V9.11.24 — covered members in customer search */
+.forms-customer-option.forms-member-option{border-left:4px solid #d7a928;background:linear-gradient(90deg,#fffaf0 0,#fff 34%)}
+.forms-customer-option.forms-member-option span{color:#8a6512}

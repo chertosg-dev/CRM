@@ -1409,10 +1409,10 @@
               <div class="forms-selected-template-summary" id="formsSelectedTemplateSummary"></div>
             </section>
             <section class="forms-section">
-              <h3>2. Επιλογή πελάτη</h3>
+              <h3>2. Επιλογή πελάτη / καλυπτόμενου μέλους</h3>
               <div class="forms-field full">
                 <label for="formsCustomerSearch">Αναζήτηση στο CRM</label>
-                <input id="formsCustomerSearch" type="search" autocomplete="off" placeholder="Όνομα, επώνυμο, ΑΦΜ ή τηλέφωνο" />
+                <input id="formsCustomerSearch" type="search" autocomplete="off" placeholder="Πελάτης ή καλυπτόμενο μέλος — όνομα, επώνυμο, ΑΦΜ ή τηλέφωνο" />
                 <div class="forms-customer-results" id="formsCustomerResults"></div>
                 <div class="forms-selected-customer" id="formsSelectedCustomer"></div>
               </div>
@@ -1923,20 +1923,83 @@
     }
   }
 
+  function searchablePeople() {
+    const rows = [];
+    customersArray().forEach(customer => {
+      rows.push({ type: "customer", customer, person: customer, policy: null });
+      (customer.policies || []).forEach(policy => {
+        (policy.coveredMembers || []).forEach(member => {
+          rows.push({ type: "member", customer, person: member, policy });
+        });
+      });
+    });
+    return rows;
+  }
+
   function renderCustomerResults(query) {
     const host = $("formsCustomerResults");
     if (!host) return;
     const q = normalizeText(query);
     if (!q) { host.classList.remove("open"); host.innerHTML = ""; return; }
-    const matches = customersArray().filter(customer => {
+
+    const matches = searchablePeople().filter(row => {
+      const person = row.person || {};
+      const customer = row.customer || {};
+      const policy = row.policy || {};
       const haystack = normalizeText([
-        displayName(customer), customer.company, customer.afm, customer.phone, customer.email
+        displayName(person), person.company, person.afm, person.phone, person.email,
+        row.type === "member" ? displayName(customer) : "",
+        row.type === "member" ? policy.number : "",
+        row.type === "member" ? policy.product : ""
       ].filter(Boolean).join(" "));
       return haystack.includes(q);
-    }).slice(0, 30);
+    }).slice(0, 40);
+
     const allCustomers = customersArray();
-    host.innerHTML = matches.length ? matches.map(customer => `<button class="forms-customer-option" type="button" data-customer-id="${esc(customer.id)}"><strong>${esc(displayName(customer))}</strong><span>${[customer.afm && `ΑΦΜ ${customer.afm}`, customer.phone].filter(Boolean).map(esc).join(" · ")}</span></button>`).join("") : `<div class="forms-empty">${allCustomers.length ? "Δεν βρέθηκε πελάτης." : "Δεν είναι ακόμη διαθέσιμα τα στοιχεία πελατών του CRM. Κλείσε και ξανάνοιξε τα Έντυπα."}</div>`;
+    host.innerHTML = matches.length ? matches.map(row => {
+      const person = row.person || {};
+      if (row.type === "member") {
+        const policyKey = row.policy?.id || row.policy?.number || "";
+        const secondary = [
+          "Καλυπτόμενο μέλος",
+          row.policy?.number && `Συμβόλαιο ${row.policy.number}`,
+          `Κύριος: ${displayName(row.customer)}`
+        ].filter(Boolean).map(esc).join(" · ");
+        return `<button class="forms-customer-option forms-member-option" type="button" data-member-customer-id="${esc(row.customer.id)}" data-member-policy-key="${esc(policyKey)}" data-member-id="${esc(person.id)}"><strong>${esc(displayName(person) || "Καλυπτόμενο μέλος")}</strong><span>${secondary}</span></button>`;
+      }
+      return `<button class="forms-customer-option" type="button" data-customer-id="${esc(row.customer.id)}"><strong>${esc(displayName(row.customer))}</strong><span>${[row.customer.afm && `ΑΦΜ ${row.customer.afm}`, row.customer.phone].filter(Boolean).map(esc).join(" · ")}</span></button>`;
+    }).join("") : `<div class="forms-empty">${allCustomers.length ? "Δεν βρέθηκε πελάτης ή καλυπτόμενο μέλος." : "Δεν είναι ακόμη διαθέσιμα τα στοιχεία πελατών του CRM. Κλείσε και ξανάνοιξε τα Έντυπα."}</div>`;
     host.classList.add("open");
+  }
+
+  function selectCoveredMemberFromSearch(customerId, policyKey, memberId) {
+    const customer = customersArray().find(item => String(item.id) === String(customerId));
+    if (!customer) return;
+    const policy = (customer.policies || []).find(item => String(item.id || item.number) === String(policyKey));
+    const member = (policy?.coveredMembers || []).find(item => String(item.id) === String(memberId));
+    if (!policy || !member) return;
+
+    selectedCustomerId = customer.id;
+    selectedPolicySource = `policy:${policy.id || policy.number}`;
+    selectedPersonId = `member:${member.id}`;
+    $("formsCustomerResults")?.classList.remove("open");
+    const search = $("formsCustomerSearch");
+    if (search) search.value = "";
+
+    const selected = $("formsSelectedCustomer");
+    if (selected) {
+      selected.innerHTML = `<div><strong>${esc(displayName(member) || "Καλυπτόμενο μέλος")}</strong><small>${esc(`Καλυπτόμενο μέλος · Κύριος ασφαλισμένος: ${displayName(customer)}${policy.number ? ` · Συμβόλαιο ${policy.number}` : ""}`)}</small></div><button class="forms-secondary" id="formsClearCustomerBtn" type="button">Αλλαγή</button>`;
+      selected.classList.add("show");
+      $("formsClearCustomerBtn")?.addEventListener("click", clearCustomer);
+    }
+
+    renderPolicyOptions();
+    renderPersonOptions();
+    const policySelect = $("formsPolicySelect");
+    if (policySelect) policySelect.value = selectedPolicySource;
+    const personSelect = $("formsPersonSelect");
+    if (personSelect) personSelect.value = selectedPersonId;
+    setStatus(selectedTemplateId ? `Επιλέχθηκε καλυπτόμενο μέλος: ${displayName(member)}.` : "Επίλεξε έντυπο από τη βιβλιοθήκη.");
   }
 
   function selectCustomer(id) {
@@ -3359,6 +3422,11 @@
     $("formsSupplementValues")?.addEventListener("input", event => { const input = event.target.closest("[data-supp-runtime]"); if (input) supplementalValues[input.dataset.suppRuntime] = input.value; });
     $("formsCustomerSearch")?.addEventListener("input", event => renderCustomerResults(event.target.value));
     $("formsCustomerResults")?.addEventListener("click", event => {
+      const memberOption = event.target.closest("[data-member-customer-id]");
+      if (memberOption) {
+        selectCoveredMemberFromSearch(memberOption.dataset.memberCustomerId, memberOption.dataset.memberPolicyKey, memberOption.dataset.memberId);
+        return;
+      }
       const option = event.target.closest("[data-customer-id]");
       if (option) selectCustomer(option.dataset.customerId);
     });
