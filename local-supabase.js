@@ -9,7 +9,7 @@
     "insureds", "policies", "policy_coverages", "covered_members",
     "covered_member_coverages", "hospital_program_options",
     "diagnostic_package_options", "ife_options", "auto_policies",
-    "payment_receipts"
+    "payment_receipts", "fire_policies"
   ];
   const DEFAULT_HOSPITAL_PROGRAMS = [
     "Βασική προστασία", "Προνομιακή προστασία", "Full Lux 0€", "Full Α 0€",
@@ -125,7 +125,7 @@
 
   function normalizeState(input) {
     const state = input && typeof input === "object" ? input : {};
-    state.schema_version = 3;
+    state.schema_version = 4;
     state.tables = state.tables && typeof state.tables === "object" ? state.tables : {};
     REQUIRED_TABLES.forEach(table => {
       if (!Array.isArray(state.tables[table])) state.tables[table] = [];
@@ -244,6 +244,7 @@
       const deletedPolicies = tables.policies.filter(row => insuredIds.has(row.insured_id));
       tables.policies = tables.policies.filter(row => !insuredIds.has(row.insured_id));
       tables.auto_policies = tables.auto_policies.filter(row => !insuredIds.has(row.insured_id));
+      tables.fire_policies = tables.fire_policies.filter(row => !insuredIds.has(row.insured_id));
       cascadeDeletedRows(state, "policies", deletedPolicies);
     } else if (table === "policies") {
       const policyIds = new Set(deletedRows.map(row => row.id));
