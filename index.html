@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.3" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.3" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.4" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.4" />
 
 
 <style>
@@ -2529,8 +2529,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .crm-renewals-button{position:relative;min-height:43px;border:1px solid rgba(255,255,255,.22)!important;background:linear-gradient(135deg,rgba(18,150,98,.34),rgba(15,112,79,.28))!important;color:#fff!important;box-shadow:none!important}
   .crm-renewals-button>span{color:#fff;font-size:18px}
   .crm-renewals-button>b{display:grid;place-items:center;min-width:23px;height:23px;margin-left:2px;padding:0 6px;border-radius:999px;background:#f2b629;color:#061b43;font-size:11px;font-weight:950;line-height:1}
+  .renewals-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px;padding:5px;border-radius:15px;background:#edf2f9}
+  .renewals-switch button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:9px 12px;border:0;border-radius:11px;background:transparent;color:#66758e;font-size:12px;font-weight:950;cursor:pointer}
+  .renewals-switch button b{display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#dce5f2;color:#52627b;font-size:11px}
+  .renewals-switch button.active{background:#fff;color:#145cf2;box-shadow:0 6px 16px rgba(20,68,145,.12)}
+  .renewals-switch button.active b{background:#145cf2;color:#fff}
   .renewals-list{display:grid;gap:12px}
   .renewal-card{overflow:hidden;border:1px solid #dfe7f2;border-radius:18px;background:#fff;box-shadow:0 9px 24px rgba(18,45,94,.08)}
+  .renewal-card-fire .renewal-head{background:linear-gradient(135deg,#fffaf7,#fff0e8)}
   .renewal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:13px;padding:15px 16px;border-bottom:1px solid #e7edf5;background:linear-gradient(135deg,#f9fbff,#eef4ff)}
   .renewal-head small{display:block;margin-bottom:5px;color:#687792;font-size:11px;font-weight:800}
   .renewal-plate{display:block;color:#17305d;font-size:clamp(24px,4vw,33px);font-weight:950;line-height:1.05;letter-spacing:.04em;overflow-wrap:anywhere}
@@ -2544,6 +2550,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .renewal-grid small{display:block;margin-bottom:4px;color:#71809a;font-size:9px;font-weight:850;text-transform:uppercase}
   .renewal-grid b{display:block;color:#182a4d;font-size:12px;font-weight:850;overflow-wrap:anywhere}
   .renewal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 13px 13px}
+  .renewal-actions.single{grid-template-columns:1fr}
   .renewal-open,.renewal-now{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:9px 12px;border:1px solid #cbd9ee;border-radius:12px;background:#f7faff;color:#174891;font-size:12px;font-weight:900;cursor:pointer}
   .renewal-open span{font-size:19px;line-height:1}
   .renewal-now{border-color:#145cf2;background:linear-gradient(135deg,#145cf2,#2778ff);color:#fff}
@@ -2808,12 +2815,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.3" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.4" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.3
+  PWA OFFLINE · V9.13.4
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2879,7 +2886,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       </div>
 
       <div class="top-actions">
-        <button class="btn crm-renewals-button" id="renewalsBtn" type="button" title="Ανανεώσεις αυτοκινήτων τρέχοντος μήνα">
+        <button class="btn crm-renewals-button" id="renewalsBtn" type="button" title="Ανανεώσεις αυτοκινήτων και Πυρός τρέχοντος μήνα">
           <span>📅</span> Ανανεώσεις <b id="renewalsCount">0</b>
         </button>
         <button class="btn crm-receipts-button" id="receiptsBtn" type="button" title="Αποδείξεις προς είσπραξη">
@@ -3181,7 +3188,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     <div class="coverage-popup-window">
       <div class="coverage-popup-head">
         <div class="coverage-popup-heading">
-          <span>Αυτοκίνητα</span>
+          <span>Ημερολόγιο ανανεώσεων</span>
           <h2 id="renewalsModalTitle">Ανανεώσεις</h2>
           <p id="renewalsModalSubtitle"></p>
         </div>
@@ -3216,10 +3223,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.3"></script>
-<script src="receipt-xlsx.js?v=9.13.3"></script>
-<script src="local-supabase.js?v=9.13.3"></script>
-<script src="auto-policies-seed.js?v=9.13.3"></script>
+<script src="jszip.min.js?v=9.13.4"></script>
+<script src="receipt-xlsx.js?v=9.13.4"></script>
+<script src="local-supabase.js?v=9.13.4"></script>
+<script src="auto-policies-seed.js?v=9.13.4"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3257,6 +3264,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   let memberCoverageMemberId = null;
   let editingAutoPolicyId = null;
   let pendingAutoAfterCustomerSave = false;
+  let activeRenewalsBranch = "autos";
   let activeReceiptsTab = "all";
   let receiptSearchQuery = "";
   let coverageOptions = {
@@ -4678,6 +4686,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       const searchable = [
         policy.productName,
         policy.packageName,
+        policy.earthquakeCoverage ? "σεισμός" : "",
         policy.insured?.name,
         policy.insured?.afm,
         policy.risk?.street,
@@ -6022,6 +6031,106 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       );
   }
 
+  function firePolicyInstallmentCount(policy) {
+    const match = String(policy?.installments ?? "").match(/\d+/);
+    const count = match ? Number(match[0]) : 0;
+    return Number.isInteger(count) && count > 0 && count <= 12 && 12 % count === 0
+      ? count
+      : null;
+  }
+
+  function firePolicyInstallmentMonths(policy) {
+    const count = firePolicyInstallmentCount(policy);
+    return count ? 12 / count : null;
+  }
+
+  function firePolicyInstallmentLabel(policy) {
+    const count = firePolicyInstallmentCount(policy);
+    const months = firePolicyInstallmentMonths(policy);
+    if (!count || !months) return "Δεν έχουν οριστεί έγκυρες δόσεις";
+    const period = ({
+      1: "Κάθε μήνα",
+      2: "Κάθε 2 μήνες",
+      3: "Κάθε τρίμηνο",
+      4: "Κάθε τετράμηνο",
+      6: "Κάθε εξάμηνο",
+      12: "Κάθε έτος"
+    })[months] || `Κάθε ${months} μήνες`;
+    return `${count} ${count === 1 ? "δόση" : "δόσεις"} · ${period}`;
+  }
+
+  function firePolicyAnnualOccurrence(startDate, referenceDate) {
+    const start = parseIsoDate(startDate);
+    const reference = parseIsoDate(referenceDate);
+    if (!start || !reference || start.getUTCMonth() !== reference.getUTCMonth()) return "";
+    const lastDay = new Date(Date.UTC(
+      reference.getUTCFullYear(),
+      reference.getUTCMonth() + 1,
+      0
+    )).getUTCDate();
+    return isoDateFromUtc(new Date(Date.UTC(
+      reference.getUTCFullYear(),
+      reference.getUTCMonth(),
+      Math.min(start.getUTCDate(), lastDay)
+    )));
+  }
+
+  function firePolicyRenewalForMonth(policy, referenceDate = currentLocalIsoDate()) {
+    const bounds = monthBoundsIso(referenceDate);
+    if (!bounds || !parseIsoDate(policy?.startDate)) return null;
+
+    const months = firePolicyInstallmentMonths(policy);
+    if (!months) {
+      if (policy.startDate > bounds.end) return null;
+      const annualOccurrence = firePolicyAnnualOccurrence(policy.startDate, referenceDate);
+      if (!annualOccurrence) return null;
+      return {
+        renewalDate: annualOccurrence,
+        months: null,
+        installments: null,
+        status: "Χρειάζονται δόσεις",
+        statusKey: "needs-frequency"
+      };
+    }
+
+    let occurrence = policy.startDate;
+    let periodIndex = 0;
+    while (occurrence < bounds.start && periodIndex < 2400) {
+      periodIndex += 1;
+      const nextOccurrence = addMonthsIso(policy.startDate, periodIndex * months);
+      if (!nextOccurrence || nextOccurrence <= occurrence) return null;
+      occurrence = nextOccurrence;
+    }
+    if (occurrence < bounds.start || occurrence > bounds.end) return null;
+
+    const overdue = occurrence <= referenceDate;
+    return {
+      renewalDate: occurrence,
+      months,
+      installments: firePolicyInstallmentCount(policy),
+      status: overdue ? "Εκκρεμεί" : "Προσεχώς",
+      statusKey: overdue ? "pending" : "upcoming"
+    };
+  }
+
+  function currentMonthFireRenewals(referenceDate = currentLocalIsoDate()) {
+    return allFirePolicies()
+      .map(policy => {
+        const renewal = firePolicyRenewalForMonth(policy, referenceDate);
+        if (!renewal) return null;
+        return {
+          ...renewal,
+          policy,
+          customer: customers.find(customer => customer.id === policy.insuredId) || null
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) =>
+        left.renewalDate.localeCompare(right.renewalDate)
+        || customerDisplayName(left.customer || {}).localeCompare(customerDisplayName(right.customer || {}), "el")
+      );
+  }
+
   function currentMonthLabel(referenceDate = currentLocalIsoDate()) {
     const date = parseIsoDate(referenceDate);
     if (!date) return "τρέχοντος μήνα";
@@ -6091,26 +6200,78 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 
   function renderRenewalsModal() {
-    const renewals = currentMonthAutoRenewals();
+    const autoRenewals = currentMonthAutoRenewals();
+    const fireRenewals = currentMonthFireRenewals();
+    const showingFire = activeRenewalsBranch === "fires";
+    const renewals = showingFire ? fireRenewals : autoRenewals;
     const monthLabel = currentMonthLabel();
     els.renewalsModalTitle.textContent = `Ανανεώσεις ${monthLabel}`;
-    els.renewalsModalSubtitle.textContent = renewals.length === 1
-      ? "1 αυτοκίνητο ανανεώνεται αυτόν τον μήνα"
-      : `${renewals.length} αυτοκίνητα ανανεώνονται αυτόν τον μήνα`;
+    els.renewalsModalSubtitle.textContent = showingFire
+      ? (renewals.length === 1
+          ? "1 πληρωμή Πυρός προγραμματίζεται αυτόν τον μήνα"
+          : `${renewals.length} πληρωμές Πυρός προγραμματίζονται αυτόν τον μήνα`)
+      : (renewals.length === 1
+          ? "1 αυτοκίνητο ανανεώνεται αυτόν τον μήνα"
+          : `${renewals.length} αυτοκίνητα ανανεώνονται αυτόν τον μήνα`);
 
+    const branchSwitch = `
+      <div class="renewals-switch" role="tablist" aria-label="Κλάδος ανανεώσεων">
+        <button type="button" role="tab" data-renewals-branch="autos" class="${showingFire ? "" : "active"}" aria-selected="${showingFire ? "false" : "true"}">
+          🚗 Αυτοκίνητα <b>${autoRenewals.length}</b>
+        </button>
+        <button type="button" role="tab" data-renewals-branch="fires" class="${showingFire ? "active" : ""}" aria-selected="${showingFire ? "true" : "false"}">
+          🔥 Πυρός <b>${fireRenewals.length}</b>
+        </button>
+      </div>`;
+
+    let branchContent = "";
     if (!renewals.length) {
-      els.renewalsModalBody.innerHTML = `
+      branchContent = `
         <div class="renewals-empty">
           <span>✓</span>
-          <strong>Δεν υπάρχουν ανανεώσεις αυτοκινήτων</strong>
-          <p>Δεν βρέθηκε συμβόλαιο με ημερομηνία ανανέωσης μέσα στον ${escapeHtml(monthLabel)}.</p>
+          <strong>${showingFire ? "Δεν υπάρχουν πληρωμές Πυρός" : "Δεν υπάρχουν ανανεώσεις αυτοκινήτων"}</strong>
+          <p>${showingFire
+            ? `Δεν υπολογίστηκε δόση ή επέτειος συμβολαίου Πυρός μέσα στον ${escapeHtml(monthLabel)}.`
+            : `Δεν βρέθηκε συμβόλαιο με ημερομηνία ανανέωσης μέσα στον ${escapeHtml(monthLabel)}.`}</p>
         </div>`;
-      return;
-    }
-
-    els.renewalsModalBody.innerHTML = `
-      <div class="renewals-list">
-        ${renewals.map(item => {
+    } else if (showingFire) {
+      branchContent = `
+        <div class="renewals-list">
+          ${renewals.map(item => {
+            const insuredName = customerDisplayName(item.customer || {}) !== "Χωρίς όνομα"
+              ? customerDisplayName(item.customer || {})
+              : (item.policy.insured?.name || "Χωρίς όνομα");
+            const riskAddress = [item.policy.risk?.street, item.policy.risk?.streetNumber]
+              .filter(Boolean).join(" ");
+            return `
+            <article class="renewal-card renewal-card-fire">
+              <div class="renewal-head">
+                <div>
+                  <small>${escapeHtml(insuredName)}</small>
+                  <strong class="renewal-plate">${escapeHtml(item.policy.policyNumber || "Χωρίς αριθμό")}</strong>
+                </div>
+                <span class="renewal-status renewal-status-${escapeHtml(item.statusKey)}">${escapeHtml(item.status)}</span>
+              </div>
+              <div class="renewal-grid">
+                <div><small>Προϊόν</small><b>${escapeHtml(item.policy.productName || "Πυρός")}</b></div>
+                <div><small>Ημερομηνία πληρωμής</small><b>${escapeHtml(formatDate(item.renewalDate))}</b></div>
+                <div><small>Δόσεις / συχνότητα</small><b>${escapeHtml(firePolicyInstallmentLabel(item.policy))}</b></div>
+                <div><small>Τοποθεσία κινδύνου</small><b>${escapeHtml(riskAddress || item.policy.risk?.area || "—")}</b></div>
+              </div>
+              <div class="renewal-actions single">
+                <button class="renewal-open" type="button"
+                  data-fire-renewal-customer="${escapeHtml(item.policy.insuredId)}"
+                  data-fire-renewal-policy="${escapeHtml(item.policy.id)}">
+                  Άνοιγμα συμβολαίου Πυρός <span>›</span>
+                </button>
+              </div>
+            </article>`;
+          }).join("")}
+        </div>`;
+    } else {
+      branchContent = `
+        <div class="renewals-list">
+          ${renewals.map(item => {
           const renewButton = item.statusKey === "needs-frequency"
               ? `<button class="renewal-now" type="button" disabled>Όρισε συχνότητα</button>`
               : `<button class="renewal-now" type="button" data-renew-now="${escapeHtml(item.policy.id)}">↻ Ανανέωση τώρα</button>`;
@@ -6139,8 +6300,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
               ${renewButton}
             </div>
           </article>`;
-        }).join("")}
-      </div>`;
+          }).join("")}
+        </div>`;
+    }
+
+    els.renewalsModalBody.innerHTML = branchSwitch + branchContent;
+
+    els.renewalsModalBody.querySelectorAll("[data-renewals-branch]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeRenewalsBranch = button.dataset.renewalsBranch;
+        renderRenewalsModal();
+      });
+    });
 
     els.renewalsModalBody.querySelectorAll("[data-renewal-policy]").forEach(button => {
       button.addEventListener("click", () => {
@@ -6151,6 +6322,24 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         activeDetailTab = "autos";
         expandedPolicyId = null;
         expandedAutoPolicyId = policyId;
+        els.search.value = "";
+        els.mobileSearch.value = "";
+        render();
+        requestAnimationFrame(() => {
+          els.detail.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    });
+    els.renewalsModalBody.querySelectorAll("[data-fire-renewal-policy]").forEach(button => {
+      button.addEventListener("click", () => {
+        const customerId = button.dataset.fireRenewalCustomer;
+        const policyId = button.dataset.fireRenewalPolicy;
+        closeRenewalsModal();
+        selectedCustomerId = customerId;
+        activeDetailTab = "fires";
+        expandedPolicyId = null;
+        expandedAutoPolicyId = null;
+        expandedFirePolicyId = policyId;
         els.search.value = "";
         els.mobileSearch.value = "";
         render();
@@ -6697,7 +6886,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function firePolicyPackageLabel(policy) {
     if (!policy.packageName) return "Πακέτο / απαλλαγή: δεν ορίστηκε";
-    return `${policy.packageName} · ${policy.withDeductible ? "Με απαλλαγές" : "Χωρίς απαλλαγές"}`;
+    return `${policy.packageName} · ${policy.withDeductible ? "Με απαλλαγές" : "Χωρίς απαλλαγές"}${policy.earthquakeCoverage ? " · Σεισμός" : ""}`;
   }
 
   function firePolicyCustomerCardHtml(policy, open = false) {
@@ -6705,6 +6894,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const fields = [
       ["Προϊόν", policy.productName],
       ["Πακέτο", firePolicyPackageLabel(policy)],
+      ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"],
       ["Έναρξη", formatDate(policy.startDate)],
       ["Δόσεις", policy.installments],
       ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)],
@@ -7110,7 +7300,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       const counter = document.getElementById(id);
       if (counter) counter.textContent = String(value);
     });
-    els.renewalsCount.textContent = String(currentMonthAutoRenewals().length);
+    els.renewalsCount.textContent = String(
+      currentMonthAutoRenewals().length + currentMonthFireRenewals().length
+    );
     els.receiptsCount.textContent = String(paymentReceipts.length);
 
     if (!query) {
@@ -8204,10 +8396,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.3"></script>
-<script src="./forms-library.js?v=9.13.3"></script>
+<script src="./fire-policies.js?v=9.13.4"></script>
+<script src="./forms-library.js?v=9.13.4"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.3";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.4";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8222,7 +8414,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.3",
+          "./service-worker.js?v=9.13.4",
           { updateViaCache: "none" }
         );
 

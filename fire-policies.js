@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "9.13.3";
+  const VERSION = "9.13.4";
   const TABLE = "fire_policies";
   const LOCAL_OWNER_ID = "00000000-0000-4000-8000-000000000001";
   const HOME_PACKAGES = ["BASIC", "EXTRA", "ADVANCED", "MAX"];
@@ -57,6 +57,12 @@
       { id: "matching_materials", name: "Αντικατάσταση μη ζημιωθέντων υλικών", limit: "3% Κ, έως 3.000€", deductible: "Σύμφωνα με τον σχετικό όρο" },
       { id: "automatic_reinstatement", name: "Αυτόματη επαναφορά ασφαλισμένων ποσών μετά τη ζημιά", limit: "Επαναφορά στα αρχικά ποσά, υπό προϋποθέσεις", deductible: "Δεν αποτελεί αυτοτελή χρηματική αποζημίωση" }
     ]
+  };
+  const EARTHQUAKE_COVERAGE = {
+    id: "earthquake",
+    name: "Σεισμός",
+    limit: "Πρόσθετη κάλυψη σύμφωνα με τους όρους του συμβολαίου",
+    deductible: "Σύμφωνα με την αναγραφόμενη απαλλαγή του συμβολαίου"
   };
 
   let client = null;
@@ -114,6 +120,7 @@
       productName: payload.productName || "FULL HOME",
       packageName: source.package_name ?? payload.packageName ?? "BASIC",
       withDeductible: Boolean(source.with_deductible ?? payload.withDeductible),
+      earthquakeCoverage: Boolean(payload.earthquakeCoverage),
       startDate: payload.startDate || "",
       installments: payload.installments ?? "",
       grossPremium: payload.grossPremium ?? "",
@@ -154,8 +161,8 @@
     style.textContent = `
       .crm-fire-button{min-height:43px;border:1px solid rgba(255,255,255,.18)!important;background:rgba(229,72,77,.18)!important;color:#fff!important;box-shadow:none!important}.crm-fire-button span{color:#ffbd61;font-size:18px}
       .fire-modal{position:fixed;inset:0;z-index:48000;display:grid;place-items:center;padding:14px;background:rgba(3,18,46,.78);backdrop-filter:blur(8px)}.fire-modal.hidden{display:none!important}.fire-window{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(100dvh - 28px);overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:#f5f8fd;box-shadow:0 34px 100px rgba(0,0,0,.4)}
-      .fire-head{display:flex;align-items:center;gap:14px;padding:16px 18px;background:linear-gradient(145deg,#4a1120,#8d2635);color:#fff}.fire-head-copy{min-width:0;flex:1}.fire-head small{display:block;color:#ffd3b0;font-weight:850}.fire-head h2{margin:3px 0 0;font-size:22px}.fire-close{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:rgba(255,255,255,.1);color:#fff;font-size:27px}.fire-body{min-height:0;padding:14px;overflow:auto}.fire-toolbar{position:sticky;top:-14px;z-index:5;display:flex;gap:10px;margin:-14px -14px 14px;padding:12px 14px;border-bottom:1px solid #dfe6f1;background:rgba(255,255,255,.97)}.fire-toolbar input{min-width:0;flex:1}.fire-import-result{margin:0 0 14px;padding:12px 14px;border:1px solid #b9dfc6;border-radius:14px;background:#edfff3;color:#23613a;font-size:12px;font-weight:750;line-height:1.5}.fire-import-result strong{display:block;margin-bottom:3px;font-size:14px}.fire-import-result.error{border-color:#efc4c4;background:#fff1f1;color:#8b2f2f}.fire-list{display:grid;gap:12px}.fire-policy-card{overflow:hidden;border:1px solid #dfe6f1;border-radius:18px;background:#fff;box-shadow:0 9px 24px rgba(18,45,94,.08)}.fire-policy-summary{display:flex;align-items:center;gap:12px;padding:14px 15px;cursor:pointer;list-style:none}.fire-policy-summary::-webkit-details-marker{display:none}.fire-policy-icon{display:grid;place-items:center;width:42px;height:42px;flex:0 0 auto;border-radius:13px;background:#fff0e8;color:#c44531;font-size:21px}.fire-policy-main{min-width:0;flex:1}.fire-policy-main strong{display:block;color:#153064;font-size:20px;font-weight:950}.fire-policy-main span{display:block;margin-top:4px;color:#6e7c93;font-size:11px;font-weight:750}.fire-package-pill{padding:7px 10px;border-radius:999px;background:#fff0e8;color:#a73b2d;font-size:10px;font-weight:950}.fire-policy-content{display:grid;gap:10px;padding:0 14px 14px}.fire-view-section,.fire-form-section{overflow:hidden;border:1px solid #e1e7f0;border-radius:15px;background:#fff}.fire-view-section>summary,.fire-form-section>summary{display:flex;align-items:center;gap:10px;min-height:51px;padding:10px 12px;list-style:none;background:#f9fbff;color:#1d345f;font-weight:900;cursor:pointer}.fire-view-section>summary::-webkit-details-marker,.fire-form-section>summary::-webkit-details-marker{display:none}.fire-section-body{padding:12px}.fire-data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.fire-data{padding:10px;border-radius:11px;background:#f5f8fc}.fire-data small{display:block;margin-bottom:4px;color:#748198;font-size:9px;font-weight:900;text-transform:uppercase}.fire-data b{display:block;color:#223a65;font-size:12px;overflow-wrap:anywhere}.fire-actions{display:flex;justify-content:flex-end;gap:8px;padding-top:3px}.fire-form{display:grid;gap:11px}.fire-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fire-form .field{margin:0}.fire-form .field-wide{grid-column:1/-1}.fire-person-same{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:#edf4ff;color:#23477f;font-size:12px;font-weight:850}.fire-person-same input{width:20px;height:20px}.fire-package-line{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}.fire-deductible-check{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 11px;border:1px solid #d7dfec;border-radius:12px;background:#fff;color:#354663;font-size:12px;font-weight:900}.fire-deductible-check input{width:19px;height:19px}.fire-coverages{display:grid;gap:8px}.fire-coverage{display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(190px,1.2fr) minmax(140px,.8fr);gap:9px;padding:10px;border:1px solid #e3e9f2;border-radius:12px;background:#fbfdff}.fire-coverage strong{color:#1d355f;font-size:12px}.fire-coverage span{color:#596983;font-size:11px;line-height:1.4}.fire-coverage em{color:#a64432;font-size:11px;font-style:normal;font-weight:850}.fire-empty{padding:42px 18px;text-align:center;color:#6c7990}.fire-empty strong{display:block;margin-bottom:6px;color:#21375e;font-size:18px}.fire-customer-note{padding:10px 12px;border-radius:12px;background:#fff7df;color:#7a5711;font-size:11px;font-weight:750}.fire-savebar{position:sticky;bottom:-14px;z-index:5;display:flex;gap:9px;margin:2px -14px -14px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.98);box-shadow:0 -8px 22px rgba(15,35,75,.1)}.fire-savebar .btn-primary{flex:1}.fire-stat{cursor:pointer}.fire-stat .tsertos-stat-icon{background:#fff0e8!important;color:#c44531!important}
-      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px}.fire-toolbar{top:-10px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
+      .fire-package-options{display:flex;align-items:center;gap:8px}
+      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px}.fire-toolbar{top:-10px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-package-options{display:grid;grid-template-columns:1fr 1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
       @media(max-width:420px){.fire-form-grid,.fire-data-grid{grid-template-columns:1fr}.fire-form .field-wide{grid-column:auto}.fire-package-pill{display:none}}
     `;
     document.head.appendChild(style);
@@ -266,7 +273,7 @@
   function policyCard(policy) {
     const customer = customerById(policy.insuredId);
     const packageLabel = policy.packageName
-      ? `${policy.packageName}${policy.withDeductible ? " · ΜΕ ΑΠΑΛΛΑΓΗ" : " · ΧΩΡΙΣ ΑΠΑΛΛΑΓΗ"}`
+      ? `${policy.packageName}${policy.withDeductible ? " · ΜΕ ΑΠΑΛΛΑΓΗ" : " · ΧΩΡΙΣ ΑΠΑΛΛΑΓΗ"}${policy.earthquakeCoverage ? " · ΣΕΙΣΜΟΣ" : ""}`
       : "ΠΑΚΕΤΟ / ΑΠΑΛΛΑΓΗ: ΔΕΝ ΟΡΙΣΤΗΚΕ";
     const people = [
       ["Ασφαλιζόμενος", policy.insured],
@@ -288,7 +295,10 @@
       ["Βελτιώσεις οικοδομής", formatMoney(policy.insuredItems.buildingImprovements)],
       ["Εναλλακτικές πηγές ενέργειας", formatMoney(policy.insuredItems.alternativeEnergy)]
     ];
-    const coverages = policy.productType === "HOME" ? coverageRows(policy.packageName) : [];
+    const packageCoverages = policy.productType === "HOME" ? coverageRows(policy.packageName) : [];
+    const coverages = policy.earthquakeCoverage
+      ? [...packageCoverages, EARTHQUAKE_COVERAGE]
+      : packageCoverages;
     return `
       <details class="fire-policy-card">
         <summary class="fire-policy-summary">
@@ -303,7 +313,7 @@
             ]).filter(([, value]) => value).map(([label, value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}
           </div></details>
           <details class="fire-view-section"><summary>📄 Συμβόλαιο & προϊόν</summary><div class="fire-section-body fire-data-grid">
-            ${[["Προϊόν", policy.productName], ["Πακέτο", packageLabel], ["Έναρξη", formatDate(policy.startDate)], ["Δόσεις", policy.installments], ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)]].map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value || "—")}</b></div>`).join("")}
+            ${[["Προϊόν", policy.productName], ["Πακέτο", packageLabel], ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"], ["Έναρξη", formatDate(policy.startDate)], ["Δόσεις", policy.installments], ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)]].map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value || "—")}</b></div>`).join("")}
           </div></details>
           <details class="fire-view-section"><summary>📍 Τοποθεσία κινδύνου</summary><div class="fire-section-body fire-data-grid">
             ${[["Διεύθυνση", riskAddress], ["Περιοχή", policy.risk.area], ["ΤΚ", policy.risk.postalCode], ["Πρόσθετα στοιχεία", policy.risk.additional]].filter(([,value]) => value).map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}
@@ -384,7 +394,10 @@
   function policyForm(policy) {
     const isHome = policy.productType !== "BUSINESS";
     const packageValues = isHome ? HOME_PACKAGES : BUSINESS_PACKAGES;
-    const homeCoverages = isHome ? coverageRows(policy.packageName) : [];
+    const packageCoverages = isHome ? coverageRows(policy.packageName) : [];
+    const visibleCoverages = policy.earthquakeCoverage
+      ? [...packageCoverages, EARTHQUAKE_COVERAGE]
+      : packageCoverages;
     return `<form id="firePolicyForm" class="fire-form" autocomplete="off">
       <details class="fire-form-section" open><summary>👤 Ασφαλιζόμενος</summary><div class="fire-section-body">
         <div class="field"><label>Επιλογή πελάτη από το CRM *</label><select name="insured_id" id="fireInsuredSelect" required><option value="">— Επιλογή ασφαλιζόμενου —</option>${customerOptions(policy.insuredId)}</select></div>
@@ -402,9 +415,9 @@
         <div class="field"><label>Προϊόν *</label><select name="product_type" id="fireProductType" required><option value="HOME" ${isHome ? "selected" : ""}>ΚΑΤΟΙΚΙΑ · FULL HOME</option><option value="BUSINESS" ${!isHome ? "selected" : ""}>ΕΠΙΧΕΙΡΗΣΗ · ΕΘΝΙΚΗ ΕΠΙΧΕΙΡΗΣΗ PLUS</option></select></div>
         <div class="field"><label>Αριθμός συμβολαίου *</label><input name="policy_number" inputmode="numeric" required value="${escapeHtml(policy.policyNumber)}"></div>
         <div class="field"><label>Έναρξη συμβολαίου</label><input name="start_date" type="date" value="${escapeHtml(policy.startDate)}"></div>
-        <div class="field"><label>Δόσεις</label><input name="installments" type="number" inputmode="numeric" min="1" max="24" value="${escapeHtml(policy.installments)}"></div>
+        <div class="field"><label>Δόσεις</label><input name="installments" type="number" inputmode="numeric" min="1" max="12" value="${escapeHtml(policy.installments)}"></div>
         <div class="field"><label>Ολικά ασφάλιστρα (€)</label><input name="gross_premium" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(policy.grossPremium)}"></div>
-        <div class="field field-wide fire-package-line"><div class="field"><label>Πακέτο *</label><select name="package_name" id="firePackage" required>${optionsHtml(packageValues, policy.packageName)}</select></div><label class="fire-deductible-check"><input name="with_deductible" type="checkbox" ${policy.withDeductible ? "checked" : ""}> Με απαλλαγές</label></div>
+        <div class="field field-wide fire-package-line"><div class="field"><label>Πακέτο *</label><select name="package_name" id="firePackage" required>${optionsHtml(packageValues, policy.packageName)}</select></div><div class="fire-package-options"><label class="fire-deductible-check"><input name="with_deductible" type="checkbox" ${policy.withDeductible ? "checked" : ""}> Με απαλλαγές</label><label class="fire-deductible-check"><input name="earthquake_coverage" type="checkbox" ${policy.earthquakeCoverage ? "checked" : ""}> Σεισμός</label></div></div>
       </div></details>
       <details class="fire-form-section"><summary>📍 Τοποθεσία κινδύνου</summary><div class="fire-section-body fire-form-grid">
         <div class="field"><label>Οδός</label><input name="risk_street" value="${escapeHtml(policy.risk.street)}"></div><div class="field"><label>Αριθμός</label><input name="risk_number" value="${escapeHtml(policy.risk.streetNumber)}"></div>
@@ -429,7 +442,7 @@
         <div class="field"><label>Βελτιώσεις οικοδομής (€)</label><input name="building_improvements" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(policy.insuredItems.buildingImprovements)}"></div>
         <div class="field"><label>Εναλλακτικές πηγές ενέργειας (€)</label><input name="alternative_energy" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(policy.insuredItems.alternativeEnergy)}"></div>
       </div></details>
-      <details class="fire-form-section" open><summary>🛡️ Καλύψεις επιλεγμένου πακέτου <span id="fireCoverageCount" style="margin-left:auto">${homeCoverages.length}</span></summary><div class="fire-section-body fire-coverages" id="fireCoveragePreview">${homeCoverages.length ? homeCoverages.map(coverageViewRow).join("") : '<div class="fire-customer-note">Οι καλύψεις των πακέτων Επιχείρησης θα προστεθούν όταν δοθούν οι αντίστοιχοι πίνακες.</div>'}</div></details>
+      <details class="fire-form-section" open><summary>🛡️ Καλύψεις επιλεγμένου πακέτου <span id="fireCoverageCount" style="margin-left:auto">${visibleCoverages.length}</span></summary><div class="fire-section-body fire-coverages" id="fireCoveragePreview">${visibleCoverages.length ? visibleCoverages.map(coverageViewRow).join("") : '<div class="fire-customer-note">Οι καλύψεις των πακέτων Επιχείρησης θα προστεθούν όταν δοθούν οι αντίστοιχοι πίνακες.</div>'}</div></details>
       <div class="field"><label>Σημειώσεις</label><textarea name="notes" rows="4">${escapeHtml(policy.notes)}</textarea></div>
       <div class="fire-savebar"><button class="btn btn-secondary" id="fireCancel" type="button">Ακύρωση</button><button class="btn btn-primary" type="submit">Αποθήκευση συμβολαίου Πυρός</button></div>
     </form>`;
@@ -472,7 +485,10 @@
 
   function renderCoveragePreview(form) {
     const isHome = form.elements.product_type.value === "HOME";
-    const rows = isHome ? coverageRows(form.elements.package_name.value) : [];
+    const packageRows = isHome ? coverageRows(form.elements.package_name.value) : [];
+    const rows = form.elements.earthquake_coverage?.checked
+      ? [...packageRows, EARTHQUAKE_COVERAGE]
+      : packageRows;
     const preview = form.querySelector("#fireCoveragePreview");
     const counter = form.querySelector("#fireCoverageCount");
     if (counter) counter.textContent = String(rows.length);
@@ -501,6 +517,7 @@
     form.elements.beneficiary_same.addEventListener("change", () => toggleSamePerson(form, "beneficiary", form.elements.beneficiary_same.checked));
     form.elements.product_type.addEventListener("change", () => syncProductForm(form));
     form.elements.package_name.addEventListener("change", () => renderCoveragePreview(form));
+    form.elements.earthquake_coverage.addEventListener("change", () => renderCoveragePreview(form));
     form.querySelector("#fireCancel").addEventListener("click", () => renderList());
     form.addEventListener("submit", event => {
       event.preventDefault();
@@ -540,7 +557,7 @@
       beneficiarySame, beneficiary: beneficiarySame ? { ...insured } : personFromForm(data, "beneficiary"),
       productType: String(data.get("product_type") || "HOME"),
       productName: data.get("product_type") === "BUSINESS" ? "ΕΘΝΙΚΗ ΕΠΙΧΕΙΡΗΣΗ PLUS" : "FULL HOME",
-      packageName: String(data.get("package_name") || ""), withDeductible: data.has("with_deductible"),
+      packageName: String(data.get("package_name") || ""), withDeductible: data.has("with_deductible"), earthquakeCoverage: data.has("earthquake_coverage"),
       startDate: String(data.get("start_date") || ""), installments: String(data.get("installments") || ""), grossPremium: String(data.get("gross_premium") || ""),
       risk: { street: String(data.get("risk_street") || "").trim(), streetNumber: String(data.get("risk_number") || "").trim(), area: String(data.get("risk_area") || "").trim(), postalCode: String(data.get("risk_postal") || "").trim(), additional: String(data.get("risk_additional") || "").trim() },
       property: { useType: data.get("product_type") === "BUSINESS" ? "ΕΠΙΧΕΙΡΗΣΗ" : String(data.get("use_type") || ""), residenceType: data.get("product_type") === "HOME" ? String(data.get("residence_type") || "") : "", ama: String(data.get("ama") || "").trim(), constructionYear: String(data.get("construction_year") || ""), mainArea: String(data.get("main_area") || ""), auxiliaryArea: String(data.get("auxiliary_area") || ""), roofConstruction: String(data.get("roof_construction") || "").trim(), buildingConstruction: String(data.get("building_construction") || "").trim(), floor: String(data.get("floor") || "").trim() },
@@ -676,7 +693,7 @@
           policyNumber,
           policyKey,
           startDate: excelDate(row[indexes.startDate], rowNumber),
-          installments: excelNumber(row[indexes.installments], rowNumber, "Δόσεις", { integer: true, min: 1, max: 24 }),
+          installments: excelNumber(row[indexes.installments], rowNumber, "Δόσεις", { integer: true, min: 1, max: 12 }),
           grossPremium: excelNumber(row[indexes.grossPremium], rowNumber, "Ολικά", { min: 0 }),
           riskLocation,
           postalCode: excelPostalCode(row[indexes.postalCode], rowNumber)
@@ -782,6 +799,7 @@
       productName: product.productName,
       packageName: previous?.packageName ?? "",
       withDeductible: previous?.withDeductible ?? false,
+      earthquakeCoverage: previous?.earthquakeCoverage ?? false,
       startDate: record.startDate,
       installments: String(record.installments),
       grossPremium: String(record.grossPremium),
