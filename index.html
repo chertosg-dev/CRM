@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.2" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.2" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.3" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.3" />
 
 
 <style>
@@ -2768,13 +2768,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
 <style id="tsertos-fire-customer-integration">
   .customer-portfolio-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 14px}
-  .customer-portfolio-summary button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:54px;padding:10px 12px;border:1px solid #e0e6ef;border-radius:13px;background:#f7f9fc;color:#7a8598;text-align:left}
+  .customer-portfolio-summary button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:54px;padding:10px 12px;border:1px solid #e0e6ef;border-radius:13px;background:#f7f9fc;color:#7a8598;text-align:left;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
   .customer-portfolio-summary button span{min-width:0;font-size:11px;font-weight:850;overflow-wrap:anywhere}
   .customer-portfolio-summary button strong{display:grid;place-items:center;min-width:28px;height:28px;padding:0 7px;border-radius:999px;background:#e9edf3;color:#637086;font-size:13px;font-weight:950}
   .customer-portfolio-summary button.has-policies{border-color:#bad0fa;background:#edf4ff;color:#174eae;box-shadow:0 6px 16px rgba(17,91,232,.08)}
   .customer-portfolio-summary button.has-policies strong{background:#145cf2;color:#fff}
-  .mock-detail-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;overflow:visible!important}
-  .mock-detail-tabs .detail-tab{min-width:0!important;white-space:normal!important;overflow-wrap:anywhere}
+  .customer-portfolio-summary button.has-policies:hover{transform:translateY(-1px)}
+  .customer-portfolio-summary button.is-active{border-color:#145cf2;background:#fff;box-shadow:0 0 0 3px rgba(20,92,242,.12),0 10px 24px rgba(17,91,232,.13)}
+  .customer-portfolio-summary button:disabled{cursor:default;opacity:.62;box-shadow:none}
+  .customer-profile-trigger{cursor:pointer;border-radius:15px;transition:background .16s ease,box-shadow .16s ease}
+  .customer-profile-trigger:hover,.customer-profile-trigger:focus-visible{background:#f7faff;box-shadow:0 0 0 4px rgba(20,92,242,.08);outline:none}
+  .customer-profile-hint{display:block;margin-top:5px;color:#7a879c;font-size:9px;font-weight:800}
+  .personal-data-heading{display:flex;align-items:center;gap:8px;margin:2px 0 10px;color:#17305d;font-size:14px;font-weight:950}
   .fire-customer-list{display:grid;gap:12px}
   .fire-customer-disclosure{overflow:hidden;border:1px solid #e1e7f0;border-radius:17px;background:#fff;box-shadow:0 9px 24px rgba(18,45,94,.07)}
   .fire-customer-summary{display:flex;align-items:center;gap:11px;min-height:67px;padding:12px 14px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#fff,#fff8f4)}
@@ -2798,18 +2803,17 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     .customer-portfolio-summary{gap:6px}
     .customer-portfolio-summary button{display:grid;justify-items:center;justify-content:stretch;gap:5px;min-height:62px;padding:8px 5px;text-align:center}
     .customer-portfolio-summary button span{font-size:9.5px}
-    .mock-detail-tabs .detail-tab{padding:9px 4px!important;font-size:9.5px!important}
     .fire-customer-grid{grid-template-columns:1fr}
     .fire-customer-open{width:100%;justify-self:stretch}
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.2" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.3" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.2
+  PWA OFFLINE · V9.13.3
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3212,10 +3216,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.2"></script>
-<script src="receipt-xlsx.js?v=9.13.2"></script>
-<script src="local-supabase.js?v=9.13.2"></script>
-<script src="auto-policies-seed.js?v=9.13.2"></script>
+<script src="jszip.min.js?v=9.13.3"></script>
+<script src="receipt-xlsx.js?v=9.13.3"></script>
+<script src="local-supabase.js?v=9.13.3"></script>
+<script src="auto-policies-seed.js?v=9.13.3"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3239,7 +3243,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   let currentUser = null;
   let pendingDeleteId = null;
   let selectedCustomerId = null;
-  let activeDetailTab = "coverages";
+  let activeDetailTab = "personal";
   let expandedPolicyId = null;
   let expandedAutoPolicyId = null;
   let expandedFirePolicyId = null;
@@ -6851,6 +6855,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     const personalPanel = `
       <div class="detail-tab-panel personal-data-panel">
+        <div class="personal-data-heading">👤 Προσωπικά στοιχεία πελάτη</div>
         ${detailItems.length
           ? `<div class="details-grid">
               ${detailItems.map(([label, value]) => `
@@ -6897,7 +6902,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     els.detail.innerHTML = `
       <div class="customer-detail-card mock-customer-detail">
-        <div class="mock-profile-card">
+        <div class="mock-profile-card customer-profile-trigger" data-show-personal role="button" tabindex="0" aria-label="Προβολή προσωπικών στοιχείων πελάτη">
           <div class="mock-avatar">${escapeHtml(customerInitials(c))}</div>
           <div class="mock-profile-main">
             <div class="mock-profile-title">
@@ -6908,6 +6913,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
               ${c.phone ? `<a href="tel:${escapeHtml(c.phone)}">☎ ${escapeHtml(c.phone)}</a>` : ""}
               ${c.email ? `<a href="mailto:${escapeHtml(c.email)}">✉ ${escapeHtml(c.email)}</a>` : ""}
               <span>♢ ${escapeHtml(profileProduct)}</span>
+              <small class="customer-profile-hint">Πατήστε εδώ για τα προσωπικά στοιχεία</small>
             </div>
           </div>
         </div>
@@ -6920,24 +6926,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         </div>
 
         <div class="customer-portfolio-summary" aria-label="Χαρτοφυλάκιο πελάτη">
-          <button type="button" data-portfolio-branch="coverages" class="${(c.policies || []).length ? "has-policies" : ""}"><span>♥ Ζωή</span><strong>${(c.policies || []).length}</strong></button>
-          <button type="button" data-portfolio-branch="autos" class="${customerAutoPolicies.length ? "has-policies" : ""}"><span>🚗 Αυτοκίνητο</span><strong>${customerAutoPolicies.length}</strong></button>
-          <button type="button" data-portfolio-branch="fires" class="${customerFirePolicies.length ? "has-policies" : ""}"><span>🔥 Πυρός</span><strong>${customerFirePolicies.length}</strong></button>
-        </div>
-
-        <div class="detail-tabs mock-detail-tabs" role="tablist">
-          <button class="detail-tab ${activeDetailTab === "coverages" ? "active" : ""}" type="button" data-detail-tab="coverages">
-            Ζωής & Καλύψεις <span class="detail-tab-count">${(c.policies || []).length}</span>
-          </button>
-          <button class="detail-tab ${activeDetailTab === "autos" ? "active" : ""}" type="button" data-detail-tab="autos">
-            🚗 Αυτοκίνητα <span class="detail-tab-count">${customerAutoPolicies.length}</span>
-          </button>
-          <button class="detail-tab ${activeDetailTab === "fires" ? "active" : ""}" type="button" data-detail-tab="fires">
-            🔥 Πυρός <span class="detail-tab-count">${customerFirePolicies.length}</span>
-          </button>
-          <button class="detail-tab ${activeDetailTab === "personal" ? "active" : ""}" type="button" data-detail-tab="personal">
-            Στοιχεία
-          </button>
+          <button type="button" data-portfolio-branch="coverages" class="${(c.policies || []).length ? "has-policies" : ""} ${activeDetailTab === "coverages" ? "is-active" : ""}" ${(c.policies || []).length ? "" : "disabled"}><span>♥ Ζωή</span><strong>${(c.policies || []).length}</strong></button>
+          <button type="button" data-portfolio-branch="autos" class="${customerAutoPolicies.length ? "has-policies" : ""} ${activeDetailTab === "autos" ? "is-active" : ""}" ${customerAutoPolicies.length ? "" : "disabled"}><span>🚗 Αυτοκίνητο</span><strong>${customerAutoPolicies.length}</strong></button>
+          <button type="button" data-portfolio-branch="fires" class="${customerFirePolicies.length ? "has-policies" : ""} ${activeDetailTab === "fires" ? "is-active" : ""}" ${customerFirePolicies.length ? "" : "disabled"}><span>🔥 Πυρός</span><strong>${customerFirePolicies.length}</strong></button>
         </div>
 
         ${activeDetailTab === "personal" ? personalPanel : (activeDetailTab === "autos" ? autosPanel : (activeDetailTab === "fires" ? firePanel : coveragesPanel))}
@@ -6946,16 +6937,25 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.detail.querySelector("[data-detail-edit]")?.addEventListener("click", () => editCustomer(c.id));
     els.detail.querySelector("[data-detail-delete]")?.addEventListener("click", () => askDelete(c.id));
 
-    els.detail.querySelectorAll("[data-detail-tab]").forEach(button => {
-      button.addEventListener("click", () => {
-        activeDetailTab = button.dataset.detailTab;
-        renderCustomerDetail();
-      });
+    const showPersonalDetails = event => {
+      if (event?.target?.closest?.("a")) return;
+      activeDetailTab = "personal";
+      renderCustomerDetail();
+    };
+    const profileTrigger = els.detail.querySelector("[data-show-personal]");
+    profileTrigger?.addEventListener("click", showPersonalDetails);
+    profileTrigger?.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      showPersonalDetails(event);
     });
 
     els.detail.querySelectorAll("[data-portfolio-branch]").forEach(button => {
       button.addEventListener("click", () => {
-        activeDetailTab = button.dataset.portfolioBranch;
+        if (button.disabled) return;
+        activeDetailTab = activeDetailTab === button.dataset.portfolioBranch
+          ? "personal"
+          : button.dataset.portfolioBranch;
         renderCustomerDetail();
       });
     });
@@ -7036,16 +7036,15 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     selectedCustomerId = id;
     const customer = customers.find(item => item.id === id);
     const query = normalize(els.search.value);
+    const matchedCustomerIdentity = customer && query ? customerNameMatchesSearch(customer, query) : false;
     const matchedLifePolicy = customer && isPolicySearch(query) ? matchingPolicies(customer, query)[0] : null;
     const matchedAutoPolicy = customer && query ? matchingAutoPolicies(customer, query)[0] : null;
     const matchedFirePolicy = customer && query ? matchingFirePolicies(customer, query)[0] : null;
 
-    if (matchedLifePolicy) activeDetailTab = "coverages";
+    if (matchedCustomerIdentity) activeDetailTab = "personal";
+    else if (matchedLifePolicy) activeDetailTab = "coverages";
     else if (matchedAutoPolicy) activeDetailTab = "autos";
     else if (matchedFirePolicy) activeDetailTab = "fires";
-    else if ((customer?.policies || []).length) activeDetailTab = "coverages";
-    else if (autoPoliciesForCustomer(customer?.id).length) activeDetailTab = "autos";
-    else if (firePoliciesForCustomer(customer?.id).length) activeDetailTab = "fires";
     else activeDetailTab = "personal";
 
     expandedPolicyId = matchedLifePolicy?.id || null;
@@ -8013,7 +8012,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       currentUser = { email: "demo@tsertos.gr" };
       customers = DESIGN_DEMO_CUSTOMERS;
       selectedCustomerId = "demo-customer";
-      activeDetailTab = "coverages";
+      activeDetailTab = "personal";
       showApplication();
       render();
       return;
@@ -8205,10 +8204,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.2"></script>
-<script src="./forms-library.js?v=9.13.2"></script>
+<script src="./fire-policies.js?v=9.13.3"></script>
+<script src="./forms-library.js?v=9.13.3"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.2";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.3";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8223,7 +8222,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.2",
+          "./service-worker.js?v=9.13.3",
           { updateViaCache: "none" }
         );
 
