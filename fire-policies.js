@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "9.13.6";
+  const VERSION = "9.13.7";
   const TABLE = "fire_policies";
   const LOCAL_OWNER_ID = "00000000-0000-4000-8000-000000000001";
   const HOME_PACKAGES = ["BASIC", "EXTRA", "ADVANCED", "MAX"];
@@ -163,9 +163,10 @@
     style.id = "tsertos-fire-styles";
     style.textContent = `
       .crm-fire-button{min-height:43px;border:1px solid rgba(255,255,255,.18)!important;background:rgba(229,72,77,.18)!important;color:#fff!important;box-shadow:none!important}.crm-fire-button span{color:#ffbd61;font-size:18px}
-      .fire-modal{position:fixed;inset:0;z-index:48000;display:grid;place-items:center;padding:14px;overflow:hidden;touch-action:none;background:rgba(3,18,46,.78);backdrop-filter:blur(8px)}.fire-modal.hidden{display:none!important}.fire-window{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(var(--fire-viewport-height,100dvh) - 28px);min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:#f5f8fd;box-shadow:0 34px 100px rgba(0,0,0,.4)}.fire-head{flex:0 0 auto}.fire-body{flex:1 1 auto;min-height:0;max-height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+      .fire-modal{position:fixed;inset:0;z-index:48000;display:grid;place-items:center;padding:14px;background:rgba(3,18,46,.78);backdrop-filter:blur(8px)}.fire-modal.hidden{display:none!important}.fire-window{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(100dvh - 28px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:#f5f8fd;box-shadow:0 34px 100px rgba(0,0,0,.4)}
       .fire-package-options{display:flex;align-items:center;gap:8px}
-      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:var(--fire-viewport-height,100dvh);max-height:var(--fire-viewport-height,100dvh);border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom))}.fire-toolbar{top:-10px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-package-options{display:grid;grid-template-columns:1fr 1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
+      .fire-head{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,#061b43,#0b2d67);color:#fff}.fire-head .fire-policy-icon{display:grid;place-items:center;width:39px;height:39px;flex:0 0 auto;border-radius:12px;background:rgba(255,255,255,.12);font-size:20px}.fire-head-copy{min-width:0;flex:1}.fire-head-copy small{display:block;color:#f2b629;font-size:9px;font-weight:950;letter-spacing:.14em}.fire-head-copy h2{margin:3px 0 0;color:#fff;font-size:20px}.fire-close{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.18);border-radius:11px;background:rgba(255,255,255,.1);color:#fff;font-size:25px}.fire-body{padding:14px;background:#f5f8fd}.fire-toolbar{position:sticky;top:71px;z-index:20;display:flex;gap:8px;margin:-14px -14px 14px;padding:11px 14px;border-bottom:1px solid #dfe6f1;background:rgba(255,255,255,.97);backdrop-filter:blur(12px)}.fire-toolbar input{min-width:0;flex:1}.fire-list{display:grid;gap:13px}.fire-form{display:grid;gap:10px}.fire-form-section{overflow:hidden;border:1px solid #dce5f2;border-radius:17px;background:#fff;box-shadow:0 8px 22px rgba(18,42,85,.07)}.fire-form-section>summary{display:flex;align-items:center;min-height:54px;padding:11px 13px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#fff,#f9fbff);color:#17284b;font-size:15px;font-weight:950}.fire-form-section>summary::-webkit-details-marker{display:none}.fire-section-body{padding:12px;border-top:1px solid #edf1f7}.fire-form-grid,.fire-data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fire-form .field{min-width:0}.fire-form .field-wide{grid-column:1/-1}.fire-form .field label{display:block;margin-bottom:5px;color:#354361;font-size:11px;font-weight:850}.fire-form input,.fire-form select,.fire-form textarea{width:100%;min-height:42px;padding:9px 11px}.fire-form textarea{min-height:82px}.fire-person-same,.fire-deductible-check{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:10px 12px;border:1px solid #e1e7f1;border-radius:12px;background:#f8faff;color:#354361;font-size:12px;font-weight:850}.fire-person-same{margin-bottom:10px}.fire-person-same input,.fire-deductible-check input{width:20px;min-height:20px}.fire-package-line{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}.fire-coverages{display:grid;gap:8px}.fire-coverage{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(160px,1fr) minmax(130px,.8fr);gap:10px;padding:11px;border:1px solid #e2e8f2;border-radius:13px;background:#fbfdff}.fire-coverage strong{color:#17284b}.fire-coverage span,.fire-coverage em{color:#66758f;font-size:12px}.fire-savebar{position:sticky;bottom:-14px;z-index:20;display:flex;justify-content:flex-end;gap:8px;margin:12px -14px -14px;padding:11px 14px calc(11px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);box-shadow:0 -9px 24px rgba(15,30,62,.1)}.fire-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 14px;border-top:1px solid #e6ebf3;background:#fff}.fire-empty,.fire-customer-note,.fire-import-result{padding:24px 16px;border:1px dashed #d9e0eb;border-radius:16px;background:#fff;color:#71809a;text-align:center}.fire-empty strong,.fire-import-result strong{display:block;margin-bottom:6px;color:#21375e}.fire-policy-list-entry .life-policy-number-icon{background:linear-gradient(135deg,#c94c32,#f29b38)}
+      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px}.fire-toolbar{top:72px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-package-options{display:grid;grid-template-columns:1fr 1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
       @media(max-width:420px){.fire-form-grid,.fire-data-grid{grid-template-columns:1fr}.fire-form .field-wide{grid-column:auto}.fire-package-pill{display:none}}
     `;
     document.head.appendChild(style);
@@ -225,20 +226,18 @@
     if (heading) heading.textContent = title;
   }
 
-  function syncFireViewportHeight() {
-    const height = window.visualViewport?.height || window.innerHeight;
-    if (height > 0) document.documentElement.style.setProperty("--fire-viewport-height", `${Math.round(height)}px`);
-  }
-
   function resetFireBodyScroll() {
     const body = document.getElementById("fireModalBody");
-    if (!body) return;
-    body.scrollTop = 0;
-    requestAnimationFrame(() => { body.scrollTop = 0; });
+    const windowElement = modal?.querySelector(".fire-window");
+    if (body) body.scrollTop = 0;
+    if (windowElement) windowElement.scrollTop = 0;
+    requestAnimationFrame(() => {
+      if (body) body.scrollTop = 0;
+      if (windowElement) windowElement.scrollTop = 0;
+    });
   }
 
   function openModal() {
-    syncFireViewportHeight();
     modal?.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     resetFireBodyScroll();
@@ -302,6 +301,23 @@
     return haystack.some(value => value.includes(query));
   }
 
+  function fireSectionCard(title, icon, rows, policyId, open = false) {
+    const visibleRows = rows.filter(([, value]) => value !== "" && value !== null && value !== undefined);
+    return `
+      <details class="mock-policy-section-expanded tone-other" ${open ? "open" : ""}>
+        <summary class="mock-policy-section-heading">
+          <span class="coverage-section-icon">${icon}</span>
+          <strong>${escapeHtml(title)}</strong>
+          <span class="mock-policy-section-count">${visibleRows.length}</span>
+          <span class="mock-policy-section-arrow">⌄</span>
+        </summary>
+        <div class="mock-policy-section-table">
+          ${visibleRows.map(([label, value]) => `<div class="mock-policy-section-row ${label === "Σημειώσεις" ? "mock-policy-section-row-long" : ""}"><span>${escapeHtml(label)}</span><b>${escapeHtml(value || "—")}</b></div>`).join("")}
+          <button class="mock-policy-section-edit" type="button" data-fire-edit="${escapeHtml(policyId)}">✎ Επεξεργασία καταχώρησης</button>
+        </div>
+      </details>`;
+  }
+
   function policyCard(policy) {
     const customer = customerById(policy.insuredId);
     const packageLabel = policy.packageName
@@ -331,32 +347,36 @@
     const coverages = policy.earthquakeCoverage
       ? [...packageCoverages, EARTHQUAKE_COVERAGE]
       : packageCoverages;
+    const personalRows = people.flatMap(([role, person]) => [
+      [role, person.name], [`${role} · ΑΦΜ`, person.afm], [`${role} · Κινητό`, person.phone], [`${role} · Email`, person.email]
+    ]);
+    const policyRows = [["Προϊόν", policy.productName], ["Πακέτο", packageLabel], ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"], ["Έναρξη", formatDate(policy.startDate)], ["Δόσεις", policy.installments], ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)]];
+    const riskRows = [["Διεύθυνση", riskAddress], ["Περιοχή", policy.risk.area], ["ΤΚ", policy.risk.postalCode], ["Πρόσθετα στοιχεία", policy.risk.additional]];
+    const coverageRowsForCard = coverages.map(coverage => [coverage.name, `${coverage.limit} · Απαλλαγή: ${coverage.deductible}`]);
     return `
-      <details class="fire-policy-card">
-        <summary class="fire-policy-summary">
-          <span class="fire-policy-icon">🔥</span>
-          <span class="fire-policy-main"><strong>${escapeHtml(policy.policyNumber || "ΧΩΡΙΣ ΑΡΙΘΜΟ")}</strong><span>${escapeHtml(customerName(customer))} · ${escapeHtml(policy.productName)}</span></span>
-          <span class="fire-package-pill">${escapeHtml(packageLabel)}</span>
+      <details class="life-policy-collapsible fire-policy-list-entry">
+        <summary class="life-policy-number-button">
+          <span class="life-policy-number-icon">🔥</span>
+          <strong>${escapeHtml(policy.policyNumber || "Χωρίς αριθμό συμβολαίου")}</strong>
+          <span class="life-policy-number-arrow">⌄</span>
         </summary>
-        <div class="fire-policy-content">
-          <details class="fire-view-section"><summary>👤 Προσωπικά στοιχεία</summary><div class="fire-section-body fire-data-grid">
-            ${people.flatMap(([role, person]) => [
-              [role, person.name], [`${role} · ΑΦΜ`, person.afm], [`${role} · Κινητό`, person.phone], [`${role} · Email`, person.email]
-            ]).filter(([, value]) => value).map(([label, value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}
-          </div></details>
-          <details class="fire-view-section"><summary>📄 Συμβόλαιο & προϊόν</summary><div class="fire-section-body fire-data-grid">
-            ${[["Προϊόν", policy.productName], ["Πακέτο", packageLabel], ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"], ["Έναρξη", formatDate(policy.startDate)], ["Δόσεις", policy.installments], ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)]].map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value || "—")}</b></div>`).join("")}
-          </div></details>
-          <details class="fire-view-section"><summary>📍 Τοποθεσία κινδύνου</summary><div class="fire-section-body fire-data-grid">
-            ${[["Διεύθυνση", riskAddress], ["Περιοχή", policy.risk.area], ["ΤΚ", policy.risk.postalCode], ["Πρόσθετα στοιχεία", policy.risk.additional]].filter(([,value]) => value).map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}
-          </div></details>
-          <details class="fire-view-section"><summary>🏠 Στοιχεία ακινήτου</summary><div class="fire-section-body fire-data-grid">${propertyRows.map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}</div></details>
-          <details class="fire-view-section"><summary>💶 Ασφαλιζόμενα αντικείμενα</summary><div class="fire-section-body fire-data-grid">${itemRows.map(([label,value]) => `<div class="fire-data"><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}</div></details>
-          <details class="fire-view-section"><summary>🛡️ Καλύψεις πακέτου (${coverages.length})</summary><div class="fire-section-body fire-coverages">
-            ${coverages.length ? coverages.map(coverageViewRow).join("") : `<div class="fire-customer-note">${policy.productType === "HOME" ? "Επίλεξε πακέτο Κατοικίας για να εμφανιστούν οι καλύψεις." : "Οι καλύψεις των πακέτων Επιχείρησης θα προστεθούν όταν δοθούν οι αντίστοιχοι πίνακες."}</div>`}
-          </div></details>
-          ${policy.notes ? `<details class="fire-view-section"><summary>📝 Σημειώσεις</summary><div class="fire-section-body">${escapeHtml(policy.notes)}</div></details>` : ""}
-          <div class="fire-actions"><button class="btn btn-secondary" type="button" data-fire-edit="${escapeHtml(policy.id)}">Επεξεργασία</button><button class="btn btn-danger" type="button" data-fire-delete="${escapeHtml(policy.id)}">Διαγραφή</button></div>
+        <div class="life-policy-collapsible-body">
+          <article class="policy-coverage-card mock-policy-card">
+            <div class="mock-policy-header">
+              <div><span class="mock-policy-label">Συμβόλαιο Πυρός</span><div class="policy-coverage-number">${escapeHtml(policy.policyNumber || "—")}</div><div class="mock-policy-date">▣ Ημ. Έναρξης: ${escapeHtml(formatDate(policy.startDate) || "Δεν έχει καταχωριστεί")}</div></div>
+              <div class="mock-policy-product"><span>${escapeHtml(policy.productName || "Πυρός")}</span><small>${escapeHtml(customerName(customer))} · ${escapeHtml(packageLabel)}</small></div>
+            </div>
+            <div class="mock-policy-sections">
+              ${fireSectionCard("Προσωπικά στοιχεία", "👤", personalRows, policy.id)}
+              ${fireSectionCard("Στοιχεία συμβολαίου & προϊόν", "📄", policyRows, policy.id, true)}
+              ${fireSectionCard("Τοποθεσία κινδύνου", "📍", riskRows, policy.id)}
+              ${fireSectionCard("Στοιχεία ακινήτου", "🏠", propertyRows, policy.id)}
+              ${fireSectionCard("Ασφαλιζόμενα αντικείμενα", "💶", itemRows, policy.id)}
+              ${fireSectionCard(`Καλύψεις πακέτου (${coverages.length})`, "🛡️", coverageRowsForCard, policy.id)}
+              ${policy.notes ? fireSectionCard("Σημειώσεις", "📝", [["Σημειώσεις", policy.notes]], policy.id) : ""}
+            </div>
+            <div class="fire-actions"><button class="btn btn-primary" type="button" data-fire-edit="${escapeHtml(policy.id)}">✎ Επεξεργασία συμβολαίου</button><button class="btn btn-danger" type="button" data-fire-delete="${escapeHtml(policy.id)}">Διαγραφή</button></div>
+          </article>
         </div>
       </details>`;
   }
@@ -1021,9 +1041,6 @@
     document.getElementById("importFile")?.addEventListener("change", importFireBackup);
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && modal && !modal.classList.contains("hidden")) closeModal();
-    });
-    window.visualViewport?.addEventListener("resize", () => {
-      if (modal && !modal.classList.contains("hidden")) syncFireViewportHeight();
     });
     observer = new MutationObserver(() => { injectNavigation(); updateCounters(); });
     observer.observe(document.getElementById("appShell") || document.body, { childList: true, subtree: true });

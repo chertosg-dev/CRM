@@ -1,7 +1,7 @@
 {
   "name": "TSERTOS Insurance CRM",
   "short_name": "TSERTOS CRM",
-  "start_url": "./index.html?v=9.13.6",
+  "start_url": "./index.html?v=9.13.7",
   "scope": "./",
   "display": "standalone",
   "background_color": "#061b43",

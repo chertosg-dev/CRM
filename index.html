@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.6" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.6" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.7" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.7" />
 
 
 <style>
@@ -2788,6 +2788,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .customer-profile-hint{display:block;margin-top:5px;color:#7a879c;font-size:9px;font-weight:800}
   .personal-data-heading{display:flex;align-items:center;gap:8px;margin:2px 0 10px;color:#17305d;font-size:14px;font-weight:950}
   .fire-customer-list{display:grid;gap:12px}
+  .fire-customer-disclosure.life-policy-collapsible{overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none}
+  .fire-customer-disclosure .life-policy-number-icon{background:linear-gradient(135deg,#c94c32,#f29b38)}
   .fire-customer-disclosure{overflow:hidden;border:1px solid #e1e7f0;border-radius:17px;background:#fff;box-shadow:0 9px 24px rgba(18,45,94,.07)}
   .fire-customer-summary{display:flex;align-items:center;gap:11px;min-height:67px;padding:12px 14px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#fff,#fff8f4)}
   .fire-customer-summary::-webkit-details-marker{display:none}
@@ -2815,12 +2817,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.6" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.7" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.6
+  PWA OFFLINE · V9.13.7
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3223,10 +3225,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.6"></script>
-<script src="receipt-xlsx.js?v=9.13.6"></script>
-<script src="local-supabase.js?v=9.13.6"></script>
-<script src="auto-policies-seed.js?v=9.13.6"></script>
+<script src="jszip.min.js?v=9.13.7"></script>
+<script src="receipt-xlsx.js?v=9.13.7"></script>
+<script src="local-supabase.js?v=9.13.7"></script>
+<script src="auto-policies-seed.js?v=9.13.7"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -6965,34 +6967,51 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     return `${policy.packageName} · ${policy.withDeductible ? "Με απαλλαγές" : "Χωρίς απαλλαγές"}${policy.earthquakeCoverage ? " · Σεισμός" : ""}`;
   }
 
+  function firePolicySectionHtml(policy, title, icon, rows, open = false) {
+    const visibleRows = rows.filter(([, value]) => value !== "" && value !== null && value !== undefined);
+    return `
+      <details class="mock-policy-section-expanded tone-other" ${open ? "open" : ""}>
+        <summary class="mock-policy-section-heading">
+          <span class="coverage-section-icon">${icon}</span>
+          <strong>${escapeHtml(title)}</strong>
+          <span class="mock-policy-section-count">${visibleRows.length}</span>
+          <span class="mock-policy-section-arrow">⌄</span>
+        </summary>
+        <div class="mock-policy-section-table">
+          ${visibleRows.map(([label, value]) => `<div class="mock-policy-section-row ${label === "Σημειώσεις" ? "mock-policy-section-row-long" : ""}"><span>${escapeHtml(label)}</span><b>${escapeHtml(value || "—")}</b></div>`).join("")}
+          <button class="mock-policy-section-edit" type="button" data-fire-policy-open="${escapeHtml(policy.id)}">✎ Επεξεργασία καταχώρησης</button>
+        </div>
+      </details>`;
+  }
+
   function firePolicyCustomerCardHtml(policy, open = false) {
     const riskAddress = [policy.risk?.street, policy.risk?.streetNumber].filter(Boolean).join(" ");
-    const fields = [
-      ["Προϊόν", policy.productName],
-      ["Πακέτο", firePolicyPackageLabel(policy)],
-      ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"],
-      ["Έναρξη", formatDate(policy.startDate)],
-      ["Δόσεις", policy.installments],
-      ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)],
-      ["Τοποθεσία κινδύνου", riskAddress],
-      ["Περιοχή", policy.risk?.area],
-      ["Τ.Κ.", policy.risk?.postalCode],
-      ["Χρήση / Είδος", policy.productType === "BUSINESS" ? "Επιχείρηση" : policy.property?.useType],
-      ["Τύπος κατοικίας", policy.productType === "HOME" ? policy.property?.residenceType : ""]
-    ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
+    const policyRows = [["Προϊόν", policy.productName], ["Πακέτο", firePolicyPackageLabel(policy)], ["Κάλυψη σεισμού", policy.earthquakeCoverage ? "Περιλαμβάνεται" : "Δεν περιλαμβάνεται"], ["Έναρξη", formatDate(policy.startDate)], ["Δόσεις", policy.installments], ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)]];
+    const riskRows = [["Διεύθυνση", riskAddress], ["Περιοχή", policy.risk?.area], ["Τ.Κ.", policy.risk?.postalCode], ["Πρόσθετα στοιχεία", policy.risk?.additional]];
+    const propertyRows = [["Χρήση / Είδος", policy.productType === "BUSINESS" ? "Επιχείρηση" : policy.property?.useType], ["Τύπος κατοικίας", policy.productType === "HOME" ? policy.property?.residenceType : ""], ["ΑΜΑ", policy.property?.ama], ["Έτος κατασκευής", policy.property?.constructionYear], ["Κύριοι χώροι", policy.property?.mainArea ? `${policy.property.mainArea} τ.μ.` : ""], ["Βοηθητικοί χώροι", policy.property?.auxiliaryArea ? `${policy.property.auxiliaryArea} τ.μ.` : ""], ["Κατασκευή στέγης", policy.property?.roofConstruction], ["Κατασκευή κτιρίου", policy.property?.buildingConstruction], ["Όροφος", policy.property?.floor]];
+    const insuredItemRows = [["Οικοδομή", formatMoney(policy.insuredItems?.building)], ["Περιεχόμενο", formatMoney(policy.insuredItems?.contents)], ["Βελτιώσεις οικοδομής", formatMoney(policy.insuredItems?.buildingImprovements)], ["Εναλλακτικές πηγές ενέργειας", formatMoney(policy.insuredItems?.alternativeEnergy)]];
     return `
-      <details class="fire-customer-disclosure" data-fire-disclosure="${escapeHtml(policy.id)}" ${open ? "open" : ""}>
-        <summary class="fire-customer-summary">
-          <span class="fire-customer-icon">🔥</span>
-          <span><strong>${escapeHtml(policy.policyNumber || "Χωρίς αριθμό συμβολαίου")}</strong><small>${escapeHtml(policy.productName || "Πυρός")}</small></span>
-          <span class="fire-customer-arrow">⌄</span>
+      <details class="life-policy-collapsible fire-customer-disclosure" data-fire-disclosure="${escapeHtml(policy.id)}" ${open ? "open" : ""}>
+        <summary class="life-policy-number-button">
+          <span class="life-policy-number-icon">🔥</span>
+          <strong>${escapeHtml(policy.policyNumber || "Χωρίς αριθμό συμβολαίου")}</strong>
+          <span class="life-policy-number-arrow">⌄</span>
         </summary>
-        <div class="fire-customer-body">
-          <div class="fire-customer-grid">
-            ${fields.map(([label, value]) => `<div><small>${escapeHtml(label)}</small><strong>${escapeHtml(value || "—")}</strong></div>`).join("")}
-          </div>
-          ${policy.notes ? `<div class="fire-customer-notes"><small>Σημειώσεις</small>${escapeHtml(policy.notes)}</div>` : ""}
-          <button class="btn btn-primary fire-customer-open" type="button" data-fire-policy-open="${escapeHtml(policy.id)}">Άνοιγμα συμβολαίου Πυρός</button>
+        <div class="life-policy-collapsible-body">
+          <article class="policy-coverage-card mock-policy-card">
+            <div class="mock-policy-header">
+              <div><span class="mock-policy-label">Συμβόλαιο Πυρός</span><div class="policy-coverage-number">${escapeHtml(policy.policyNumber || "—")}</div><div class="mock-policy-date">▣ Ημ. Έναρξης: ${escapeHtml(formatDate(policy.startDate) || "Δεν έχει καταχωριστεί")}</div></div>
+              <div class="mock-policy-product"><span>${escapeHtml(policy.productName || "Πυρός")}</span><small>${escapeHtml(firePolicyPackageLabel(policy))}</small></div>
+            </div>
+            <div class="mock-policy-sections">
+              ${firePolicySectionHtml(policy, "Στοιχεία συμβολαίου & προϊόν", "📄", policyRows, true)}
+              ${firePolicySectionHtml(policy, "Τοποθεσία κινδύνου", "📍", riskRows)}
+              ${firePolicySectionHtml(policy, "Στοιχεία ακινήτου", "🏠", propertyRows)}
+              ${firePolicySectionHtml(policy, "Ασφαλιζόμενα αντικείμενα", "💶", insuredItemRows)}
+              ${policy.notes ? firePolicySectionHtml(policy, "Σημειώσεις", "📝", [["Σημειώσεις", policy.notes]]) : ""}
+            </div>
+            <button class="mock-members-button" type="button" data-fire-policy-open="${escapeHtml(policy.id)}"><span>✎ Επεξεργασία συμβολαίου Πυρός</span><b>›</b></button>
+          </article>
         </div>
       </details>`;
   }
@@ -8473,10 +8492,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.6"></script>
-<script src="./forms-library.js?v=9.13.6"></script>
+<script src="./fire-policies.js?v=9.13.7"></script>
+<script src="./forms-library.js?v=9.13.7"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.6";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.7";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8491,7 +8510,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.6",
+          "./service-worker.js?v=9.13.7",
           { updateViaCache: "none" }
         );
 
