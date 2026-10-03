@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "9.13.4";
+  const VERSION = "9.13.6";
   const TABLE = "fire_policies";
   const LOCAL_OWNER_ID = "00000000-0000-4000-8000-000000000001";
   const HOME_PACKAGES = ["BASIC", "EXTRA", "ADVANCED", "MAX"];
@@ -121,6 +121,9 @@
       packageName: source.package_name ?? payload.packageName ?? "BASIC",
       withDeductible: Boolean(source.with_deductible ?? payload.withDeductible),
       earthquakeCoverage: Boolean(payload.earthquakeCoverage),
+      completedRenewalDates: Array.isArray(payload.completedRenewalDates)
+        ? [...new Set(payload.completedRenewalDates.map(value => String(value || "").trim()).filter(Boolean))]
+        : [],
       startDate: payload.startDate || "",
       installments: payload.installments ?? "",
       grossPremium: payload.grossPremium ?? "",
@@ -160,9 +163,9 @@
     style.id = "tsertos-fire-styles";
     style.textContent = `
       .crm-fire-button{min-height:43px;border:1px solid rgba(255,255,255,.18)!important;background:rgba(229,72,77,.18)!important;color:#fff!important;box-shadow:none!important}.crm-fire-button span{color:#ffbd61;font-size:18px}
-      .fire-modal{position:fixed;inset:0;z-index:48000;display:grid;place-items:center;padding:14px;background:rgba(3,18,46,.78);backdrop-filter:blur(8px)}.fire-modal.hidden{display:none!important}.fire-window{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(100dvh - 28px);overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:#f5f8fd;box-shadow:0 34px 100px rgba(0,0,0,.4)}
+      .fire-modal{position:fixed;inset:0;z-index:48000;display:grid;place-items:center;padding:14px;overflow:hidden;touch-action:none;background:rgba(3,18,46,.78);backdrop-filter:blur(8px)}.fire-modal.hidden{display:none!important}.fire-window{display:flex;flex-direction:column;width:min(1100px,100%);max-height:calc(var(--fire-viewport-height,100dvh) - 28px);min-height:0;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:#f5f8fd;box-shadow:0 34px 100px rgba(0,0,0,.4)}.fire-head{flex:0 0 auto}.fire-body{flex:1 1 auto;min-height:0;max-height:100%;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
       .fire-package-options{display:flex;align-items:center;gap:8px}
-      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px}.fire-toolbar{top:-10px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-package-options{display:grid;grid-template-columns:1fr 1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
+      @media(max-width:900px){.crm-fire-button{width:43px;padding:0!important;font-size:0}.crm-fire-button span{font-size:21px}.top-actions{grid-template-columns:repeat(7,minmax(0,1fr))!important}.fire-modal{padding:0;background:#f5f8fd}.fire-window{width:100%;height:var(--fire-viewport-height,100dvh);max-height:var(--fire-viewport-height,100dvh);border:0;border-radius:0}.fire-head{padding:calc(13px + env(safe-area-inset-top)) 13px 12px}.fire-body{padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom))}.fire-toolbar{top:-10px;flex-wrap:wrap;margin:-10px -10px 10px;padding:9px 10px}.fire-toolbar #fireSearch{flex-basis:100%;order:2}.fire-toolbar .btn{flex:1}.fire-form-grid,.fire-data-grid{grid-template-columns:1fr 1fr}.fire-coverages{gap:7px}.fire-coverage{grid-template-columns:1fr;gap:5px;padding:9px}.fire-savebar{bottom:-10px;margin-right:-10px;margin-left:-10px}.fire-package-line{grid-template-columns:1fr}.fire-package-options{display:grid;grid-template-columns:1fr 1fr}.fire-deductible-check{justify-content:center}.fire-policy-main strong{font-size:17px}}
       @media(max-width:420px){.fire-form-grid,.fire-data-grid{grid-template-columns:1fr}.fire-form .field-wide{grid-column:auto}.fire-package-pill{display:none}}
     `;
     document.head.appendChild(style);
@@ -222,9 +225,23 @@
     if (heading) heading.textContent = title;
   }
 
+  function syncFireViewportHeight() {
+    const height = window.visualViewport?.height || window.innerHeight;
+    if (height > 0) document.documentElement.style.setProperty("--fire-viewport-height", `${Math.round(height)}px`);
+  }
+
+  function resetFireBodyScroll() {
+    const body = document.getElementById("fireModalBody");
+    if (!body) return;
+    body.scrollTop = 0;
+    requestAnimationFrame(() => { body.scrollTop = 0; });
+  }
+
   function openModal() {
+    syncFireViewportHeight();
     modal?.classList.remove("hidden");
     document.body.style.overflow = "hidden";
+    resetFireBodyScroll();
   }
 
   function closeModal() {
@@ -253,8 +270,23 @@
     firePolicies = (data || []).map(sanitizePolicy);
     window.TSERTOS_CRM_FORMS_API.getFirePolicies = () => firePolicies.map(policy => ({ ...policy }));
     window.TSERTOS_CRM_FORMS_API.openFirePolicy = policyId => {
-      openModal();
       openForm(policyId);
+      openModal();
+    };
+    window.TSERTOS_CRM_FORMS_API.completeFireRenewal = async (policyId, renewalDate) => {
+      const policy = firePolicies.find(item => item.id === policyId);
+      const date = String(renewalDate || "").trim();
+      if (!policy || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+      if (!policy.completedRenewalDates.includes(date)) {
+        const updated = sanitizePolicy({
+          ...policy,
+          completedRenewalDates: [...policy.completedRenewalDates, date].sort()
+        });
+        const { error } = await client.from(TABLE).update(databaseRow(updated, false)).eq("id", policy.id);
+        if (error) throw error;
+        await loadPolicies();
+      }
+      return true;
     };
     updateCounters();
     window.TSERTOS_CRM_FORMS_API.refreshCustomerDirectory?.();
@@ -357,13 +389,14 @@
       ${customers().length ? "" : '<div class="fire-customer-note">Δεν υπάρχει πελάτης στο CRM. Δημιούργησε πρώτα τον ασφαλιζόμενο.</div>'}
       ${filtered.length ? `<div class="fire-list">${filtered.map(policyCard).join("")}</div>` : `<div class="fire-empty"><strong>${firePolicies.length ? "Δεν βρέθηκαν αποτελέσματα" : "Δεν υπάρχει συμβόλαιο Πυρός"}</strong><span>Πρόσθεσε το πρώτο συμβόλαιο και σύνδεσέ το με υπάρχοντα πελάτη του CRM.</span><div style="margin-top:14px"><button class="btn btn-secondary" id="fireNewCustomer" type="button">+ Νέος πελάτης</button></div></div>`}`;
     bindListEvents();
+    resetFireBodyScroll();
   }
 
   async function openList() {
-    openModal();
     setModalTitle("Κλάδος Πυρός");
     const body = document.getElementById("fireModalBody");
     body.innerHTML = '<div class="fire-empty"><strong>Φόρτωση συμβολαίων…</strong></div>';
+    openModal();
     try {
       await loadPolicies();
       renderList();
@@ -542,6 +575,7 @@
     setModalTitle(existing ? `Επεξεργασία ${existing.policyNumber}` : "Νέο συμβόλαιο Πυρός");
     document.getElementById("fireModalBody").innerHTML = policyForm(policy);
     bindForm(policy, Boolean(existing));
+    resetFireBodyScroll();
   }
 
   async function savePolicy(form, existing) {
@@ -987,6 +1021,9 @@
     document.getElementById("importFile")?.addEventListener("change", importFireBackup);
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && modal && !modal.classList.contains("hidden")) closeModal();
+    });
+    window.visualViewport?.addEventListener("resize", () => {
+      if (modal && !modal.classList.contains("hidden")) syncFireViewportHeight();
     });
     observer = new MutationObserver(() => { injectNavigation(); updateCounters(); });
     observer.observe(document.getElementById("appShell") || document.body, { childList: true, subtree: true });

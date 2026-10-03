@@ -1,4 +1,4 @@
-const BUILD = "tsertos-crm-v9.13.4";
+const BUILD = "tsertos-crm-v9.13.6";
 
 self.addEventListener("install", () => self.skipWaiting());
 

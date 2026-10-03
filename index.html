@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.4" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.4" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.6" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.6" />
 
 
 <style>
@@ -2815,12 +2815,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.4" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.6" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.4
+  PWA OFFLINE · V9.13.6
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3223,10 +3223,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.4"></script>
-<script src="receipt-xlsx.js?v=9.13.4"></script>
-<script src="local-supabase.js?v=9.13.4"></script>
-<script src="auto-policies-seed.js?v=9.13.4"></script>
+<script src="jszip.min.js?v=9.13.6"></script>
+<script src="receipt-xlsx.js?v=9.13.6"></script>
+<script src="local-supabase.js?v=9.13.6"></script>
+<script src="auto-policies-seed.js?v=9.13.6"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -6075,6 +6075,39 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     )));
   }
 
+  function firePolicyBaseNumber(policyNumber) {
+    return String(policyNumber || "")
+      .split("/")[0]
+      .replace(/\s+/g, "")
+      .toLocaleUpperCase("el-GR");
+  }
+
+  function firePolicyRevisionNumber(policyNumber) {
+    const match = String(policyNumber || "").match(/\/\s*(\d+)\s*$/);
+    return match ? Number(match[1]) : 0;
+  }
+
+  function newerFirePolicy(left, right) {
+    const leftStart = parseIsoDate(left?.startDate) ? left.startDate : "";
+    const rightStart = parseIsoDate(right?.startDate) ? right.startDate : "";
+    if (leftStart !== rightStart) return leftStart > rightStart ? left : right;
+    const leftRevision = firePolicyRevisionNumber(left?.policyNumber);
+    const rightRevision = firePolicyRevisionNumber(right?.policyNumber);
+    if (leftRevision !== rightRevision) return leftRevision > rightRevision ? left : right;
+    return String(left?.updatedAt || "") >= String(right?.updatedAt || "") ? left : right;
+  }
+
+  function uniqueCurrentFirePolicies() {
+    const grouped = new Map();
+    allFirePolicies().forEach(policy => {
+      const baseNumber = firePolicyBaseNumber(policy.policyNumber);
+      const key = baseNumber || `id:${policy.id}`;
+      const current = grouped.get(key);
+      grouped.set(key, current ? newerFirePolicy(current, policy) : policy);
+    });
+    return [...grouped.values()];
+  }
+
   function firePolicyRenewalForMonth(policy, referenceDate = currentLocalIsoDate()) {
     const bounds = monthBoundsIso(referenceDate);
     if (!bounds || !parseIsoDate(policy?.startDate)) return null;
@@ -6114,10 +6147,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 
   function currentMonthFireRenewals(referenceDate = currentLocalIsoDate()) {
-    return allFirePolicies()
+    return uniqueCurrentFirePolicies()
       .map(policy => {
         const renewal = firePolicyRenewalForMonth(policy, referenceDate);
         if (!renewal) return null;
+        if ((policy.completedRenewalDates || []).includes(renewal.renewalDate)) return null;
         return {
           ...renewal,
           policy,
@@ -6199,6 +6233,36 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
   }
 
+  async function completeFireRenewalNow(policyId, renewalDate) {
+    const policy = allFirePolicies().find(item => item.id === policyId);
+    if (!policy) {
+      showToast("Δεν βρέθηκε το συμβόλαιο Πυρός.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Να σημειωθεί ως ανανεωμένο το συμβόλαιο ${policy.policyNumber || ""};\n\n`
+      + `Ημερομηνία: ${formatDate(renewalDate)}`
+    );
+    if (!confirmed) return;
+
+    els.renewalsModalBody.querySelectorAll("[data-fire-renewal-complete]").forEach(button => {
+      button.disabled = true;
+    });
+    setSyncStatus("Καταχώριση ανανέωσης Πυρός…", "syncing");
+    try {
+      const completed = await window.TSERTOS_CRM_FORMS_API?.completeFireRenewal?.(policyId, renewalDate);
+      if (!completed) throw new Error("Δεν αποθηκεύτηκε η ανανέωση Πυρός.");
+      renderRenewalsModal();
+      setSyncStatus("Αποθηκεύεται τοπικά στο iPhone", "online");
+      showToast(`Η ανανέωση ${firePolicyBaseNumber(policy.policyNumber)} ολοκληρώθηκε.`);
+    } catch (error) {
+      console.error(error);
+      setSyncStatus("Σφάλμα ανανέωσης Πυρός", "error");
+      renderRenewalsModal();
+      showToast(databaseErrorMessage(error));
+    }
+  }
+
   function renderRenewalsModal() {
     const autoRenewals = currentMonthAutoRenewals();
     const fireRenewals = currentMonthFireRenewals();
@@ -6256,13 +6320,19 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
                 <div><small>Προϊόν</small><b>${escapeHtml(item.policy.productName || "Πυρός")}</b></div>
                 <div><small>Ημερομηνία πληρωμής</small><b>${escapeHtml(formatDate(item.renewalDate))}</b></div>
                 <div><small>Δόσεις / συχνότητα</small><b>${escapeHtml(firePolicyInstallmentLabel(item.policy))}</b></div>
+                <div><small>Ολικά ασφάλιστρα</small><b>${escapeHtml(formatMoney(item.policy.grossPremium) || "—")}</b></div>
                 <div><small>Τοποθεσία κινδύνου</small><b>${escapeHtml(riskAddress || item.policy.risk?.area || "—")}</b></div>
               </div>
-              <div class="renewal-actions single">
+              <div class="renewal-actions">
                 <button class="renewal-open" type="button"
                   data-fire-renewal-customer="${escapeHtml(item.policy.insuredId)}"
                   data-fire-renewal-policy="${escapeHtml(item.policy.id)}">
                   Άνοιγμα συμβολαίου Πυρός <span>›</span>
+                </button>
+                <button class="renewal-now is-done" type="button"
+                  data-fire-renewal-complete="${escapeHtml(item.policy.id)}"
+                  data-fire-renewal-date="${escapeHtml(item.renewalDate)}">
+                  ✓ Ανανεώθηκε
                 </button>
               </div>
             </article>`;
@@ -6347,6 +6417,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           els.detail.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
+    });
+    els.renewalsModalBody.querySelectorAll("[data-fire-renewal-complete]").forEach(button => {
+      button.addEventListener("click", () => completeFireRenewalNow(
+        button.dataset.fireRenewalComplete,
+        button.dataset.fireRenewalDate
+      ));
     });
     els.renewalsModalBody.querySelectorAll("[data-renew-now]").forEach(button => {
       button.addEventListener("click", () => renewAutoPolicyNow(button.dataset.renewNow));
@@ -8249,6 +8325,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     getCustomers: () => Array.isArray(customers) ? customers : [],
     getAutoPolicies: () => Array.isArray(autoPolicies) ? autoPolicies : [],
     getFirePolicies: () => [],
+    completeFireRenewal: async () => false,
     refreshCustomerDirectory: () => render(),
     refreshCustomers: async () => {
       await loadCustomersFromDatabase({ quiet: true });
@@ -8396,10 +8473,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.4"></script>
-<script src="./forms-library.js?v=9.13.4"></script>
+<script src="./fire-policies.js?v=9.13.6"></script>
+<script src="./forms-library.js?v=9.13.6"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.4";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.6";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8414,7 +8491,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.4",
+          "./service-worker.js?v=9.13.6",
           { updateViaCache: "none" }
         );
 
