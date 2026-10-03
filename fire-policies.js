@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "9.13.1";
+  const VERSION = "9.13.2";
   const TABLE = "fire_policies";
   const LOCAL_OWNER_ID = "00000000-0000-4000-8000-000000000001";
   const HOME_PACKAGES = ["BASIC", "EXTRA", "ADVANCED", "MAX"];
@@ -245,7 +245,12 @@
     if (error) throw error;
     firePolicies = (data || []).map(sanitizePolicy);
     window.TSERTOS_CRM_FORMS_API.getFirePolicies = () => firePolicies.map(policy => ({ ...policy }));
+    window.TSERTOS_CRM_FORMS_API.openFirePolicy = policyId => {
+      openModal();
+      openForm(policyId);
+    };
     updateCounters();
+    window.TSERTOS_CRM_FORMS_API.refreshCustomerDirectory?.();
   }
 
   function policyMatches(policy, query) {

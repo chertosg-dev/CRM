@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate,max-age=0">
   <meta name="theme-color" content="#061b43">
-  <title>Ενημέρωση TSERTOS CRM V9.13.1</title>
+  <title>Ενημέρωση TSERTOS CRM V9.13.2</title>
   <style>
     *{box-sizing:border-box}
     body{min-height:100dvh;margin:0;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#061b43,#0b2d67);font-family:system-ui;color:#13264b}
@@ -17,7 +17,7 @@
 <body>
   <main class="card">
     <div class="shield">TS</div>
-    <h1>Ενημέρωση V9.13.1</h1>
+    <h1>Ενημέρωση V9.13.2</h1>
     <p>Καθαρίζονται μόνο τα προσωρινά αρχεία της εφαρμογής και φορτώνεται η νεότερη έκδοση.</p>
     <div class="status" id="status">Καθαρισμός cache…</div>
   </main>
@@ -33,11 +33,11 @@
           const keys = await caches.keys();
           await Promise.all(keys.map(key => caches.delete(key)));
         }
-        localStorage.setItem("tsertos-crm-build", "9.13.1");
-        status.textContent = "Ολοκληρώθηκε. Ανοίγει η V9.13.1…";
-        setTimeout(() => location.replace("./index.html?v=9.13.1-" + Date.now()), 800);
+        localStorage.setItem("tsertos-crm-build", "9.13.2");
+        status.textContent = "Ολοκληρώθηκε. Ανοίγει η V9.13.2…";
+        setTimeout(() => location.replace("./index.html?v=9.13.2-" + Date.now()), 800);
       } catch (error) {
-        status.textContent = "Άνοιξε χειροκίνητα το index.html?v=9.13.1";
+        status.textContent = "Άνοιξε χειροκίνητα το index.html?v=9.13.2";
       }
     })();
   </script>

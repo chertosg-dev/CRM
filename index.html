@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.1" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.1" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.2" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.2" />
 
 
 <style>
@@ -2766,12 +2766,50 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.1" />
+<style id="tsertos-fire-customer-integration">
+  .customer-portfolio-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 14px}
+  .customer-portfolio-summary button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:54px;padding:10px 12px;border:1px solid #e0e6ef;border-radius:13px;background:#f7f9fc;color:#7a8598;text-align:left}
+  .customer-portfolio-summary button span{min-width:0;font-size:11px;font-weight:850;overflow-wrap:anywhere}
+  .customer-portfolio-summary button strong{display:grid;place-items:center;min-width:28px;height:28px;padding:0 7px;border-radius:999px;background:#e9edf3;color:#637086;font-size:13px;font-weight:950}
+  .customer-portfolio-summary button.has-policies{border-color:#bad0fa;background:#edf4ff;color:#174eae;box-shadow:0 6px 16px rgba(17,91,232,.08)}
+  .customer-portfolio-summary button.has-policies strong{background:#145cf2;color:#fff}
+  .mock-detail-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;overflow:visible!important}
+  .mock-detail-tabs .detail-tab{min-width:0!important;white-space:normal!important;overflow-wrap:anywhere}
+  .fire-customer-list{display:grid;gap:12px}
+  .fire-customer-disclosure{overflow:hidden;border:1px solid #e1e7f0;border-radius:17px;background:#fff;box-shadow:0 9px 24px rgba(18,45,94,.07)}
+  .fire-customer-summary{display:flex;align-items:center;gap:11px;min-height:67px;padding:12px 14px;cursor:pointer;list-style:none;background:linear-gradient(180deg,#fff,#fff8f4)}
+  .fire-customer-summary::-webkit-details-marker{display:none}
+  .fire-customer-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 auto;border-radius:12px;background:#fff0e8;font-size:20px}
+  .fire-customer-summary>span:nth-child(2){min-width:0;flex:1}
+  .fire-customer-summary strong{display:block;color:#17305d;font-size:17px;font-weight:950;overflow-wrap:anywhere}
+  .fire-customer-summary small{display:block;margin-top:4px;color:#7b6b68;font-size:10px;font-weight:750;overflow-wrap:anywhere}
+  .fire-customer-arrow{color:#a64432;font-size:20px;font-weight:900;transition:transform .18s ease}
+  .fire-customer-disclosure[open] .fire-customer-arrow{transform:rotate(180deg)}
+  .fire-customer-body{display:grid;gap:11px;padding:12px;border-top:1px solid #efe5df;background:#fff}
+  .fire-customer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fire-customer-grid>div,.fire-customer-notes{min-width:0;padding:10px;border-radius:11px;background:#f7f9fc}
+  .fire-customer-grid small,.fire-customer-notes small{display:block;margin-bottom:4px;color:#7b8699;font-size:9px;font-weight:900;text-transform:uppercase}
+  .fire-customer-grid strong{display:block;color:#213a66;font-size:12px;overflow-wrap:anywhere}
+  .fire-customer-notes{color:#344563;font-size:12px;line-height:1.45}
+  .fire-customer-open{justify-self:end}
+  .fire-customer-empty{padding:34px 16px;border:1px dashed #d9e0eb;border-radius:16px;background:#fafcff;color:#71809a;text-align:center}
+  .fire-customer-empty strong{display:block;margin-bottom:6px;color:#21375e;font-size:17px}
+  @media(max-width:760px){
+    .customer-portfolio-summary{gap:6px}
+    .customer-portfolio-summary button{display:grid;justify-items:center;justify-content:stretch;gap:5px;min-height:62px;padding:8px 5px;text-align:center}
+    .customer-portfolio-summary button span{font-size:9.5px}
+    .mock-detail-tabs .detail-tab{padding:9px 4px!important;font-size:9.5px!important}
+    .fire-customer-grid{grid-template-columns:1fr}
+    .fire-customer-open{width:100%;justify-self:stretch}
+  }
+</style>
+
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.2" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.1
+  PWA OFFLINE · V9.13.2
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2874,7 +2912,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           inputmode="search"
           autocomplete="off"
           enterkeyhint="search"
-          placeholder="Όνομα, επώνυμο ή αριθμός συμβολαίου..."
+          placeholder="Όνομα, ΑΦΜ, συμβόλαιο ή διεύθυνση κινδύνου..."
           aria-label="Αναζήτηση ασφαλισμένου"
         />
         <button class="mobile-search-clear" id="mobileSearchClear" type="button" aria-label="Καθαρισμός αναζήτησης">×</button>
@@ -3000,12 +3038,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="search-wrap">
           <div class="search-input">
             <span class="search-icon">🔎</span>
-            <input id="searchInput" placeholder="Αναζήτηση με ονοματεπώνυμο, επώνυμο ή αριθμό συμβολαίου..." />
+            <input id="searchInput" placeholder="Όνομα, ΑΦΜ, συμβόλαιο ή διεύθυνση κινδύνου..." />
           </div>
           <button class="btn btn-secondary" id="printBtn">Εκτύπωση</button>
         </div>
         <div class="search-rule">
-          Η αναζήτηση βρίσκει ονόματα, επώνυμα και συμβόλαια μόνο όταν ξεκινούν από αυτό που πληκτρολογείς.
+          Η αναζήτηση βρίσκει πελάτες και συμβόλαια Ζωής, Αυτοκινήτου και Πυρός, καθώς και ΑΦΜ ή τοποθεσία κινδύνου.
         </div>
 
         <div class="migration-banner hidden" id="migrationBanner">
@@ -3174,10 +3212,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.1"></script>
-<script src="receipt-xlsx.js?v=9.13.1"></script>
-<script src="local-supabase.js?v=9.13.1"></script>
-<script src="auto-policies-seed.js?v=9.13.1"></script>
+<script src="jszip.min.js?v=9.13.2"></script>
+<script src="receipt-xlsx.js?v=9.13.2"></script>
+<script src="local-supabase.js?v=9.13.2"></script>
+<script src="auto-policies-seed.js?v=9.13.2"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3204,6 +3242,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   let activeDetailTab = "coverages";
   let expandedPolicyId = null;
   let expandedAutoPolicyId = null;
+  let expandedFirePolicyId = null;
   let coverageModalPolicyId = null;
   let coverageModalTab = "coverage";
   let coverageModalEditMode = false;
@@ -4617,22 +4656,58 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     );
   }
 
+  function allFirePolicies() {
+    const policies = window.TSERTOS_CRM_FORMS_API?.getFirePolicies?.();
+    return Array.isArray(policies) ? policies : [];
+  }
+
+  function firePoliciesForCustomer(customerId) {
+    return allFirePolicies().filter(policy => policy.insuredId === customerId);
+  }
+
+  function matchingFirePolicies(c, query) {
+    const policies = firePoliciesForCustomer(c.id);
+    if (!query) return policies;
+    const compactQuery = normalize(query).replace(/\s/g, "");
+    return policies.filter(policy => {
+      const policyNumber = normalize(policy.policyNumber).replace(/\s/g, "");
+      const searchable = [
+        policy.productName,
+        policy.packageName,
+        policy.insured?.name,
+        policy.insured?.afm,
+        policy.risk?.street,
+        policy.risk?.streetNumber,
+        policy.risk?.area,
+        policy.risk?.postalCode
+      ].map(normalize).filter(Boolean);
+      return (compactQuery && policyNumber.startsWith(compactQuery))
+        || searchable.some(value => value.includes(query));
+    });
+  }
+
+  function customerNameMatchesSearch(c, query) {
+    const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ");
+    const reverseFullName = [c.lastName, c.firstName].filter(Boolean).join(" ");
+    const fireNames = firePoliciesForCustomer(c.id).map(policy => policy.insured?.name);
+    return [fullName, reverseFullName, c.lastName, c.company, c.afm, ...fireNames]
+      .map(normalize)
+      .filter(Boolean)
+      .some(value => value.startsWith(query));
+  }
+
   function customerMatchesSearch(c, query) {
     if (!query) return false;
 
     if (isPolicySearch(query)) {
-      return matchingPolicies(c, query).length > 0 || matchingAutoPolicies(c, query).length > 0;
+      return matchingPolicies(c, query).length > 0
+        || matchingAutoPolicies(c, query).length > 0
+        || matchingFirePolicies(c, query).length > 0;
     }
 
     if (matchingAutoPolicies(c, query).length > 0) return true;
-
-    const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ");
-    const reverseFullName = [c.lastName, c.firstName].filter(Boolean).join(" ");
-
-    return [fullName, reverseFullName, c.lastName]
-      .map(normalize)
-      .filter(Boolean)
-      .some(value => value.startsWith(query));
+    if (matchingFirePolicies(c, query).length > 0) return true;
+    return customerNameMatchesSearch(c, query);
   }
 
   function formatMoney(value, daily = false) {
@@ -6616,6 +6691,42 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     }
   }
 
+  function firePolicyPackageLabel(policy) {
+    if (!policy.packageName) return "Πακέτο / απαλλαγή: δεν ορίστηκε";
+    return `${policy.packageName} · ${policy.withDeductible ? "Με απαλλαγές" : "Χωρίς απαλλαγές"}`;
+  }
+
+  function firePolicyCustomerCardHtml(policy, open = false) {
+    const riskAddress = [policy.risk?.street, policy.risk?.streetNumber].filter(Boolean).join(" ");
+    const fields = [
+      ["Προϊόν", policy.productName],
+      ["Πακέτο", firePolicyPackageLabel(policy)],
+      ["Έναρξη", formatDate(policy.startDate)],
+      ["Δόσεις", policy.installments],
+      ["Ολικά ασφάλιστρα", formatMoney(policy.grossPremium)],
+      ["Τοποθεσία κινδύνου", riskAddress],
+      ["Περιοχή", policy.risk?.area],
+      ["Τ.Κ.", policy.risk?.postalCode],
+      ["Χρήση / Είδος", policy.productType === "BUSINESS" ? "Επιχείρηση" : policy.property?.useType],
+      ["Τύπος κατοικίας", policy.productType === "HOME" ? policy.property?.residenceType : ""]
+    ].filter(([, value]) => value !== "" && value !== null && value !== undefined);
+    return `
+      <details class="fire-customer-disclosure" data-fire-disclosure="${escapeHtml(policy.id)}" ${open ? "open" : ""}>
+        <summary class="fire-customer-summary">
+          <span class="fire-customer-icon">🔥</span>
+          <span><strong>${escapeHtml(policy.policyNumber || "Χωρίς αριθμό συμβολαίου")}</strong><small>${escapeHtml(policy.productName || "Πυρός")}</small></span>
+          <span class="fire-customer-arrow">⌄</span>
+        </summary>
+        <div class="fire-customer-body">
+          <div class="fire-customer-grid">
+            ${fields.map(([label, value]) => `<div><small>${escapeHtml(label)}</small><strong>${escapeHtml(value || "—")}</strong></div>`).join("")}
+          </div>
+          ${policy.notes ? `<div class="fire-customer-notes"><small>Σημειώσεις</small>${escapeHtml(policy.notes)}</div>` : ""}
+          <button class="btn btn-primary fire-customer-open" type="button" data-fire-policy-open="${escapeHtml(policy.id)}">Άνοιγμα συμβολαίου Πυρός</button>
+        </div>
+      </details>`;
+  }
+
   function renderCustomerDetail() {
     const c = customers.find(customer =>
       customer.id === selectedCustomerId && isInsuredCustomer(customer)
@@ -6652,7 +6763,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     const firstPolicy = (c.policies || [])[0];
     const customerAutoPolicies = autoPoliciesForCustomer(c.id);
-    const profileProduct = firstPolicy?.product || customerAutoPolicies[0]?.packageName || "Χωρίς καταχωρισμένο πρόγραμμα";
+    const customerFirePolicies = firePoliciesForCustomer(c.id);
+    const profileProduct = firstPolicy?.product
+      || customerAutoPolicies[0]?.packageName
+      || customerFirePolicies[0]?.productName
+      || "Χωρίς καταχωρισμένο πρόγραμμα";
 
     const currentQuery = normalize(els.search.value);
     const matchedLifePolicyId = isPolicySearch(currentQuery)
@@ -6726,6 +6841,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <div class="auto-policy-collapsible-body">${autoPolicyCardHtml(policy)}</div>
         </details>`).join("");
 
+    const matchedFirePolicyId = currentQuery
+      ? matchingFirePolicies(c, currentQuery)[0]?.id
+      : null;
+    if (matchedFirePolicyId) expandedFirePolicyId = matchedFirePolicyId;
+    const firePoliciesHtml = customerFirePolicies.map(policy =>
+      firePolicyCustomerCardHtml(policy, policy.id === matchedFirePolicyId || policy.id === expandedFirePolicyId)
+    ).join("");
+
     const personalPanel = `
       <div class="detail-tab-panel personal-data-panel">
         ${detailItems.length
@@ -6762,6 +6885,16 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
             </div>`}
       </div>`;
 
+    const firePanel = `
+      <div class="detail-tab-panel">
+        ${customerFirePolicies.length
+          ? `<div class="fire-customer-list">${firePoliciesHtml}</div>`
+          : `<div class="fire-customer-empty">
+              <strong>Δεν υπάρχει συμβόλαιο Πυρός</strong>
+              <div>Πρόσθεσε νέο συμβόλαιο από τον Κλάδο Πυρός ή κάνε εισαγωγή Excel.</div>
+            </div>`}
+      </div>`;
+
     els.detail.innerHTML = `
       <div class="customer-detail-card mock-customer-detail">
         <div class="mock-profile-card">
@@ -6786,6 +6919,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <button class="mock-action-button delete" type="button" data-detail-delete="${escapeHtml(c.id)}">⌫ <span>Διαγραφή</span></button>
         </div>
 
+        <div class="customer-portfolio-summary" aria-label="Χαρτοφυλάκιο πελάτη">
+          <button type="button" data-portfolio-branch="coverages" class="${(c.policies || []).length ? "has-policies" : ""}"><span>♥ Ζωή</span><strong>${(c.policies || []).length}</strong></button>
+          <button type="button" data-portfolio-branch="autos" class="${customerAutoPolicies.length ? "has-policies" : ""}"><span>🚗 Αυτοκίνητο</span><strong>${customerAutoPolicies.length}</strong></button>
+          <button type="button" data-portfolio-branch="fires" class="${customerFirePolicies.length ? "has-policies" : ""}"><span>🔥 Πυρός</span><strong>${customerFirePolicies.length}</strong></button>
+        </div>
+
         <div class="detail-tabs mock-detail-tabs" role="tablist">
           <button class="detail-tab ${activeDetailTab === "coverages" ? "active" : ""}" type="button" data-detail-tab="coverages">
             Ζωής & Καλύψεις <span class="detail-tab-count">${(c.policies || []).length}</span>
@@ -6793,12 +6932,15 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <button class="detail-tab ${activeDetailTab === "autos" ? "active" : ""}" type="button" data-detail-tab="autos">
             🚗 Αυτοκίνητα <span class="detail-tab-count">${customerAutoPolicies.length}</span>
           </button>
+          <button class="detail-tab ${activeDetailTab === "fires" ? "active" : ""}" type="button" data-detail-tab="fires">
+            🔥 Πυρός <span class="detail-tab-count">${customerFirePolicies.length}</span>
+          </button>
           <button class="detail-tab ${activeDetailTab === "personal" ? "active" : ""}" type="button" data-detail-tab="personal">
-            Προσωπικά στοιχεία
+            Στοιχεία
           </button>
         </div>
 
-        ${activeDetailTab === "personal" ? personalPanel : (activeDetailTab === "autos" ? autosPanel : coveragesPanel)}
+        ${activeDetailTab === "personal" ? personalPanel : (activeDetailTab === "autos" ? autosPanel : (activeDetailTab === "fires" ? firePanel : coveragesPanel))}
       </div>`;
 
     els.detail.querySelector("[data-detail-edit]")?.addEventListener("click", () => editCustomer(c.id));
@@ -6807,6 +6949,13 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.detail.querySelectorAll("[data-detail-tab]").forEach(button => {
       button.addEventListener("click", () => {
         activeDetailTab = button.dataset.detailTab;
+        renderCustomerDetail();
+      });
+    });
+
+    els.detail.querySelectorAll("[data-portfolio-branch]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeDetailTab = button.dataset.portfolioBranch;
         renderCustomerDetail();
       });
     });
@@ -6862,24 +7011,46 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         });
       });
     });
+    els.detail.querySelectorAll("[data-fire-policy-open]").forEach(button => {
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        window.TSERTOS_CRM_FORMS_API?.openFirePolicy?.(button.dataset.firePolicyOpen);
+      });
+    });
+    els.detail.querySelectorAll("[data-fire-disclosure]").forEach(disclosure => {
+      disclosure.addEventListener("toggle", () => {
+        if (!disclosure.open) {
+          if (expandedFirePolicyId === disclosure.dataset.fireDisclosure) expandedFirePolicyId = null;
+          return;
+        }
+        expandedFirePolicyId = disclosure.dataset.fireDisclosure;
+        els.detail.querySelectorAll("[data-fire-disclosure]").forEach(other => {
+          if (other !== disclosure) other.open = false;
+        });
+      });
+    });
   }
 
   function selectCustomer(id) {
     selectedCustomerId = id;
     const customer = customers.find(item => item.id === id);
     const query = normalize(els.search.value);
+    const matchedLifePolicy = customer && isPolicySearch(query) ? matchingPolicies(customer, query)[0] : null;
+    const matchedAutoPolicy = customer && query ? matchingAutoPolicies(customer, query)[0] : null;
+    const matchedFirePolicy = customer && query ? matchingFirePolicies(customer, query)[0] : null;
 
-    if (customer && (isPolicySearch(query) || matchingAutoPolicies(customer, query).length > 0)) {
-      const matchedLifePolicy = matchingPolicies(customer, query)[0];
-      const matchedAutoPolicy = matchingAutoPolicies(customer, query)[0];
-      activeDetailTab = matchedLifePolicy ? "coverages" : (matchedAutoPolicy ? "autos" : "coverages");
-      expandedPolicyId = matchedLifePolicy?.id || null;
-      expandedAutoPolicyId = matchedAutoPolicy?.id || null;
-    } else {
-      activeDetailTab = "coverages";
-      expandedPolicyId = null;
-      expandedAutoPolicyId = null;
-    }
+    if (matchedLifePolicy) activeDetailTab = "coverages";
+    else if (matchedAutoPolicy) activeDetailTab = "autos";
+    else if (matchedFirePolicy) activeDetailTab = "fires";
+    else if ((customer?.policies || []).length) activeDetailTab = "coverages";
+    else if (autoPoliciesForCustomer(customer?.id).length) activeDetailTab = "autos";
+    else if (firePoliciesForCustomer(customer?.id).length) activeDetailTab = "fires";
+    else activeDetailTab = "personal";
+
+    expandedPolicyId = matchedLifePolicy?.id || null;
+    expandedAutoPolicyId = matchedAutoPolicy?.id || null;
+    expandedFirePolicyId = matchedFirePolicy?.id || null;
 
     render();
 
@@ -6922,16 +7093,18 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const dashboardHospitalPolicies = dashboardPolicies.filter(policy =>
       /health|νοσοκομ|full|περίθαλψη/.test(dashboardPolicyText(policy))
     ).length;
+    const dashboardFirePolicies = allFirePolicies();
 
-    $("totalPolicies").textContent = dashboardPolicies.length + autoPolicies.length;
+    $("totalPolicies").textContent = dashboardPolicies.length + autoPolicies.length + dashboardFirePolicies.length;
 
     const dashboardCounters = {
       statInsureds: insuredCustomers.length,
-      statPolicies: dashboardPolicies.length + autoPolicies.length,
+      statPolicies: dashboardPolicies.length + autoPolicies.length + dashboardFirePolicies.length,
       statMembers: dashboardMembers.length,
       statLife: dashboardLifePolicies,
       statHospital: dashboardHospitalPolicies,
-      statAutos: autoPolicies.length
+      statAutos: autoPolicies.length,
+      statFire: dashboardFirePolicies.length
     };
 
     Object.entries(dashboardCounters).forEach(([id, value]) => {
@@ -6946,7 +7119,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="empty">
           <span class="emoji">🔎</span>
           <strong>Ξεκίνησε την αναζήτηση</strong>
-          <div style="margin-top:6px">Γράψε ονοματεπώνυμο, επώνυμο ή αριθμό συμβολαίου.</div>
+          <div style="margin-top:6px">Γράψε όνομα, ΑΦΜ, αριθμό συμβολαίου ή τοποθεσία κινδύνου.</div>
         </div>`;
       renderCustomerDetail();
       return;
@@ -6957,7 +7130,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="empty">
           <span class="emoji">🔍</span>
           <strong>Δεν βρέθηκαν αποτελέσματα</strong>
-          <div style="margin-top:6px">Η αναζήτηση γίνεται από την αρχή του ονοματεπώνυμου, του επωνύμου ή του αριθμού συμβολαίου.</div>
+          <div style="margin-top:6px">Έλεγξε το όνομα, το ΑΦΜ, το συμβόλαιο ή την τοποθεσία κινδύνου.</div>
         </div>`;
       renderCustomerDetail();
       return;
@@ -6970,18 +7143,31 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         : "";
       const suggestedPolicies = matchingPolicies(c, query);
       const suggestedAutoPolicies = matchingAutoPolicies(c, query);
+      const suggestedFirePolicies = customerNameMatchesSearch(c, query)
+        ? firePoliciesForCustomer(c.id)
+        : matchingFirePolicies(c, query);
+      const branchLabels = [
+        (c.policies || []).length ? "Ζωή" : "",
+        autoPoliciesForCustomer(c.id).length ? "Αυτοκίνητο" : "",
+        firePoliciesForCustomer(c.id).length ? "Πυρός" : ""
+      ].filter(Boolean);
       const suggestedEntries = [
-        ...suggestedPolicies.map(policy => ({ number: policy.number, product: policy.product, auto: false })),
+        ...suggestedPolicies.map(policy => ({ number: policy.number, product: policy.product, icon: "♥" })),
         ...suggestedAutoPolicies.map(policy => ({
           number: [policy.policyNumber, policy.registrationNumber].filter(Boolean).join(" · "),
           product: policy.packageName || policy.product,
-          auto: true
+          icon: "🚗"
+        })),
+        ...suggestedFirePolicies.map(policy => ({
+          number: policy.policyNumber,
+          product: [policy.productName, policy.packageName].filter(Boolean).join(" · "),
+          icon: "🔥"
         }))
       ];
       const policyLabels = suggestedEntries.slice(0, 3)
         .map(policy => `
           <div class="suggestion-policy">
-            <span class="suggestion-policy-number">${policy.auto ? "🚗 " : ""}${escapeHtml(policy.number)}</span>
+            <span class="suggestion-policy-number">${policy.icon} ${escapeHtml(policy.number)}</span>
             <span class="suggestion-policy-product">${escapeHtml(policy.product || "Δεν έχει καταχωριστεί προϊόν")}</span>
           </div>`)
         .join("");
@@ -7000,7 +7186,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
           <div class="suggestion-content">
             <div class="suggestion-main">
               <h3 class="customer-name">${escapeHtml(customerDisplayName(c))}</h3>
-              <div class="customer-sub">${escapeHtml(companySubtitle || ((c.policies || []).length ? "Ασφαλισμένος" : "Πελάτης"))}</div>
+              <div class="customer-sub">${escapeHtml(companySubtitle || (branchLabels.length ? branchLabels.join(" · ") : "Πελάτης"))}</div>
               ${(policyLabels || extraPolicies) ? `<div class="suggestion-policies">${policyLabels}${extraPolicies}</div>` : ""}
             </div>
             <span class="suggestion-arrow">›</span>
@@ -7871,6 +8057,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   window.TSERTOS_CRM_FORMS_API = {
     getCustomers: () => Array.isArray(customers) ? customers : [],
     getAutoPolicies: () => Array.isArray(autoPolicies) ? autoPolicies : [],
+    getFirePolicies: () => [],
+    refreshCustomerDirectory: () => render(),
     refreshCustomers: async () => {
       await loadCustomersFromDatabase({ quiet: true });
       return Array.isArray(customers) ? customers : [];
@@ -8017,10 +8205,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.1"></script>
-<script src="./forms-library.js?v=9.13.1"></script>
+<script src="./fire-policies.js?v=9.13.2"></script>
+<script src="./forms-library.js?v=9.13.2"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.1";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.2";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8035,7 +8223,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.1",
+          "./service-worker.js?v=9.13.2",
           { updateViaCache: "none" }
         );
 
