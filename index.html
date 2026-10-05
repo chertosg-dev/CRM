@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.7" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.7" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.8" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.8" />
 
 
 <style>
@@ -2817,19 +2817,56 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.7" />
+<style id="tsertos-ipad-layout">
+  /* Dedicated tablet layout: iPad portrait and landscape. */
+  @media (min-width:700px) and (max-width:1366px){
+    .topbar,.mobile-search-shell,.tsertos-dashboard,.layout{width:100%!important;max-width:1240px!important;padding-left:22px!important;padding-right:22px!important}
+    #tsertosDashboard{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:11px!important;overflow:visible!important;padding-top:10px!important;padding-bottom:12px!important}
+    #tsertosDashboard>.tsertos-stat{width:auto!important;min-width:0!important;max-width:none!important;min-height:90px!important}
+    #tsertosDashboard>.tsertos-stat:last-child{grid-column:auto!important}
+    .mock-customer-detail{padding:18px!important}
+    .mock-profile-card{align-items:center!important}
+    .mock-profile-info{display:flex!important;flex-wrap:wrap!important;font-size:12px!important}
+    .mock-actions{display:flex!important;grid-template-columns:none!important}
+    .mock-action-button{min-width:112px!important;padding:9px 12px!important}
+    .mock-action-button span{display:inline!important}
+    .personal-data-panel .details-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .policy-coverage-number{font-size:clamp(30px,4vw,42px)!important}
+    .coverage-popup-modal{padding:24px!important;background:rgba(3,18,46,.74)!important}
+    .coverage-popup-window{width:min(940px,94vw)!important;height:auto!important;max-height:calc(100dvh - 48px)!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:24px!important;box-shadow:0 35px 100px rgba(0,0,0,.38)!important}
+    .coverage-popup-head{padding:16px 18px!important}
+    .coverage-popup-body{padding:14px!important}
+    .contract-popup-tabs{top:-14px!important;margin:-14px -14px 13px!important;padding:10px 14px!important}
+    .contract-edit-card{grid-template-columns:45px minmax(0,1fr)!important;padding:12px!important}
+    .contract-edit-icon{display:grid!important}
+    .contract-edit-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+    .coverage-entry-row{grid-template-columns:minmax(190px,38%) minmax(0,1fr)!important;gap:14px!important;padding:8px 13px!important}
+    .coverage-entry-row>label{font-size:13px!important}
+    .coverage-entry-control input,.coverage-entry-control select{font-size:14px!important;padding:9px 12px!important}
+    .form-panel{width:min(640px,82vw)!important;border-radius:24px 0 0 24px!important;padding:24px!important}
+    .auto-policy-grid,.renewal-grid,.receipt-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .fire-customer-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  }
+  @media (min-width:1000px) and (max-width:1366px) and (orientation:landscape){
+    #tsertosDashboard{grid-template-columns:repeat(7,minmax(0,1fr))!important}
+    .results-layout{display:grid!important;grid-template-columns:minmax(270px,320px) minmax(0,1fr)!important;gap:18px!important}
+    .results-layout>.suggestions-panel{display:block!important}
+  }
+</style>
+
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.8" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.7
+  PWA OFFLINE · V9.13.8
 </div>
 
 <section class="auth-screen" id="authScreen">
     <div class="auth-card">
       <div class="auth-logo">🔐</div>
       <h1>Είσοδος στο χαρτοφυλάκιο</h1>
-      <p>Τα στοιχεία αποθηκεύονται μόνιμα και αποκλειστικά σε αυτό το iPhone.</p>
+      <p>Τα στοιχεία αποθηκεύονται μόνιμα και αποκλειστικά σε αυτή τη συσκευή.</p>
 
       <div id="normalAuthFields">
         <div class="field">
@@ -3225,10 +3262,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.7"></script>
-<script src="receipt-xlsx.js?v=9.13.7"></script>
-<script src="local-supabase.js?v=9.13.7"></script>
-<script src="auto-policies-seed.js?v=9.13.7"></script>
+<script src="jszip.min.js?v=9.13.8"></script>
+<script src="receipt-xlsx.js?v=9.13.8"></script>
+<script src="local-supabase.js?v=9.13.8"></script>
+<script src="auto-policies-seed.js?v=9.13.8"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -8492,10 +8529,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.7"></script>
-<script src="./forms-library.js?v=9.13.7"></script>
+<script src="./fire-policies.js?v=9.13.8"></script>
+<script src="./forms-library.js?v=9.13.8"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.7";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.8";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8510,7 +8547,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.7",
+          "./service-worker.js?v=9.13.8",
           { updateViaCache: "none" }
         );
 
