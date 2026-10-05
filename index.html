@@ -2075,8 +2075,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.8" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.8" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.9" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.9" />
 
 
 <style>
@@ -2847,6 +2847,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     .auto-policy-grid,.renewal-grid,.receipt-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     .fire-customer-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   }
+  @media (min-width:761px) and (max-width:999px){
+    .results-layout{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+    .results-layout>.suggestions-panel{display:block!important;width:100%!important;max-width:none!important}
+    .customer-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;max-height:36dvh!important;overflow-y:auto!important}
+    .customer-detail{width:100%!important;min-height:0!important}
+  }
   @media (min-width:1000px) and (max-width:1366px) and (orientation:landscape){
     #tsertosDashboard{grid-template-columns:repeat(7,minmax(0,1fr))!important}
     .results-layout{display:grid!important;grid-template-columns:minmax(270px,320px) minmax(0,1fr)!important;gap:18px!important}
@@ -2854,12 +2860,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.8" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.9" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.8
+  PWA OFFLINE · V9.13.9
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3262,10 +3268,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.8"></script>
-<script src="receipt-xlsx.js?v=9.13.8"></script>
-<script src="local-supabase.js?v=9.13.8"></script>
-<script src="auto-policies-seed.js?v=9.13.8"></script>
+<script src="jszip.min.js?v=9.13.9"></script>
+<script src="receipt-xlsx.js?v=9.13.9"></script>
+<script src="local-supabase.js?v=9.13.9"></script>
+<script src="auto-policies-seed.js?v=9.13.9"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -4630,6 +4636,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function isMobileSearchMode() {
     return window.matchMedia("(max-width: 760px)").matches;
+  }
+
+  function isTabletPortraitSearchMode() {
+    return window.matchMedia("(min-width: 761px) and (max-width: 999px)").matches;
   }
 
   function syncSuggestionsPlacement() {
@@ -7381,6 +7391,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       requestAnimationFrame(() => {
         els.detail.scrollIntoView({ behavior: "smooth", block: "start" });
       });
+    } else if (isTabletPortraitSearchMode()) {
+      requestAnimationFrame(() => {
+        els.detail.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   }
 
@@ -8529,10 +8543,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.8"></script>
-<script src="./forms-library.js?v=9.13.8"></script>
+<script src="./fire-policies.js?v=9.13.9"></script>
+<script src="./forms-library.js?v=9.13.9"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.8";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.9";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8547,7 +8561,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.8",
+          "./service-worker.js?v=9.13.9",
           { updateViaCache: "none" }
         );
 
