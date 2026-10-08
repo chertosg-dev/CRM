@@ -2076,8 +2076,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.10" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.10" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.11" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.11" />
 
 
 <style>
@@ -2861,12 +2861,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.10" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.11" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.10
+  PWA OFFLINE · V9.13.11
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -2952,7 +2952,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="top-menu-panel" id="topMenuPanel">
           <span class="sync-status" id="syncStatus">Τοπική αποθήκευση iPhone</span>
           <button class="btn btn-ghost" id="exportBtn">Εξαγωγή backup</button>
-          <label class="btn btn-ghost backup-recovery-button" id="importBtn" for="importFile" role="button">Εισαγωγή backup</label>
+          <label class="btn btn-ghost backup-recovery-button" id="importBtn" for="importFile" role="button">Ενημέρωση από backup</label>
           <button class="btn btn-ghost" id="lifeCoverageImportBtn">❤️ Εισαγωγή καλύψεων ζωής (Excel)</button>
           <button class="btn btn-ghost" id="signOutBtn">Αποσύνδεση</button>
         </div>
@@ -3106,7 +3106,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <div class="migration-banner hidden" id="migrationBanner">
           <div>
             <strong>Η τοπική βάση είναι κενή</strong>
-            <span>Πάτησε «Επαναφορά από backup» και επίλεξε το αρχείο JSON από τα Αρχεία του iPhone.</span>
+            <span>Πάτησε «Επαναφορά από backup» και επίλεξε το αρχείο JSON από τα Αρχεία της συσκευής.</span>
           </div>
           <div class="backup-recovery-actions">
             <label class="btn btn-primary backup-recovery-button" for="importFile">⬆ Επαναφορά από backup</label>
@@ -3269,10 +3269,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.10"></script>
-<script src="receipt-xlsx.js?v=9.13.10"></script>
-<script src="local-supabase.js?v=9.13.10"></script>
-<script src="auto-policies-seed.js?v=9.13.10"></script>
+<script src="jszip.min.js?v=9.13.11"></script>
+<script src="receipt-xlsx.js?v=9.13.11"></script>
+<script src="local-supabase.js?v=9.13.11"></script>
+<script src="auto-policies-seed.js?v=9.13.11"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -4418,9 +4418,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     return result;
   }
 
-  async function importRecordsIntoDatabase(records) {
+  async function importRecordsIntoDatabase(records, { merge = false } = {}) {
     if (!currentUser) throw new Error("Δεν υπάρχει ενεργή σύνδεση.");
-    if (customers.length) throw new Error("Για ασφάλεια, η μαζική εισαγωγή επιτρέπεται μόνο όταν η τοπική βάση είναι κενή.");
+    if (customers.length && !merge) throw new Error("Για ασφάλεια, η αρχική μαζική εισαγωγή επιτρέπεται μόνο όταν η τοπική βάση είναι κενή.");
 
     const prepared = records.map(source => {
       const customer = sanitizeCustomer(source);
@@ -4486,28 +4486,34 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     try {
       const insuredChunks = chunks(insuredRows, 75);
       for (let index = 0; index < insuredChunks.length; index++) {
-        setBusy(true, "Μεταφορά ασφαλισμένων…", `Ομάδα ${index + 1} από ${insuredChunks.length}`);
+        setBusy(true, merge ? "Συγχώνευση ασφαλισμένων…" : "Μεταφορά ασφαλισμένων…", `Ομάδα ${index + 1} από ${insuredChunks.length}`);
         const batch = insuredChunks[index];
-        const { error } = await supabaseClient.from("insureds").insert(batch);
+        const request = merge
+          ? supabaseClient.from("insureds").upsert(batch, { onConflict: "id" })
+          : supabaseClient.from("insureds").insert(batch);
+        const { error } = await request;
         if (error) throw error;
-        insertedIds.push(...batch.map(row => row.id));
+        if (!merge) insertedIds.push(...batch.map(row => row.id));
       }
 
-      for (const [table, rows, title] of [
-        ["policies", policyRows, "Μεταφορά συμβολαίων…"],
-        ["policy_coverages", coverageRows, "Μεταφορά καλύψεων…"],
-        ["covered_members", memberRows, "Μεταφορά καλυπτόμενων μελών…"],
-        ["covered_member_coverages", memberCoverageRows, "Μεταφορά καλύψεων μελών…"]
+      for (const [table, rows, title, conflict] of [
+        ["policies", policyRows, merge ? "Συγχώνευση συμβολαίων…" : "Μεταφορά συμβολαίων…", "id"],
+        ["policy_coverages", coverageRows, merge ? "Συγχώνευση καλύψεων…" : "Μεταφορά καλύψεων…", "owner_id,policy_id"],
+        ["covered_members", memberRows, merge ? "Συγχώνευση καλυπτόμενων μελών…" : "Μεταφορά καλυπτόμενων μελών…", "id"],
+        ["covered_member_coverages", memberCoverageRows, merge ? "Συγχώνευση καλύψεων μελών…" : "Μεταφορά καλύψεων μελών…", "owner_id,covered_member_id"]
       ]) {
         const rowChunks = chunks(rows, 75);
         for (let index = 0; index < rowChunks.length; index++) {
           setBusy(true, title, `Ομάδα ${index + 1} από ${rowChunks.length}`);
-          const { error } = await supabaseClient.from(table).insert(rowChunks[index]);
+          const request = merge
+            ? supabaseClient.from(table).upsert(rowChunks[index], { onConflict: conflict })
+            : supabaseClient.from(table).insert(rowChunks[index]);
+          const { error } = await request;
           if (error) throw error;
         }
       }
     } catch (error) {
-      if (insertedIds.length) {
+      if (!merge && insertedIds.length) {
         await supabaseClient.from("insureds").delete().in("id", insertedIds);
       }
       throw error;
@@ -7873,32 +7879,46 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       const parsed = JSON.parse(await file.text());
       const imported = Array.isArray(parsed) ? parsed : parsed.customers;
       const importedAutoPolicies = Array.isArray(parsed?.autoPolicies) ? parsed.autoPolicies : [];
+      const importedFirePolicies = Array.isArray(parsed?.firePolicies) ? parsed.firePolicies : [];
       const hasPaymentReceipts = Array.isArray(parsed?.paymentReceipts);
       const importedPaymentReceipts = hasPaymentReceipts ? parsed.paymentReceipts : [];
       if (!Array.isArray(imported)) throw new Error("Το αρχείο backup δεν είναι έγκυρο.");
-      setBusy(true, "Εισαγωγή backup…", "Τα δεδομένα αποθηκεύονται τοπικά στο iPhone.");
-      await importRecordsIntoDatabase(imported);
+      if (customers.length) {
+        const confirmed = window.confirm(
+          "Η συσκευή περιέχει ήδη δεδομένα. Να γίνει συγχώνευση με το backup;\n\n" +
+          "Οι ίδιες εγγραφές θα ενημερωθούν, οι νέες θα προστεθούν και οι εγγραφές που υπάρχουν μόνο σε αυτή τη συσκευή δεν θα διαγραφούν."
+        );
+        if (!confirmed) return;
+      }
+      setBusy(true, "Συγχώνευση backup…", "Οι υπάρχουσες εγγραφές ενημερώνονται χωρίς να αδειάσει η βάση.");
+      await importRecordsIntoDatabase(imported, { merge: true });
       for (let index = 0; index < importedAutoPolicies.length; index += 75) {
         const rows = importedAutoPolicies.slice(index, index + 75).map(policy =>
           toDatabaseAutoPolicy(policy.insuredId, policy, true)
         );
-        const { error } = await supabaseClient.from("auto_policies").insert(rows);
+        const { error } = await supabaseClient
+          .from("auto_policies")
+          .upsert(rows, { onConflict: "id" });
         if (error) throw error;
       }
       if (hasPaymentReceipts) {
-        const deletion = await supabaseClient.from("payment_receipts").delete();
-        if (deletion.error) throw deletion.error;
         for (let index = 0; index < importedPaymentReceipts.length; index += 100) {
           const rows = importedPaymentReceipts.slice(index, index + 100).map(receipt => ({
             ...receipt,
             owner_id: currentUser.id
           }));
-          const { error } = await supabaseClient.from("payment_receipts").insert(rows);
+          const { error } = await supabaseClient
+            .from("payment_receipts")
+            .upsert(rows, { onConflict: "id" });
           if (error) throw error;
         }
       }
+      if (importedFirePolicies.length && window.TSERTOS_CRM_FORMS_API?.mergeFirePolicies) {
+        await window.TSERTOS_CRM_FORMS_API.mergeFirePolicies(importedFirePolicies);
+      }
       await loadCustomersFromDatabase({ quiet: true });
-      showToast(`Εισήχθησαν ${customers.length} ασφαλισμένοι, ${autoPolicies.length} αυτοκίνητα και ${paymentReceipts.length} αποδείξεις στο iPhone.`);
+      const fireCount = window.TSERTOS_CRM_FORMS_API?.getFirePolicies?.().length || 0;
+      showToast(`Η βάση ενημερώθηκε: ${customers.length} ασφαλισμένοι, ${autoPolicies.length} αυτοκίνητα, ${fireCount} Πυρός και ${paymentReceipts.length} αποδείξεις.`);
     } catch (error) {
       console.error(error);
       showToast(databaseErrorMessage(error));
@@ -8593,10 +8613,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.10"></script>
-<script src="./forms-library.js?v=9.13.10"></script>
+<script src="./fire-policies.js?v=9.13.11"></script>
+<script src="./forms-library.js?v=9.13.11"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.10";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.11";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8611,7 +8631,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.10",
+          "./service-worker.js?v=9.13.11",
           { updateViaCache: "none" }
         );
 

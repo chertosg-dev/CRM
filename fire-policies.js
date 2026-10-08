@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "9.13.10";
+  const VERSION = "9.13.11";
   const TABLE = "fire_policies";
   const LOCAL_OWNER_ID = "00000000-0000-4000-8000-000000000001";
   const HOME_PACKAGES = ["BASIC", "EXTRA", "ADVANCED", "MAX"];
@@ -269,6 +269,15 @@
     if (error) throw error;
     firePolicies = (data || []).map(sanitizePolicy);
     window.TSERTOS_CRM_FORMS_API.getFirePolicies = () => firePolicies.map(policy => ({ ...policy }));
+    window.TSERTOS_CRM_FORMS_API.mergeFirePolicies = async sources => {
+      const rows = (Array.isArray(sources) ? sources : []).map(source => databaseRow(sanitizePolicy(source), true));
+      for (let index = 0; index < rows.length; index += 75) {
+        const result = await client.from(TABLE).upsert(rows.slice(index, index + 75), { onConflict: "id" });
+        if (result.error) throw result.error;
+      }
+      await loadPolicies();
+      return firePolicies.length;
+    };
     window.TSERTOS_CRM_FORMS_API.openFirePolicy = policyId => {
       openForm(policyId);
       openModal();
@@ -1010,25 +1019,6 @@
     }
   }
 
-  async function importFireBackup(event) {
-    const file = event.target.files?.[0];
-    if (!file || customers().length) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      if (!Array.isArray(parsed?.firePolicies)) return;
-      const deletion = await client.from(TABLE).delete();
-      if (deletion.error) throw deletion.error;
-      const rows = parsed.firePolicies.map(source => databaseRow(sanitizePolicy(source), true));
-      for (let index = 0; index < rows.length; index += 75) {
-        const result = await client.from(TABLE).insert(rows.slice(index, index + 75));
-        if (result.error) throw result.error;
-      }
-      await loadPolicies();
-    } catch (error) {
-      setTimeout(() => alert(`Οι εγγραφές Πυρός δεν επαναφέρθηκαν: ${error?.message || error}`), 600);
-    }
-  }
-
   async function initialize() {
     if (!window.createLocalSupabaseClient || !window.TSERTOS_CRM_FORMS_API) return;
     injectStyles();
@@ -1039,7 +1029,6 @@
     ownerId = session?.data?.session?.user?.id || LOCAL_OWNER_ID;
     await loadPolicies();
     document.getElementById("exportBtn")?.addEventListener("click", enhancedBackup, true);
-    document.getElementById("importFile")?.addEventListener("change", importFireBackup);
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && modal && !modal.classList.contains("hidden")) closeModal();
     });
