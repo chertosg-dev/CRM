@@ -51,7 +51,12 @@
       for (const match of relationshipsXml.matchAll(/<Relationship\b([^>]*)\/?\s*>/g)) {
         if (attributeValue(match[1], "Id") !== relationshipId) continue;
         const target = attributeValue(match[1], "Target");
-        if (target) return normalizeZipPath(`xl/${target}`);
+        if (target) {
+          const normalizedTarget = normalizeZipPath(target);
+          return normalizedTarget.startsWith("xl/")
+            ? normalizedTarget
+            : normalizeZipPath(`xl/${normalizedTarget}`);
+        }
       }
     }
     return "xl/worksheets/sheet1.xml";
