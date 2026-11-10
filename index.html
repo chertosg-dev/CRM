@@ -2076,8 +2076,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.12" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.12" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.13" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.13" />
 
 
 <style>
@@ -2874,12 +2874,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.12" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.13" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.12
+  PWA OFFLINE · V9.13.13
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3282,10 +3282,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.12"></script>
-<script src="receipt-xlsx.js?v=9.13.12"></script>
-<script src="local-supabase.js?v=9.13.12"></script>
-<script src="auto-policies-seed.js?v=9.13.12"></script>
+<script src="jszip.min.js?v=9.13.13"></script>
+<script src="receipt-xlsx.js?v=9.13.13"></script>
+<script src="local-supabase.js?v=9.13.13"></script>
+<script src="auto-policies-seed.js?v=9.13.13"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -6816,7 +6816,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     );
     els.receiptsModalTitle.textContent = "Πληρωμένες αποδείξεις";
     els.receiptsModalSubtitle.textContent =
-      `Τα ανείσπρακτα μειώθηκαν από ${previousCount} σε ${currentCount}.`;
+      `Από τις προηγούμενες ${previousCount} αποδείξεις, ${paidReceipts.length} δεν υπάρχουν στο νέο αρχείο των ${currentCount}.`;
     els.receiptsModalBody.innerHTML = `
       <div class="paid-receipts-summary">
         <strong>Πληρώθηκαν ${paidReceipts.length} ${paidReceipts.length === 1 ? "απόδειξη" : "αποδείξεις"}</strong>
@@ -6923,7 +6923,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const paidReceipts = previousReceipts.filter(
       receipt => !currentReceiptKeys.has(receiptComparisonKey(receipt))
     );
-    if (uniqueRows.length < previousReceipts.length && paidReceipts.length) {
+    if (paidReceipts.length) {
       showPaidReceiptsPopup(paidReceipts, previousReceipts.length, uniqueRows.length);
     } else {
       renderReceiptsModal();
@@ -8675,10 +8675,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.12"></script>
-<script src="./forms-library.js?v=9.13.12"></script>
+<script src="./fire-policies.js?v=9.13.13"></script>
+<script src="./forms-library.js?v=9.13.13"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.12";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.13";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8693,7 +8693,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.12",
+          "./service-worker.js?v=9.13.13",
           { updateViaCache: "none" }
         );
 
