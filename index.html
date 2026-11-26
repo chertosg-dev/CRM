@@ -776,7 +776,7 @@
       top: -20px;
       z-index: 8;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
       gap: 7px;
       margin: -20px -20px 18px;
       padding: 12px 20px;
@@ -2060,7 +2060,7 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
 .mock-detail-tabs{position:static!important;margin:0 0 14px!important;padding:4px!important;border:0!important;border-radius:13px!important;background:#eef3fb!important}.mock-detail-tabs .detail-tab{padding:10px 12px!important;font-size:12px}.mock-detail-tabs .detail-tab.active{background:#fff!important;color:var(--crm-blue)!important;box-shadow:0 5px 13px rgba(26,60,120,.12)!important}
 .policy-coverages-list{display:grid;gap:14px}.mock-policy-card{overflow:hidden;border:1px solid #e1e8f2!important;border-radius:19px!important;background:#fff!important;box-shadow:0 10px 26px rgba(18,45,94,.08)!important}.mock-policy-header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 18px 15px;border-bottom:1px solid #e8edf5}.mock-policy-label{color:#34415d;font-size:13px;font-weight:850}.mock-policy-header .policy-coverage-number{margin-top:7px;color:var(--crm-blue)!important;font-size:clamp(31px,5vw,43px)!important;font-weight:950!important;line-height:.95;letter-spacing:.015em}.mock-policy-date{margin-top:11px;color:#68758f;font-size:12px;font-weight:700}.mock-policy-product{max-width:240px;text-align:right}.mock-policy-product span{display:block;color:#17305d;font-size:13px;font-weight:900}.mock-policy-product small{display:block;margin-top:5px;color:#7a8598;font-size:10px;font-weight:750}
 .mock-policy-sections{display:grid;gap:9px;padding:14px;background:linear-gradient(180deg,#fbfdff,#f6f9fd)}.mock-policy-section{display:flex;align-items:center;gap:11px;width:100%;min-height:62px;padding:11px 13px;border:1px solid #e2e8f2;border-left-width:4px;border-radius:14px;background:#fff;color:var(--crm-text);box-shadow:0 6px 16px rgba(18,45,94,.05);text-align:left}.mock-policy-section-copy{min-width:0;flex:1}.mock-policy-section-copy strong{display:block;color:#17284c;font-size:14px;font-weight:900}.mock-policy-section-copy small{display:block;max-width:100%;margin-top:4px;overflow:hidden;color:#7a859a;font-size:10px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.mock-policy-section-arrow{color:#35527e;font-size:19px;font-weight:900}.mock-members-button{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;padding:10px 16px;border:0;border-top:1px solid #e6ebf3;background:#fff;color:#41506c;font-size:12px;font-weight:850}.mock-members-button b{display:grid;place-items:center;min-width:27px;height:27px;border-radius:999px;background:#edf3ff;color:var(--crm-blue)}
-.life-policy-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;border-top:1px solid #e6ebf3;background:#fff}.life-policy-actions .mock-members-button{border-top:0}.life-policy-delete{min-height:48px;padding:10px 16px;border:0;border-left:1px solid #f1d5d8;background:#fff7f7;color:#bd3340;font-size:12px;font-weight:900;cursor:pointer}.life-policy-delete:active{background:#ffecee}@media(max-width:560px){.life-policy-actions{grid-template-columns:1fr}.life-policy-delete{border-top:1px solid #f1d5d8;border-left:0}}
+.life-policy-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;border-top:1px solid #e6ebf3;background:#fff}.life-policy-actions .mock-members-button{border-top:0}.life-policy-delete{min-height:48px;padding:10px 16px;border:0;border-left:1px solid #f1d5d8;background:#fff7f7;color:#bd3340;font-size:12px;font-weight:900;cursor:pointer}.life-policy-delete:active{background:#ffecee}@media(max-width:560px){.life-policy-actions{grid-template-columns:1fr}.life-policy-delete{border-top:1px solid #f1d5d8;border-left:0}}
 .personal-data-panel .details-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}.personal-data-panel .detail{padding:12px!important;border:1px solid #e4eaf3!important;border-radius:13px!important;background:#fbfdff!important}.personal-data-panel .detail b{display:block;margin-bottom:5px;color:#798397;font-size:10px;text-transform:uppercase}.personal-data-panel .detail span{color:#1e335f;font-size:13px;font-weight:800}.premium-detail-empty{min-height:430px!important;border:1px solid #dfe6f1;border-radius:22px;background:#fff!important;box-shadow:0 18px 46px rgba(18,45,94,.10)}.empty-shield{display:grid;place-items:center;width:60px;height:68px;margin:0 auto 14px;border:3px solid var(--crm-gold);border-radius:17px 17px 25px 25px;background:var(--crm-navy);color:#fff;font-family:Georgia,serif;font-weight:900}
 .coverage-popup-modal{z-index:800!important;background:rgba(3,18,46,.74)!important;backdrop-filter:blur(8px)!important}.coverage-popup-window{width:min(920px,100%)!important;max-height:calc(100dvh - 28px)!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:24px!important;background:#f5f8fd!important;box-shadow:0 35px 100px rgba(0,0,0,.38)!important}.coverage-popup-head{padding:16px 18px!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:linear-gradient(145deg,var(--crm-navy),var(--crm-navy-2))!important;color:#fff!important}.coverage-popup-heading>span{color:#aebed8!important}.coverage-popup-heading h2{color:#fff!important}.coverage-popup-close{border-color:rgba(255,255,255,.17)!important;background:rgba(255,255,255,.1)!important;color:#fff!important}.coverage-popup-body{padding:14px!important;background:#f5f8fd!important}.contract-popup-tabs{top:-14px!important;margin:-14px -14px 13px!important;padding:10px 14px!important;border-bottom:1px solid #dfe6f1!important;background:#fff!important}.contract-popup-tab{font-size:12px!important}.contract-popup-tab.active{background:#edf4ff!important;color:var(--crm-blue)!important}.coverage-mobile-form{max-width:820px!important}.mobile-editor-title{display:none!important}.contract-edit-card{grid-template-columns:45px minmax(0,1fr)!important;margin-bottom:10px!important;padding:12px!important;border-radius:15px!important}.contract-edit-icon{width:45px!important;height:45px!important}.contract-edit-fields input{min-height:41px!important}.coverage-accordion-stack{gap:10px!important}.coverage-accordion{border-radius:15px!important;box-shadow:0 7px 18px rgba(18,45,94,.06)!important}.coverage-accordion summary{min-height:48px!important;padding:8px 11px!important}.coverage-entry-row{min-height:51px!important;padding:6px 11px!important}.coverage-entry-control input,.coverage-entry-control select{min-height:37px!important;padding:7px 10px!important;border-radius:9px!important;background:#fff!important}.coverage-entry-control textarea{min-height:67px!important}.mobile-save-bar{position:sticky!important;bottom:-14px!important;z-index:20!important;display:flex!important;margin:12px -14px -14px!important;padding:11px 14px calc(11px + env(safe-area-inset-bottom))!important;background:rgba(255,255,255,.97)!important;box-shadow:0 -9px 24px rgba(15,30,62,.10)!important}.mobile-save-bar .btn-primary{flex:1!important;min-height:47px!important;background:linear-gradient(135deg,var(--crm-blue),var(--crm-blue-2))!important;box-shadow:0 9px 22px rgba(17,91,232,.24)!important}
 .auth-screen{background:radial-gradient(circle at 12% 0%,rgba(45,105,235,.24),transparent 28rem),linear-gradient(145deg,#061b43,#0b2d67)!important}.auth-card{border:1px solid rgba(255,255,255,.2)!important;background:rgba(255,255,255,.97)!important;box-shadow:0 30px 90px rgba(0,0,0,.32)!important}
@@ -2076,8 +2076,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.13" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.13" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.16" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.16" />
 
 
 <style>
@@ -2874,12 +2874,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.13" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.16" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.13
+  PWA OFFLINE · V9.13.16
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3095,6 +3095,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
                 <strong>αριθμός συμβολαίου | προϊόν</strong>.
               </div>
             </div>
+            <div id="entryPolicyholders"></div>
           </section>
 
           <div class="form-actions">
@@ -3282,10 +3283,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.13"></script>
-<script src="receipt-xlsx.js?v=9.13.13"></script>
-<script src="local-supabase.js?v=9.13.13"></script>
-<script src="auto-policies-seed.js?v=9.13.13"></script>
+<script src="jszip.min.js?v=9.13.16"></script>
+<script src="receipt-xlsx.js?v=9.13.16"></script>
+<script src="local-supabase.js?v=9.13.16"></script>
+<script src="auto-policies-seed.js?v=9.13.16"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -3525,6 +3526,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         id: id || current?.id || "",
         number,
         product: product || current?.product || "",
+        policyholder: item?.policyholder ?? current?.policyholder ?? null,
         coverage: coverage || current?.coverage || null,
         coveredMembers: coveredMembers.length ? coveredMembers : (current?.coveredMembers || [])
       });
@@ -3546,6 +3548,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         id: policy.id || seeded?.id || "",
         number: policy.number,
         product: policy.product || seeded?.product || "",
+        policyholder: policy.policyholder ?? seeded?.policyholder ?? null,
         coverage: policy.coverage || seeded?.coverage || null,
         coveredMembers: policy.coveredMembers?.length ? policy.coveredMembers : (seeded?.coveredMembers || [])
       });
@@ -3795,6 +3798,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       policies: policyRows.map(policy => ({
         id: policy.id,
         number: policy.policy_number,
+        policyholder: policy.policyholder,
         product: policy.product || "",
         coverage: policy.coverage || null,
         coveredMembers: policy.coveredMembers || []
@@ -4376,6 +4380,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
             .from("policies")
             .update({
               policy_number: policy.number,
+              policyholder: policy.policyholder,
               product: policy.product || null
             })
             .eq("id", current.id);
@@ -4386,6 +4391,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
             .insert({
               owner_id: currentUser.id,
               insured_id: insuredId,
+              policyholder: policy.policyholder,
               policy_number: policy.number,
               product: policy.product || null
             });
@@ -4462,7 +4468,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         owner_id: currentUser.id,
         insured_id: item.dbId,
         policy_number: entry.policy.number,
-        product: entry.policy.product || null
+        product: entry.policy.product || null,
+        policyholder: entry.policy.policyholder
       }))
     );
 
@@ -4701,6 +4708,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function resetForm() {
     els.form.reset();
+    entryPolicyholders.replaceChildren();
     els.id.value = "";
     els.formTitle.textContent = "Νέος πελάτης";
     els.editBadge.textContent = "Καταχώριση";
@@ -5151,6 +5159,122 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         : `<div class="coverage-no-policy">Δεν έχουν προστεθεί ακόμη καλυπτόμενα μέλη σε αυτό το συμβόλαιο.</div>`}`;
   }
 
+  const policyholderFields = [
+    ["firstName", "Όνομα"], ["lastName", "Επώνυμο"], ["company", "Επωνυμία εταιρείας"],
+    ["phone", "Τηλέφωνο", "tel"], ["email", "Email", "email"], ["afm", "ΑΦΜ"],
+    ["dou", "ΔΟΥ"], ["adt", "Αριθμός ταυτότητας"], ["birthDate", "Ημερομηνία γέννησης", "date"],
+    ["street", "Οδός"], ["streetNumber", "Αριθμός"], ["area", "Περιοχή"], ["postalCode", "ΤΚ"],
+    ["notes", "Σημειώσεις", "textarea"]
+  ];
+
+  function policyholderInputs(holder, prefix, insured) {
+    const same = holder?.sameAsInsured === true;
+    return `<label class="same-address-box"><input type="checkbox" data-holder-same ${same ? "checked" : ""}> Ο ασφαλιζόμενος είναι και ο συμβαλλόμενος</label>
+      <div class="member-form-grid">` + policyholderFields.map(([key, label, type = "text"]) => {
+      const id = prefix + "-" + key;
+      const ownValue = escapeHtml(holder?.[key] || "");
+      const value = same ? escapeHtml(insured[key] || "") : ownValue;
+      const attributes = `data-holder-field="${key}" data-own-value="${ownValue}" ${same ? "disabled" : ""}`;
+      const digits = key === "afm" ? 9 : key === "postalCode" ? 5 : 0;
+      const numeric = digits ? ` inputmode="numeric" maxlength="${digits}" pattern="[0-9]{${digits}}"` : "";
+      const control = type === "textarea"
+        ? `<textarea id="${id}" ${attributes}>${value}</textarea>`
+        : `<input id="${id}" ${attributes} type="${type}" value="${value}"${numeric}>`;
+      return `<div class="field"><label for="${id}">${label}</label>${control}</div>`;
+    }).join("") + "</div>";
+  }
+
+  function syncHolderFields(container, insured) {
+    const same = container.querySelector("[data-holder-same]").checked;
+    for (const field of container.querySelectorAll("[data-holder-field]")) {
+      if (same) {
+        if (!field.disabled) field.dataset.ownValue = field.value;
+        field.value = insured[field.dataset.holderField] || "";
+      } else if (field.disabled) {
+        field.value = field.dataset.ownValue || "";
+      }
+      field.disabled = same;
+    }
+  }
+
+  function entryInsuredDetails() {
+    return Object.fromEntries(policyholderFields.map(([key]) => [key, els[key].value]));
+  }
+
+  function readPolicyholder(container) {
+    if (container.querySelector("[data-holder-same]").checked) return { sameAsInsured: true };
+    return Object.fromEntries(Array.from(container.querySelectorAll("[data-holder-field]"),
+      field => [field.dataset.holderField, field.value.trim()]));
+  }
+
+  const entryPolicyholders = document.getElementById("entryPolicyholders");
+  let holderPanelSequence = 0;
+
+  function syncEntryPolicyholders(savedPolicies = []) {
+    const panels = new Map(Array.from(entryPolicyholders.children, panel => [panel.dataset.number, panel]));
+    const saved = new Map(savedPolicies.map(policy => [policy.number, policy.policyholder]));
+    for (const { number } of normalizePolicies(els.policies.value)) {
+      const existing = panels.get(number);
+      if (existing) {
+        panels.delete(number);
+        entryPolicyholders.append(existing);
+        continue;
+      }
+      const panel = document.createElement("details");
+      panel.className = "member-form-section";
+      panel.dataset.number = number;
+      panel.innerHTML = `<summary>Συμβαλλόμενος · ${escapeHtml(number)}</summary>
+        ${policyholderInputs(saved.get(number), "entry-holder-" + ++holderPanelSequence, entryInsuredDetails())}`;
+      entryPolicyholders.append(panel);
+    }
+    panels.forEach(panel => panel.remove());
+  }
+
+  function readEntryPolicies() {
+    const holders = new Map(Array.from(entryPolicyholders.children, panel => [panel.dataset.number, readPolicyholder(panel)]));
+    return normalizePolicies(els.policies.value).map(policy => ({ ...policy, policyholder: holders.get(policy.number) || null }));
+  }
+
+  els.policies.addEventListener("input", () => syncEntryPolicyholders());
+
+  entryPolicyholders.addEventListener("change", event => {
+    if (event.target.matches("[data-holder-same]")) syncHolderFields(event.target.closest("details"), entryInsuredDetails());
+  });
+
+  els.form.addEventListener("input", event => {
+    if (!policyholderFields.some(([key]) => key === event.target.id)) return;
+    const insured = entryInsuredDetails();
+    for (const panel of entryPolicyholders.children) {
+      if (panel.querySelector("[data-holder-same]").checked) syncHolderFields(panel, insured);
+    }
+  });
+
+  function policyholderFormHtml(policy, customer) {
+    return `<form data-policyholder-form>
+      <div class="member-form-section">
+        <h3 class="member-form-section-title">Στοιχεία συμβαλλομένου</h3>
+        ${policyholderInputs(policy.policyholder, "holder", customer)}
+      </div>
+      <div class="coverage-actions"><button class="btn btn-primary" type="submit">Αποθήκευση στοιχείων</button></div>
+    </form>`;
+  }
+
+  async function savePolicyholder(policy, form) {
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+      const holder = readPolicyholder(form);
+      const { error } = await supabaseClient.from("policies").update({ policyholder: holder }).eq("id", policy.id);
+      if (error) throw error;
+      await loadCustomersFromDatabase({ quiet: true });
+      showToast("Τα στοιχεία του συμβαλλομένου αποθηκεύτηκαν.");
+    } catch (error) {
+      showToast(databaseErrorMessage(error));
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function renderCoverageModal() {
     const result = findSelectedPolicy(coverageModalPolicyId);
     if (!result) {
@@ -5174,8 +5298,9 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         <button class="contract-popup-tab ${coverageModalTab === "members" ? "active" : ""}" type="button" data-contract-tab="members">
           Καλυπτόμενα μέλη <span class="contract-popup-count">${members.length}</span>
         </button>
+        <button class="contract-popup-tab ${coverageModalTab === "policyholder" ? "active" : ""}" type="button" data-contract-tab="policyholder">Συμβαλλόμενος</button>
       </div>
-      ${coverageModalTab === "members"
+      ${coverageModalTab === "policyholder" ? policyholderFormHtml(policy, customer) : coverageModalTab === "members"
         ? coveredMembersPanelHtml(customer, policy)
         : (coverageModalEditMode ? coverageFormHtml(policy, "policy") : policyCoverageSummaryHtml(policy))}`;
 
@@ -5185,6 +5310,13 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         coverageModalEditMode = false;
         renderCoverageModal();
       });
+    });
+
+    const holderForm = els.coverageModalBody.querySelector("[data-policyholder-form]");
+    holderForm?.querySelector("[data-holder-same]").addEventListener("change", () => syncHolderFields(holderForm, customer));
+    holderForm?.addEventListener("submit", event => {
+      event.preventDefault();
+      savePolicyholder(policy, holderForm);
     });
 
     const form = els.coverageModalBody.querySelector("[data-coverage-form]");
@@ -5229,6 +5361,76 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     const popupOpen = [els.coverageModal, els.memberModal, els.memberDetailModal, els.memberCoverageModal]
       .some(modal => modal && !modal.classList.contains("hidden"));
     document.body.classList.toggle("coverage-modal-open", popupOpen);
+  }
+
+  function openNewLifePolicy(customer) {
+    coverageModalPolicyId = null;
+    els.coverageModalTitle.textContent = "Νέο συμβόλαιο Ζωής";
+    els.coverageModalSubtitle.textContent = customerDisplayName(customer);
+    els.coverageModalBody.innerHTML = `
+      <form data-new-life>
+        <div class="member-form-section member-form-grid">
+          <div class="field">
+            <label for="new-life-number">Αριθμός συμβολαίου *</label>
+            <input id="new-life-number" name="number" required>
+          </div>
+          <div class="field">
+            <label for="new-life-product">Προϊόν / πρόγραμμα</label>
+            <input id="new-life-product" name="product">
+          </div>
+        </div>
+        <div class="member-form-section">
+          <h3 class="member-form-section-title">Στοιχεία συμβαλλομένου</h3>
+          ${policyholderInputs(null, "new-life-holder", customer)}
+        </div>
+        <div class="coverage-actions">
+          <button class="btn btn-secondary" type="button" data-cancel>Ακύρωση</button>
+          <button class="btn btn-primary" type="submit">Αποθήκευση συμβολαίου</button>
+        </div>
+      </form>`;
+    const form = els.coverageModalBody.querySelector("[data-new-life]");
+    form.querySelector("[data-holder-same]").addEventListener("change", () => syncHolderFields(form, customer));
+    form.querySelector("[data-cancel]").addEventListener("click", closeCoverageModal);
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      saveNewLifePolicy(customer, form);
+    });
+    els.coverageModal.classList.remove("hidden");
+    syncPopupBodyState();
+    form.elements.number.focus();
+  }
+
+  async function saveNewLifePolicy(customer, form) {
+    const button = form.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    const number = form.elements.number.value.trim();
+    if (!number || customers.some(c => c.policies?.some(policy => policy.number === number))) {
+      showToast(number ? "Υπάρχει ήδη συμβόλαιο Ζωής με αυτόν τον αριθμό." : "Συμπλήρωσε τον αριθμό συμβολαίου.");
+      form.elements.number.focus();
+      return;
+    }
+    button.disabled = true;
+    try {
+      const { data, error } = await supabaseClient.from("policies").insert({
+        insured_id: customer.id,
+        owner_id: currentUser.id,
+        policy_number: number,
+        product: form.elements.product.value.trim() || null,
+        policyholder: readPolicyholder(form)
+      }).select("id").single();
+      if (error) throw error;
+      if (form.isConnected) {
+        closeCoverageModal();
+        activeDetailTab = "coverages";
+        expandedPolicyId = data.id;
+      }
+      await loadCustomersFromDatabase({ quiet: true });
+      showToast("Το νέο συμβόλαιο Ζωής αποθηκεύτηκε.");
+    } catch (error) {
+      showToast(databaseErrorMessage(error));
+    } finally {
+      button.disabled = false;
+    }
   }
 
   function openCoverageModal(policyId, tab = "coverage") {
@@ -7265,6 +7467,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
               <span>👨‍👩‍👧 Καλυπτόμενα μέλη</span>
               <b>${members}</b>
             </button>
+            <button class="mock-members-button" type="button" data-policy-holder="${escapeHtml(policy.id)}">Συμβαλλόμενος</button>
             <button class="life-policy-delete" type="button" data-policy-delete="${escapeHtml(policy.id)}">🗑 Διαγραφή συμβολαίου</button>
           </div>
             </article>
@@ -7311,11 +7514,14 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
     const coveragesPanel = `
       <div class="detail-tab-panel coverages-mock-panel">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary" type="button" data-life-add>+ Προσθήκη συμβολαίου Ζωής</button>
+        </div>
         ${(c.policies || []).length
           ? `<div class="policy-coverages-list life-policy-list">${policiesHtml}</div>`
           : `<div class="coverage-no-policy">
               <strong>Δεν υπάρχει συμβόλαιο</strong>
-              <span>Πάτησε «Επεξεργασία» για να προσθέσεις συμβόλαιο.</span>
+
             </div>`}
       </div>`;
 
@@ -7368,7 +7574,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         </div>
 
         <div class="customer-portfolio-summary" aria-label="Χαρτοφυλάκιο πελάτη">
-          <button type="button" data-portfolio-branch="coverages" class="${(c.policies || []).length ? "has-policies" : ""} ${activeDetailTab === "coverages" ? "is-active" : ""}" ${(c.policies || []).length ? "" : "disabled"}><span>♥ Ζωή</span><strong>${(c.policies || []).length}</strong></button>
+          <button type="button" data-portfolio-branch="coverages" class="${(c.policies || []).length ? "has-policies" : ""} ${activeDetailTab === "coverages" ? "is-active" : ""}"><span>♥ Ζωή</span><strong>${(c.policies || []).length}</strong></button>
           <button type="button" data-portfolio-branch="autos" class="${customerAutoPolicies.length ? "has-policies" : ""} ${activeDetailTab === "autos" ? "is-active" : ""}" ${customerAutoPolicies.length ? "" : "disabled"}><span>🚗 Αυτοκίνητο</span><strong>${customerAutoPolicies.length}</strong></button>
           <button type="button" data-portfolio-branch="fires" class="${customerFirePolicies.length ? "has-policies" : ""} ${activeDetailTab === "fires" ? "is-active" : ""}" ${customerFirePolicies.length ? "" : "disabled"}><span>🔥 Πυρός</span><strong>${customerFirePolicies.length}</strong></button>
         </div>
@@ -7411,6 +7617,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       });
     });
 
+    els.detail.querySelectorAll("[data-policy-holder]").forEach(button => {
+      button.addEventListener("click", () => openCoverageModal(button.dataset.policyHolder, "policyholder"));
+    });
+
     els.detail.querySelectorAll("[data-policy-members]").forEach(button => {
       button.addEventListener("click", event => {
         event.preventDefault();
@@ -7440,6 +7650,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       });
     });
 
+    els.detail.querySelector("[data-life-add]")?.addEventListener("click", () => openNewLifePolicy(c));
     els.detail.querySelector("[data-auto-add]")?.addEventListener("click", () => {
       openAutoPolicyModal(c.id);
     });
@@ -7672,6 +7883,8 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     els.policies.value = (c.policies || [])
       .map(policy => policy.number + (policy.product ? " | " + policy.product : ""))
       .join("\n");
+    entryPolicyholders.replaceChildren();
+    syncEntryPolicyholders(c.policies || []);
     els.phone.value = c.phone || "";
     els.email.value = c.email || "";
     els.afm.value = c.afm || "";
@@ -7723,7 +7936,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       firstName: els.firstName.value.trim(),
       lastName: els.lastName.value.trim(),
       company: els.company.value.trim(),
-      policies: normalizePolicies(els.policies.value),
+      policies: readEntryPolicies(),
       isInsured: true,
       phone: els.phone.value.trim(),
       email: els.email.value.trim(),
@@ -8675,10 +8888,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.13"></script>
-<script src="./forms-library.js?v=9.13.13"></script>
+<script src="./fire-policies.js?v=9.13.16"></script>
+<script src="./forms-library.js?v=9.13.16"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.13";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.16";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8693,7 +8906,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.13",
+          "./service-worker.js?v=9.13.16",
           { updateViaCache: "none" }
         );
 
