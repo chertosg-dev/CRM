@@ -2076,8 +2076,8 @@ body{padding-top:0!important;background:linear-gradient(180deg,#edf3fb,#f7f9fd)!
   <meta name="apple-mobile-web-app-title" content="TSERTOS CRM" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="./manifest.webmanifest?v=9.13.16" />
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.16" />
+  <link rel="manifest" href="./manifest.webmanifest?v=9.13.17" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=9.13.17" />
 
 
 <style>
@@ -2516,6 +2516,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   .auto-customer-picker{display:grid;gap:12px}
   .auto-customer-picker-intro{margin:0;color:#596982;font-size:13px;line-height:1.5}
   .auto-customer-search{width:100%}
+  [data-holder-lookup][hidden]{display:none!important}
   .auto-customer-choices{display:grid;gap:7px;max-height:48vh;overflow-y:auto;padding-right:3px}
   .auto-customer-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px;border:1px solid #dfe7f2;border-radius:13px;background:#f8fbff;color:#17305d;text-align:left;cursor:pointer}
   .auto-customer-choice:hover{border-color:#145cf2;background:#eef4ff}
@@ -2874,12 +2875,12 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }
 </style>
 
-  <link rel="stylesheet" href="./forms-library.css?v=9.13.16" />
+  <link rel="stylesheet" href="./forms-library.css?v=9.13.17" />
 </head>
 <body>
 
 <div id="tsertosBuildBadge" aria-label="Έκδοση εφαρμογής">
-  PWA OFFLINE · V9.13.16
+  PWA OFFLINE · V9.13.17
 </div>
 
 <section class="auth-screen" id="authScreen">
@@ -3283,10 +3284,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     </div>
   </div>
 
-<script src="jszip.min.js?v=9.13.16"></script>
-<script src="receipt-xlsx.js?v=9.13.16"></script>
-<script src="local-supabase.js?v=9.13.16"></script>
-<script src="auto-policies-seed.js?v=9.13.16"></script>
+<script src="jszip.min.js?v=9.13.17"></script>
+<script src="receipt-xlsx.js?v=9.13.17"></script>
+<script src="local-supabase.js?v=9.13.17"></script>
+<script src="auto-policies-seed.js?v=9.13.17"></script>
 <script>
 (() => {
   const STORAGE_KEY = "personalPortfolioCustomers_v1";
@@ -5167,9 +5168,79 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     ["notes", "Σημειώσεις", "textarea"]
   ];
 
+  function findLifePeople(query) {
+    const fold = value => normalize(value).replace(/ς/g, "σ");
+    const terms = fold(query).split(" ").filter(Boolean);
+    if (!terms.length) return [];
+    const matches = new Map();
+    function add(person, role, number = "") {
+      if (!person) return;
+      const name = [person.firstName, person.lastName].filter(Boolean).join(" ") || person.company;
+      if (!name && !person.afm) return;
+      const searchable = fold([name, person.company, person.afm, person.phone, person.email, number].filter(Boolean).join(" "));
+      if (!terms.every(term => searchable.includes(term))) return;
+      const key = JSON.stringify(policyholderFields.map(([field]) => person[field] || ""));
+      const match = matches.get(key) || { person, name: name || person.afm, roles: new Set(), number };
+      match.roles.add(role);
+      matches.set(key, match);
+    }
+    for (const customer of customers) {
+      add(customer, "Ασφαλιζόμενος");
+      for (const policy of customer.policies || []) {
+        add(customer, "Ασφαλιζόμενος", policy.number);
+        const holder = policy.policyholder;
+        add(holder?.sameAsInsured ? customer : holder, "Συμβαλλόμενος", policy.number);
+        for (const member of policy.coveredMembers || []) add(member, "Καλυπτόμενο μέλος", policy.number);
+      }
+    }
+    return [...matches.values()].sort((a, b) => a.name.localeCompare(b.name, "el"));
+  }
+
+  function bindHolderSearch(container) {
+    const input = container.querySelector("[data-holder-search]");
+    const results = container.querySelector("[data-holder-results]");
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        results.querySelector("button")?.focus();
+      }
+    });
+    input.addEventListener("input", () => {
+      results.replaceChildren();
+      if (!input.value.trim()) return;
+      const matches = findLifePeople(input.value);
+      if (!matches.length) results.textContent = "Δεν βρέθηκε πρόσωπο.";
+      for (const { person, name, roles, number } of matches) {
+        const choice = document.createElement("button");
+        choice.type = "button";
+        choice.className = "auto-customer-choice";
+        const details = [[...roles].join(" / "), person.afm && "ΑΦΜ " + person.afm,
+          person.phone, number && "Συμβ. " + number].filter(Boolean).join(" · ");
+        choice.innerHTML = `<div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(details)}</small></div>`;
+        choice.addEventListener("click", () => {
+          for (const field of container.querySelectorAll("[data-holder-field]")) {
+            const value = person[field.dataset.holderField] || "";
+            field.value = value;
+            field.dataset.ownValue = value;
+          }
+          input.value = "";
+          results.replaceChildren();
+          container.querySelector("[data-holder-field]").focus();
+        });
+        results.append(choice);
+      }
+    });
+  }
+
   function policyholderInputs(holder, prefix, insured) {
     const same = holder?.sameAsInsured === true;
     return `<label class="same-address-box"><input type="checkbox" data-holder-same ${same ? "checked" : ""}> Ο ασφαλιζόμενος είναι και ο συμβαλλόμενος</label>
+      <div class="field" data-holder-lookup ${same ? "hidden" : ""}>
+        <label for="${prefix}-search">Αναζήτηση υπάρχοντος προσώπου</label>
+        <input id="${prefix}-search" data-holder-search type="search" autocomplete="off"
+          placeholder="Όνομα, επωνυμία, ΑΦΜ ή τηλέφωνο">
+        <div data-holder-results class="auto-customer-choices" aria-live="polite"></div>
+      </div>
       <div class="member-form-grid">` + policyholderFields.map(([key, label, type = "text"]) => {
       const id = prefix + "-" + key;
       const ownValue = escapeHtml(holder?.[key] || "");
@@ -5186,6 +5257,11 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
 
   function syncHolderFields(container, insured) {
     const same = container.querySelector("[data-holder-same]").checked;
+    container.querySelector("[data-holder-lookup]").hidden = same;
+    if (same) {
+      container.querySelector("[data-holder-search]").value = "";
+      container.querySelector("[data-holder-results]").replaceChildren();
+    }
     for (const field of container.querySelectorAll("[data-holder-field]")) {
       if (same) {
         if (!field.disabled) field.dataset.ownValue = field.value;
@@ -5225,6 +5301,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
       panel.dataset.number = number;
       panel.innerHTML = `<summary>Συμβαλλόμενος · ${escapeHtml(number)}</summary>
         ${policyholderInputs(saved.get(number), "entry-holder-" + ++holderPanelSequence, entryInsuredDetails())}`;
+      bindHolderSearch(panel);
       entryPolicyholders.append(panel);
     }
     panels.forEach(panel => panel.remove());
@@ -5313,6 +5390,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     });
 
     const holderForm = els.coverageModalBody.querySelector("[data-policyholder-form]");
+    if (holderForm) bindHolderSearch(holderForm);
     holderForm?.querySelector("[data-holder-same]").addEventListener("change", () => syncHolderFields(holderForm, customer));
     holderForm?.addEventListener("submit", event => {
       event.preventDefault();
@@ -5389,6 +5467,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
         </div>
       </form>`;
     const form = els.coverageModalBody.querySelector("[data-new-life]");
+    bindHolderSearch(form);
     form.querySelector("[data-holder-same]").addEventListener("change", () => syncHolderFields(form, customer));
     form.querySelector("[data-cancel]").addEventListener("click", closeCoverageModal);
     form.addEventListener("submit", event => {
@@ -8888,10 +8967,10 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
   }, true);
 })();
 </script>
-<script src="./fire-policies.js?v=9.13.16"></script>
-<script src="./forms-library.js?v=9.13.16"></script>
+<script src="./fire-policies.js?v=9.13.17"></script>
+<script src="./forms-library.js?v=9.13.17"></script>
 <script>
-  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.16";
+  document.getElementById("tsertosBuildBadge").textContent = "PWA OFFLINE - V9.13.17";
 </script>
 <script>
   if ("serviceWorker" in navigator) {
@@ -8906,7 +8985,7 @@ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!import
     window.addEventListener("load", async () => {
       try {
         const registration = await navigator.serviceWorker.register(
-          "./service-worker.js?v=9.13.16",
+          "./service-worker.js?v=9.13.17",
           { updateViaCache: "none" }
         );
 
